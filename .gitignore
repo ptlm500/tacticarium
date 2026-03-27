@@ -21,8 +21,8 @@ backend/.env
 .DS_Store
 Thumbs.db
 
-# Go
-backend/go.sum
+# Go build cache
+backend/tmp/
 
 # Logs
 *.log
