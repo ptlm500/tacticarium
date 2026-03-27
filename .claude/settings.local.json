@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl -s https://api.github.com/repos/BSData/wh40k-10e/contents)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/BSData/wh40k-10e/master/Imperium%20-%20Dark%20Angels.cat\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/BSData/wh40k-10e/master/Warhammer%2040%2C000.gst\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/BSData/wh40k-10e/master/Imperium%20-%20Space%20Marines.cat\")",
+      "Bash(curl -s \"https://api.github.com/repos/BSData/wh40k-10e/git/trees/master?recursive=1\")",
+      "WebFetch(domain:wahapedia.ru)",
+      "Bash(go get:*)",
+      "Bash(npm create:*)",
+      "Read(//c/Users/peter/go/**)",
+      "Read(//c//**)",
+      "Read(//usr/local/go/**)",
+      "Bash(echo PATH=$PATH)",
+      "Bash(cmd.exe /c \"where go\")",
+      "Bash(cmd.exe /c \"go version\")",
+      "Bash(npx --yes create-vite@latest /c/Users/peter/dev/turn-tracker/frontend --template react-ts)",
+      "Bash(npx --yes create-vite@5 /c/Users/peter/dev/turn-tracker/frontend -- --template react-ts)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

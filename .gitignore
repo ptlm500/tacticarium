@@ -1,0 +1,37 @@
+# Dependencies
+frontend/node_modules/
+scraper/node_modules/
+
+# Build output
+frontend/dist/
+backend/server
+backend/seed
+
+# Environment
+backend/.env
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+backend/go.sum
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker volumes
+pgdata/
+
+
+# Seed data
+Factions.csv
+Stratagems.csv
