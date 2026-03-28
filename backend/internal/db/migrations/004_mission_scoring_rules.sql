@@ -1,1 +1,2 @@
+-- +goose Up
 ALTER TABLE missions ADD COLUMN IF NOT EXISTS scoring_rules JSONB NOT NULL DEFAULT '[]';

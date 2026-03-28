@@ -37,7 +37,7 @@ func main() {
 
 	if *migrate {
 		log.Println("Running migrations...")
-		if err := db.RunMigrations(ctx, pool); err != nil {
+		if err := db.RunMigrations(dbURL); err != nil {
 			log.Fatalf("Migration failed: %v", err)
 		}
 		log.Println("Migrations complete.")

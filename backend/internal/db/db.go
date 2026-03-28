@@ -2,13 +2,14 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"fmt"
 	"log"
-	"sort"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib" // Registers "pgx" driver for standard database/sql
+	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*.sql
@@ -27,31 +28,29 @@ func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
-	entries, err := migrationsFS.ReadDir("migrations")
+func RunMigrations(databaseURL string) error {
+	// Goose requires a standard *sql.DB, so we open one using pgx's stdlib driver
+	db, err := sql.Open("pgx", databaseURL)
 	if err != nil {
-		return fmt.Errorf("reading migrations dir: %w", err)
+		return fmt.Errorf("failed to open db for migrations: %w", err)
+	}
+	defer db.Close()
+
+	// Tell goose to use the embedded file system
+	goose.SetBaseFS(migrationsFS)
+
+	// Set the PostgreSQL dialect
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("failed to set goose dialect: %w", err)
 	}
 
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].Name() < entries[j].Name()
-	})
+	log.Println("Running database migrations...")
 
-	for _, entry := range entries {
-		if !strings.HasSuffix(entry.Name(), ".sql") {
-			continue
-		}
-
-		content, err := migrationsFS.ReadFile("migrations/" + entry.Name())
-		if err != nil {
-			return fmt.Errorf("reading migration %s: %w", entry.Name(), err)
-		}
-
-		log.Printf("Running migration: %s", entry.Name())
-		if _, err := pool.Exec(ctx, string(content)); err != nil {
-			return fmt.Errorf("executing migration %s: %w", entry.Name(), err)
-		}
+	// Run the migrations. "migrations" matches the folder name in your embed.FS
+	if err := goose.Up(db, "migrations"); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	log.Println("Database migrations completed successfully")
 	return nil
 }

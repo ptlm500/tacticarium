@@ -23,8 +23,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Run migrations
-	if err := db.RunMigrations(ctx, pool); err != nil {
+	// Run migrations (Now passes the URL instead of the pool)
+	if err := db.RunMigrations(cfg.DatabaseURL); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 

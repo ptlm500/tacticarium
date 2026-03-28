@@ -1,3 +1,4 @@
+-- +goose Up
 -- Mission rules / twists
 CREATE TABLE IF NOT EXISTS mission_rules (
     id              TEXT PRIMARY KEY,

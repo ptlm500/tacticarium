@@ -1,3 +1,4 @@
+-- +goose Up
 -- Games
 CREATE TABLE IF NOT EXISTS games (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),

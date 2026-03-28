@@ -67,7 +67,8 @@ func MustSetupTestEnv() *TestEnv {
 		log.Fatalf("Failed to connect to test DB: %v", err)
 	}
 
-	if err := db.RunMigrations(ctx, pool); err != nil {
+	// Pass connStr instead of ctx and pool
+	if err := db.RunMigrations(connStr); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
