@@ -4,12 +4,20 @@ export interface MissionPack {
   description?: string;
 }
 
+export interface ScoringAction {
+  label: string;
+  vp: number;
+  minRound?: number;
+  description?: string;
+}
+
 export interface Mission {
   id: string;
   missionPackId: string;
   name: string;
   lore: string;
   description: string;
+  scoringRules: ScoringAction[];
 }
 
 export interface Secondary {

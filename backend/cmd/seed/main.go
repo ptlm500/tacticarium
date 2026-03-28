@@ -45,13 +45,13 @@ func main() {
 
 	if *all {
 		if *factionsFile == "" {
-			*factionsFile = "../../Factions.csv"
+			*factionsFile = "../Factions.csv"
 		}
 		if *stratagemFile == "" {
-			*stratagemFile = "../../Stratagems.csv"
+			*stratagemFile = "../Stratagems.csv"
 		}
 		if *missionsFile == "" {
-			*missionsFile = "../../missions.json"
+			*missionsFile = "../missions.json"
 		}
 	}
 

@@ -42,12 +42,20 @@ type MissionPack struct {
 	Description string `json:"description,omitempty"`
 }
 
+type ScoringAction struct {
+	Label    string `json:"label"`
+	VP       int    `json:"vp"`
+	MinRound int    `json:"minRound,omitempty"`
+	Desc     string `json:"description,omitempty"`
+}
+
 type Mission struct {
-	ID            string `json:"id"`
-	MissionPackID string `json:"missionPackId"`
-	Name          string `json:"name"`
-	Lore          string `json:"lore,omitempty"`
-	Description   string `json:"description"`
+	ID            string          `json:"id"`
+	MissionPackID string          `json:"missionPackId"`
+	Name          string          `json:"name"`
+	Lore          string          `json:"lore,omitempty"`
+	Description   string          `json:"description"`
+	ScoringRules  []ScoringAction `json:"scoringRules"`
 }
 
 type MissionRule struct {

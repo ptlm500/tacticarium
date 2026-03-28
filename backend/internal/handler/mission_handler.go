@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -41,7 +42,7 @@ func (h *MissionHandler) ListMissions(w http.ResponseWriter, r *http.Request) {
 	packID := chi.URLParam(r, "packId")
 
 	rows, err := h.db.Query(r.Context(),
-		`SELECT id, mission_pack_id, name, lore, description
+		`SELECT id, mission_pack_id, name, lore, description, scoring_rules
 		 FROM missions WHERE mission_pack_id = $1 ORDER BY name`, packID)
 	if err != nil {
 		http.Error(w, "database error", http.StatusInternalServerError)
@@ -52,9 +53,14 @@ func (h *MissionHandler) ListMissions(w http.ResponseWriter, r *http.Request) {
 	missions := make([]models.Mission, 0)
 	for rows.Next() {
 		var m models.Mission
-		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description); err != nil {
+		var scoringJSON []byte
+		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description, &scoringJSON); err != nil {
 			http.Error(w, "scan error", http.StatusInternalServerError)
 			return
+		}
+		json.Unmarshal(scoringJSON, &m.ScoringRules)
+		if m.ScoringRules == nil {
+			m.ScoringRules = []models.ScoringAction{}
 		}
 		missions = append(missions, m)
 	}

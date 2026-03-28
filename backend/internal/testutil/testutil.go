@@ -236,7 +236,7 @@ func SeedMissionPack(t *testing.T, pool *pgxpool.Pool, id, name string) {
 func SeedMission(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO missions (id, mission_pack_id, name, description) VALUES ($1, $2, $3, 'Test mission') ON CONFLICT DO NOTHING`,
+		`INSERT INTO missions (id, mission_pack_id, name, description, scoring_rules) VALUES ($1, $2, $3, 'Test mission', '[]') ON CONFLICT DO NOTHING`,
 		id, packID, name)
 	if err != nil {
 		t.Fatalf("Failed to seed mission: %v", err)

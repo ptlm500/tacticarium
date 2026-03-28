@@ -10,7 +10,7 @@ interface Props {
   currentRound: number;
   currentCP: number;
   onAchieve: (secondaryId: string, vpScored: number) => void;
-  onDiscard: (secondaryId: string) => void;
+  onDiscard: (secondaryId: string, free: boolean) => void;
   onNewOrders: (discardSecondaryId: string) => void;
   onDraw: () => void;
   onScoreFixedVP: (delta: number) => void;
@@ -87,11 +87,20 @@ export function SecondaryPanel({
                         </button>
                       </div>
                       <button
-                        onClick={() => onDiscard(s.id)}
+                        onClick={() => onDiscard(s.id, true)}
                         className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-3 py-1 rounded transition-colors"
                       >
-                        Discard{currentRound < 5 ? ' (+1 CP)' : ''}
+                        Discard
                       </button>
+                      {currentRound < 5 && (
+                        <button
+                          onClick={() => onDiscard(s.id, false)}
+                          className="bg-teal-800 hover:bg-teal-700 text-white text-xs px-3 py-1 rounded transition-colors"
+                          title="End-of-turn discard: gain 1 CP"
+                        >
+                          Discard +1CP
+                        </button>
+                      )}
                       <button
                         onClick={() => onNewOrders(s.id)}
                         disabled={currentCP < 1}

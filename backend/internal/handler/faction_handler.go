@@ -66,7 +66,7 @@ func (h *FactionHandler) ListStratagems(w http.ResponseWriter, r *http.Request) 
 
 	rows, err := h.db.Query(r.Context(),
 		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description
-		 FROM stratagems WHERE faction_id = $1 ORDER BY name`, factionID)
+		 FROM stratagems WHERE faction_id = $1 OR faction_id IS NULL ORDER BY name`, factionID)
 	if err != nil {
 		http.Error(w, "database error", http.StatusInternalServerError)
 		return

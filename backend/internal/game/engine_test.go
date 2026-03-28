@@ -502,6 +502,24 @@ func TestDiscardSecondary(t *testing.T) {
 	}
 }
 
+func TestDiscardSecondary_FreeNoCPGain(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 3
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 0
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	e.Apply(GameAction{
+		Type:         ActionDiscardSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "free": true},
+	})
+	if state.Players[0].CP != 0 {
+		t.Fatal("expected no CP gain from free discard")
+	}
+}
+
 func TestDiscardSecondary_Round5NoCPGain(t *testing.T) {
 	state := newActiveTestState()
 	state.CurrentRound = 5

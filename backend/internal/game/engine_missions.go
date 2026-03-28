@@ -269,9 +269,13 @@ func (e *Engine) applyDiscardSecondary(action GameAction) ([]GameEvent, error) {
 	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
 	player.DiscardedSecondaries = append(player.DiscardedSecondaries, discarded)
 
-	// Grant 1CP if not round 5
+	// End-of-turn discard grants 1CP (except round 5); free discard grants nothing
+	free := false
+	if v, ok := action.Data["free"].(bool); ok {
+		free = v
+	}
 	cpGained := 0
-	if e.state.CurrentRound < MaxRounds {
+	if !free && e.state.CurrentRound < MaxRounds {
 		player.CP++
 		cpGained = 1
 	}
@@ -285,6 +289,7 @@ func (e *Engine) applyDiscardSecondary(action GameAction) ([]GameEvent, error) {
 			"secondaryId":   secondaryID,
 			"secondaryName": discarded.Name,
 			"cpGained":      cpGained,
+			"free":          free,
 		},
 	}}, nil
 }

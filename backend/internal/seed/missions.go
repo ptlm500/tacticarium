@@ -61,6 +61,8 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 		}
 	}
 
+	scoringRules := missionScoringRules()
+
 	for _, entry := range entries {
 		// Skip generic setup rules and entries without a pack prefix
 		if strings.HasPrefix(entry.ID, "setup-rule-") {
@@ -76,11 +78,15 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 
 		switch entryType {
 		case "mission":
+			rulesJSON := []byte("[]")
+			if rules, ok := scoringRules[entry.ID]; ok {
+				rulesJSON, _ = json.Marshal(rules)
+			}
 			_, err := pool.Exec(ctx,
-				`INSERT INTO missions (id, mission_pack_id, name, lore, description)
-				 VALUES ($1, $2, $3, $4, $5)
-				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5`,
-				entry.ID, packID, name, entry.Lore, entry.Body)
+				`INSERT INTO missions (id, mission_pack_id, name, lore, description, scoring_rules)
+				 VALUES ($1, $2, $3, $4, $5, $6)
+				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, scoring_rules = $6`,
+				entry.ID, packID, name, entry.Lore, entry.Body, rulesJSON)
 			if err != nil {
 				return stats, fmt.Errorf("inserting mission %s: %w", entry.ID, err)
 			}
@@ -222,4 +228,71 @@ type MissionSeedStats struct {
 	Secondaries     int
 	ChallengerCards int
 	Gambits         int
+}
+
+type scoringAction struct {
+	Label       string `json:"label"`
+	VP          int    `json:"vp"`
+	MinRound    int    `json:"minRound,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+func missionScoringRules() map[string][]scoringAction {
+	return map[string][]scoringAction{
+		"mission-chapter-approved-2025-26-take-and-hold": {
+			{Label: "1 Objective", VP: 5, MinRound: 2},
+			{Label: "2 Objectives", VP: 10, MinRound: 2},
+			{Label: "3 Objectives", VP: 15, MinRound: 2},
+		},
+		"mission-chapter-approved-2025-26-scorched-earth": {
+			{Label: "Control 1 Objective", VP: 5, MinRound: 2},
+			{Label: "Control 2 Objectives", VP: 10, MinRound: 2},
+			{Label: "Burn (No Man's Land)", VP: 5, MinRound: 2},
+			{Label: "Burn (Enemy Zone)", VP: 10, MinRound: 2},
+		},
+		"mission-chapter-approved-2025-26-purge-the-foe": {
+			{Label: "Destroyed 1+ enemy unit", VP: 4},
+			{Label: "Destroyed more than lost", VP: 4, MinRound: 2},
+			{Label: "Control 1+ objective", VP: 4, MinRound: 2},
+			{Label: "Control more objectives", VP: 4, MinRound: 2},
+		},
+		"mission-chapter-approved-2025-26-the-ritual": {
+			{Label: "1 NML Objective", VP: 5, MinRound: 2},
+			{Label: "2 NML Objectives", VP: 10, MinRound: 2},
+			{Label: "3 NML Objectives", VP: 15, MinRound: 2},
+		},
+		"mission-chapter-approved-2025-26-supply-drop": {
+			{Label: "1 NML Obj (R2-3)", VP: 5, MinRound: 2, Description: "Rounds 2-3"},
+			{Label: "2 NML Obj (R2-3)", VP: 10, MinRound: 2, Description: "Rounds 2-3"},
+			{Label: "1 NML Obj (R4)", VP: 8, MinRound: 4, Description: "Round 4"},
+			{Label: "1 NML Obj (R5)", VP: 15, MinRound: 5, Description: "Round 5"},
+		},
+		"mission-chapter-approved-2025-26-burden-of-trust": {
+			{Label: "1 Obj outside deploy zone", VP: 4, MinRound: 2},
+			{Label: "2 Obj outside deploy zone", VP: 8, MinRound: 2},
+			{Label: "Opponent guards (per unit)", VP: 2, MinRound: 2, Description: "Opponent scores this"},
+		},
+		"mission-chapter-approved-2025-26-terraform": {
+			{Label: "1 Objective controlled", VP: 4, MinRound: 2},
+			{Label: "2 Objectives controlled", VP: 8, MinRound: 2},
+			{Label: "3 Objectives controlled", VP: 12, MinRound: 2},
+			{Label: "Terraformed marker", VP: 1, MinRound: 2},
+		},
+		"mission-chapter-approved-2025-26-unexploded-ordinance": {
+			{Label: "Hazard in enemy zone", VP: 8, MinRound: 2},
+			{Label: "Hazard within 6\"", VP: 5, MinRound: 2},
+			{Label: "Hazard within 12\"", VP: 2, MinRound: 2},
+		},
+		"mission-chapter-approved-2025-26-linchpin": {
+			{Label: "Centre + 1 other", VP: 8, MinRound: 2, Description: "Control centre + 1 other objective"},
+			{Label: "Centre + 2 others", VP: 13, MinRound: 2, Description: "Control centre + 2 other objectives"},
+			{Label: "Centre + 3 others", VP: 15, MinRound: 2, Description: "Control centre + all others (capped at 15)"},
+			{Label: "No centre (per obj)", VP: 3, MinRound: 2, Description: "Don't control centre: 3VP per objective"},
+		},
+		"mission-chapter-approved-2025-26-hidden-supplies": {
+			{Label: "1 Obj outside zone", VP: 5, MinRound: 2},
+			{Label: "2 Obj outside zone", VP: 10, MinRound: 2, Description: "Cumulative: 5+5"},
+			{Label: "2 Obj + more than opp", VP: 15, MinRound: 2, Description: "Cumulative: 5+5+5"},
+		},
+	}
 }

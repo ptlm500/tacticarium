@@ -5,7 +5,9 @@ import { useGameStore } from '../stores/gameStore';
 import { useGameConnection } from '../hooks/useGameState';
 import { getToken } from '../api/client';
 import { factionsApi } from '../api/factions';
+import { missionsApi } from '../api/missions';
 import { Stratagem } from '../types/faction';
+import { Mission } from '../types/mission';
 import { PHASE_LABELS, PHASE_ORDER } from '../types/game';
 import { PhaseTracker } from '../components/game/PhaseTracker';
 import { RoundIndicator } from '../components/game/RoundIndicator';
@@ -14,6 +16,7 @@ import { VPCounter } from '../components/game/VPCounter';
 import { StratagemPanel } from '../components/game/StratagemPanel';
 import { SecondaryPanel } from '../components/game/SecondaryPanel';
 import { MissionInfo } from '../components/game/MissionInfo';
+import { MissionScoring } from '../components/game/MissionScoring';
 import { GameLog } from '../components/game/GameLog';
 
 export function GamePage() {
@@ -26,6 +29,7 @@ export function GamePage() {
   const { connected, sendAction } = useGameConnection(gameId!, token);
 
   const [stratagems, setStratagems] = useState<Stratagem[]>([]);
+  const [currentMission, setCurrentMission] = useState<Mission | null>(null);
   const [showStratagems, setShowStratagems] = useState(false);
   const [showLog, setShowLog] = useState(false);
 
@@ -39,6 +43,16 @@ export function GamePage() {
       factionsApi.getStratagems(myPlayer.factionId).then(setStratagems);
     }
   }, [myPlayer?.factionId]);
+
+  // Load mission scoring rules
+  useEffect(() => {
+    if (gameState?.missionPackId && gameState?.missionId) {
+      missionsApi.listMissions(gameState.missionPackId).then((missions) => {
+        const m = missions.find((m) => m.id === gameState.missionId);
+        setCurrentMission(m ?? null);
+      });
+    }
+  }, [gameState?.missionPackId, gameState?.missionId]);
 
   // Filter stratagems for current phase
   const availableStratagems = stratagems.filter((s) => {
@@ -102,8 +116,8 @@ export function GamePage() {
   );
 
   const handleDiscardSecondary = useCallback(
-    (secondaryId: string) => {
-      sendAction('discard_secondary', { secondaryId });
+    (secondaryId: string, free: boolean) => {
+      sendAction('discard_secondary', { secondaryId, free });
     },
     [sendAction]
   );
@@ -224,6 +238,14 @@ export function GamePage() {
               onScore={handleScoreVP}
             />
           </div>
+          {/* Mission Quick Scoring */}
+          {currentMission && currentMission.scoringRules.length > 0 && (
+            <MissionScoring
+              scoringRules={currentMission.scoringRules}
+              currentRound={gameState.currentRound}
+              onScore={(vp) => handleScoreVP('primary', vp)}
+            />
+          )}
         </section>
 
         {/* Opponent State */}
