@@ -108,7 +108,7 @@ func CleanDatabase(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 	_, err := pool.Exec(ctx, `
-		TRUNCATE stratagem_usage, game_events, game_player_secondaries, game_players, games, users CASCADE
+		TRUNCATE stratagem_usage, game_events, game_players, games, users CASCADE
 	`)
 	if err != nil {
 		t.Fatalf("Failed to clean database: %v", err)
@@ -120,8 +120,9 @@ func CleanAllTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 	_, err := pool.Exec(ctx, `
-		TRUNCATE stratagem_usage, game_events, game_player_secondaries, game_players, games,
-		         stratagems, detachments, factions, gambits, secondaries, missions, mission_packs, users CASCADE
+		TRUNCATE stratagem_usage, game_events, game_players, games,
+		         stratagems, detachments, factions, gambits, secondaries, missions,
+		         mission_rules, challenger_cards, mission_packs, users CASCADE
 	`)
 	if err != nil {
 		t.Fatalf("Failed to clean all tables: %v", err)
@@ -231,47 +232,61 @@ func SeedMissionPack(t *testing.T, pool *pgxpool.Pool, id, name string) {
 	}
 }
 
-// SeedMission inserts a mission and returns its UUID.
-func SeedMission(t *testing.T, pool *pgxpool.Pool, packID, name string) string {
+// SeedMission inserts a mission with a TEXT PK.
+func SeedMission(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
 	t.Helper()
-	var id string
-	err := pool.QueryRow(context.Background(),
-		`INSERT INTO missions (mission_pack_id, name) VALUES ($1, $2) RETURNING id`, packID, name,
-	).Scan(&id)
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO missions (id, mission_pack_id, name, description) VALUES ($1, $2, $3, 'Test mission') ON CONFLICT DO NOTHING`,
+		id, packID, name)
 	if err != nil {
 		t.Fatalf("Failed to seed mission: %v", err)
 	}
-	return id
 }
 
-// SeedSecondary inserts a secondary objective and returns its UUID.
-func SeedSecondary(t *testing.T, pool *pgxpool.Pool, packID, name, category string) string {
+// SeedSecondary inserts a secondary objective with a TEXT PK.
+func SeedSecondary(t *testing.T, pool *pgxpool.Pool, id, packID, name string, isFixed bool) {
 	t.Helper()
-	var id string
-	err := pool.QueryRow(context.Background(),
-		`INSERT INTO secondaries (mission_pack_id, name, category, description, max_vp)
-		 VALUES ($1, $2, $3, 'Test secondary', 8) RETURNING id`,
-		packID, name, category,
-	).Scan(&id)
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO secondaries (id, mission_pack_id, name, description, max_vp, is_fixed)
+		 VALUES ($1, $2, $3, 'Test secondary', 5, $4) ON CONFLICT DO NOTHING`,
+		id, packID, name, isFixed)
 	if err != nil {
 		t.Fatalf("Failed to seed secondary: %v", err)
 	}
-	return id
 }
 
-// SeedGambit inserts a gambit and returns its UUID.
-func SeedGambit(t *testing.T, pool *pgxpool.Pool, packID, name string) string {
+// SeedMissionRule inserts a mission rule (twist) with a TEXT PK.
+func SeedMissionRule(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
 	t.Helper()
-	var id string
-	err := pool.QueryRow(context.Background(),
-		`INSERT INTO gambits (mission_pack_id, name, description, vp_value)
-		 VALUES ($1, $2, 'Test gambit', 12) RETURNING id`,
-		packID, name,
-	).Scan(&id)
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO mission_rules (id, mission_pack_id, name, description) VALUES ($1, $2, $3, 'Test rule') ON CONFLICT DO NOTHING`,
+		id, packID, name)
+	if err != nil {
+		t.Fatalf("Failed to seed mission rule: %v", err)
+	}
+}
+
+// SeedChallengerCard inserts a challenger card with a TEXT PK.
+func SeedChallengerCard(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO challenger_cards (id, mission_pack_id, name, description) VALUES ($1, $2, $3, 'Test card') ON CONFLICT DO NOTHING`,
+		id, packID, name)
+	if err != nil {
+		t.Fatalf("Failed to seed challenger card: %v", err)
+	}
+}
+
+// SeedGambit inserts a gambit.
+func SeedGambit(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO gambits (id, mission_pack_id, name, description, vp_value)
+		 VALUES ($1, $2, $3, 'Test gambit', 12) ON CONFLICT DO NOTHING`,
+		id, packID, name)
 	if err != nil {
 		t.Fatalf("Failed to seed gambit: %v", err)
 	}
-	return id
 }
 
 // AuthHeader returns headers with a Bearer token.

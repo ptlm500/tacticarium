@@ -10,6 +10,11 @@ const (
 
 	// CP gained at start of command phase (rounds 2-5)
 	CPPerCommandPhase = 1
+
+	// Challenger card constants
+	ChallengerVPThreshold = 6  // Must trail by this many VP
+	ChallengerCardVP      = 3  // Default VP for completing a challenger card mission
+	MaxVPCombined         = 90 // Primary + Secondary + Challenger combined cap
 )
 
 // ShouldGainCP returns true if CP should be auto-gained this round.

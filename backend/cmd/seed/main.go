@@ -15,6 +15,7 @@ import (
 func main() {
 	factionsFile := flag.String("factions", "", "Path to Factions.csv")
 	stratagemFile := flag.String("stratagems", "", "Path to Stratagems.csv")
+	missionsFile := flag.String("missions", "", "Path to missions.json")
 	all := flag.Bool("all", false, "Seed all data (uses default paths)")
 	migrate := flag.Bool("migrate", false, "Run database migrations before seeding")
 	flag.Parse()
@@ -49,6 +50,9 @@ func main() {
 		if *stratagemFile == "" {
 			*stratagemFile = "../../Stratagems.csv"
 		}
+		if *missionsFile == "" {
+			*missionsFile = "../../missions.json"
+		}
 	}
 
 	if *factionsFile != "" {
@@ -69,8 +73,18 @@ func main() {
 		fmt.Printf("Seeded %d detachments, %d stratagems\n", detCount, stratCount)
 	}
 
-	if *factionsFile == "" && *stratagemFile == "" && !*migrate {
-		fmt.Println("Usage: seed [--migrate] [--factions path] [--stratagems path] [--all]")
+	if *missionsFile != "" {
+		log.Printf("Seeding missions from %s...", *missionsFile)
+		stats, err := seed.SeedMissions(ctx, pool, *missionsFile)
+		if err != nil {
+			log.Fatalf("Failed to seed missions: %v", err)
+		}
+		fmt.Printf("Seeded %d missions, %d mission rules, %d secondaries, %d challenger cards, %d gambits\n",
+			stats.Missions, stats.MissionRules, stats.Secondaries, stats.ChallengerCards, stats.Gambits)
+	}
+
+	if *factionsFile == "" && *stratagemFile == "" && *missionsFile == "" && !*migrate {
+		fmt.Println("Usage: seed [--migrate] [--factions path] [--stratagems path] [--missions path] [--all]")
 		os.Exit(1)
 	}
 

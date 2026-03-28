@@ -144,9 +144,8 @@ func (h *GameHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.db.Query(r.Context(),
-		`SELECT g.id, g.invite_code, g.status, COALESCE(m.name, ''), g.created_at, g.completed_at, g.winner_id
+		`SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
-		 LEFT JOIN missions m ON g.mission_id = m.id
 		 JOIN game_players gp ON g.id = gp.game_id
 		 WHERE gp.user_id = $1
 		 ORDER BY g.created_at DESC
@@ -196,9 +195,8 @@ func (h *GameHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.db.Query(r.Context(),
-		`SELECT g.id, g.invite_code, g.status, COALESCE(m.name, ''), g.created_at, g.completed_at, g.winner_id
+		`SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
-		 LEFT JOIN missions m ON g.mission_id = m.id
 		 JOIN game_players gp ON g.id = gp.game_id
 		 WHERE gp.user_id = $1 AND g.status = 'completed'
 		 ORDER BY g.completed_at DESC
@@ -338,7 +336,7 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.GameState, error) {
 	var state game.GameState
-	var missionPackID, missionID, missionName *string
+	var missionPackID, missionID, missionName, twistID, twistName *string
 	var firstTurnPlayer *int
 	var winnerID *string
 	var completedAt *time.Time
@@ -346,13 +344,13 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	err := h.db.QueryRow(ctx,
 		`SELECT g.id, g.invite_code, g.status, g.current_round, g.current_phase,
 		        g.active_player, g.first_turn_player, g.mission_pack_id, g.mission_id,
-		        m.name, g.created_at, g.completed_at, g.winner_id
+		        g.mission_name, g.twist_id, g.twist_name,
+		        g.created_at, g.completed_at, g.winner_id
 		 FROM games g
-		 LEFT JOIN missions m ON g.mission_id = m.id
 		 WHERE g.id = $1`, gameID,
 	).Scan(&state.GameID, &state.InviteCode, &state.Status, &state.CurrentRound,
 		&state.CurrentPhase, &state.ActivePlayer, &firstTurnPlayer,
-		&missionPackID, &missionID, &missionName,
+		&missionPackID, &missionID, &missionName, &twistID, &twistName,
 		&state.CreatedAt, &completedAt, &winnerID)
 	if err != nil {
 		return nil, err
@@ -370,6 +368,12 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	if missionName != nil {
 		state.MissionName = *missionName
 	}
+	if twistID != nil {
+		state.TwistID = *twistID
+	}
+	if twistName != nil {
+		state.TwistName = *twistName
+	}
 	if completedAt != nil {
 		state.CompletedAt = completedAt
 	}
@@ -383,7 +387,9 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 		        COALESCE(gp.faction_id, ''), COALESCE(f.name, ''),
 		        COALESCE(gp.detachment_id, ''), COALESCE(d.name, ''),
 		        gp.cp, gp.vp_primary, gp.vp_secondary, gp.vp_gambit, gp.vp_paint,
-		        gp.is_ready
+		        gp.is_ready, gp.secondary_mode,
+		        gp.tactical_deck, gp.active_secondaries, gp.achieved_secondaries, gp.discarded_secondaries,
+		        gp.is_challenger, COALESCE(gp.challenger_card_id, ''), gp.adapt_or_die_uses
 		 FROM game_players gp
 		 JOIN users u ON gp.user_id = u.id
 		 LEFT JOIN factions f ON gp.faction_id = f.id
@@ -397,13 +403,38 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 
 	for rows.Next() {
 		var p game.PlayerState
+		var tacticalDeckJSON, activeSecJSON, achievedSecJSON, discardedSecJSON []byte
 		if err := rows.Scan(&p.UserID, &p.Username, &p.PlayerNumber,
 			&p.FactionID, &p.FactionName,
 			&p.DetachmentID, &p.DetachmentName,
 			&p.CP, &p.VPPrimary, &p.VPSecondary, &p.VPGambit, &p.VPPaint,
-			&p.Ready); err != nil {
+			&p.Ready, &p.SecondaryMode,
+			&tacticalDeckJSON, &activeSecJSON, &achievedSecJSON, &discardedSecJSON,
+			&p.IsChallenger, &p.ChallengerCardID, &p.AdaptOrDieUses); err != nil {
+			log.Printf("Scan player error: %v", err)
 			continue
 		}
+
+		// Unmarshal JSONB fields
+		json.Unmarshal(tacticalDeckJSON, &p.TacticalDeck)
+		json.Unmarshal(activeSecJSON, &p.ActiveSecondaries)
+		json.Unmarshal(achievedSecJSON, &p.AchievedSecondaries)
+		json.Unmarshal(discardedSecJSON, &p.DiscardedSecondaries)
+
+		// Ensure non-nil slices for JSON serialization
+		if p.TacticalDeck == nil {
+			p.TacticalDeck = []game.ActiveSecondary{}
+		}
+		if p.ActiveSecondaries == nil {
+			p.ActiveSecondaries = []game.ActiveSecondary{}
+		}
+		if p.AchievedSecondaries == nil {
+			p.AchievedSecondaries = []game.ActiveSecondary{}
+		}
+		if p.DiscardedSecondaries == nil {
+			p.DiscardedSecondaries = []game.ActiveSecondary{}
+		}
+
 		if p.PlayerNumber == 1 || p.PlayerNumber == 2 {
 			state.Players[p.PlayerNumber-1] = &p
 		}
@@ -419,11 +450,14 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 	_, err := h.db.Exec(ctx,
 		`UPDATE games SET status = $1, current_round = $2, current_phase = $3,
 		 active_player = $4, first_turn_player = $5, mission_pack_id = NULLIF($6, ''),
-		 mission_id = NULLIF($7::text, '')::uuid, completed_at = $8, winner_id = NULLIF($9::text, '')::uuid
-		 WHERE id = $10`,
+		 mission_id = NULLIF($7, ''), mission_name = NULLIF($8, ''),
+		 twist_id = NULLIF($9, ''), twist_name = NULLIF($10, ''),
+		 completed_at = $11, winner_id = NULLIF($12::text, '')::uuid
+		 WHERE id = $13`,
 		state.Status, state.CurrentRound, state.CurrentPhase,
 		state.ActivePlayer, state.FirstTurnPlayer, state.MissionPackID,
-		state.MissionID, state.CompletedAt, state.WinnerID, state.GameID)
+		state.MissionID, state.MissionName, state.TwistID, state.TwistName,
+		state.CompletedAt, state.WinnerID, state.GameID)
 	if err != nil {
 		log.Printf("Persist game state error: %v", err)
 	}
@@ -433,12 +467,23 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 		if p == nil {
 			continue
 		}
+		tacticalDeckJSON, _ := json.Marshal(p.TacticalDeck)
+		activeSecJSON, _ := json.Marshal(p.ActiveSecondaries)
+		achievedSecJSON, _ := json.Marshal(p.AchievedSecondaries)
+		discardedSecJSON, _ := json.Marshal(p.DiscardedSecondaries)
+
 		_, err := h.db.Exec(ctx,
 			`UPDATE game_players SET faction_id = NULLIF($1, ''), detachment_id = NULLIF($2, ''),
-			 cp = $3, vp_primary = $4, vp_secondary = $5, vp_gambit = $6, vp_paint = $7, is_ready = $8
-			 WHERE game_id = $9 AND player_number = $10`,
+			 cp = $3, vp_primary = $4, vp_secondary = $5, vp_gambit = $6, vp_paint = $7, is_ready = $8,
+			 secondary_mode = $9, tactical_deck = $10, active_secondaries = $11,
+			 achieved_secondaries = $12, discarded_secondaries = $13,
+			 is_challenger = $14, challenger_card_id = NULLIF($15, ''), adapt_or_die_uses = $16
+			 WHERE game_id = $17 AND player_number = $18`,
 			p.FactionID, p.DetachmentID, p.CP,
 			p.VPPrimary, p.VPSecondary, p.VPGambit, p.VPPaint, p.Ready,
+			p.SecondaryMode, tacticalDeckJSON, activeSecJSON,
+			achievedSecJSON, discardedSecJSON,
+			p.IsChallenger, p.ChallengerCardID, p.AdaptOrDieUses,
 			state.GameID, p.PlayerNumber)
 		if err != nil {
 			log.Printf("Persist player state error: %v", err)

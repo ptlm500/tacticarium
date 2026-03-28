@@ -14,8 +14,20 @@ const (
 	ActionRemoveSecondary  ActionType = "remove_secondary"
 	ActionDeclareGambit    ActionType = "declare_gambit"
 	ActionSetReady         ActionType = "set_ready"
-	ActionConcede          ActionType = "concede"
-	ActionSetPaintScore    ActionType = "set_paint_score"
+	ActionConcede              ActionType = "concede"
+	ActionSetPaintScore        ActionType = "set_paint_score"
+	ActionSelectPrimaryMission ActionType = "select_primary_mission"
+	ActionSelectTwist          ActionType = "select_twist"
+	ActionSelectSecondaryMode  ActionType = "select_secondary_mode"
+	ActionSetFixedSecondaries  ActionType = "set_fixed_secondaries"
+	ActionInitTacticalDeck     ActionType = "init_tactical_deck"
+	ActionDrawSecondary        ActionType = "draw_secondary"
+	ActionAchieveSecondary     ActionType = "achieve_secondary"
+	ActionDiscardSecondary     ActionType = "discard_secondary"
+	ActionNewOrders            ActionType = "new_orders"
+	ActionDrawChallengerCard   ActionType = "draw_challenger_card"
+	ActionScoreChallenger      ActionType = "score_challenger"
+	ActionAdaptOrDie           ActionType = "adapt_or_die"
 )
 
 type GameAction struct {
@@ -41,8 +53,17 @@ const (
 	EventGameStart         EventType = "game_start"
 	EventGameEnd           EventType = "game_end"
 	EventFactionSelected   EventType = "faction_selected"
-	EventMissionSelected   EventType = "mission_selected"
-	EventPlayerReady       EventType = "player_ready"
+	EventMissionSelected        EventType = "mission_selected"
+	EventPlayerReady            EventType = "player_ready"
+	EventPrimaryMissionSelected EventType = "primary_mission_selected"
+	EventTwistSelected          EventType = "twist_selected"
+	EventSecondaryModeSelected  EventType = "secondary_mode_selected"
+	EventSecondaryDrawn         EventType = "secondary_drawn"
+	EventSecondaryAchieved      EventType = "secondary_achieved"
+	EventSecondaryDiscarded     EventType = "secondary_discarded"
+	EventNewOrdersUsed          EventType = "new_orders_used"
+	EventChallengerActivated    EventType = "challenger_activated"
+	EventChallengerScored       EventType = "challenger_scored"
 )
 
 type GameEvent struct {

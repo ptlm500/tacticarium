@@ -60,6 +60,8 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) chi.Router {
 		r.Get("/api/mission-packs/{packId}/missions", missionHandler.ListMissions)
 		r.Get("/api/mission-packs/{packId}/secondaries", missionHandler.ListSecondaries)
 		r.Get("/api/mission-packs/{packId}/gambits", missionHandler.ListGambits)
+		r.Get("/api/mission-packs/{packId}/rules", missionHandler.ListMissionRules)
+		r.Get("/api/mission-packs/{packId}/challenger-cards", missionHandler.ListChallengerCards)
 
 		r.Post("/api/games", gameHandler.CreateGame)
 		r.Get("/api/games", gameHandler.ListGames)

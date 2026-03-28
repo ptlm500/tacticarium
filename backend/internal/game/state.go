@@ -34,6 +34,15 @@ type SecondaryObjective struct {
 	VPScored    int    `json:"vpScored"`
 }
 
+// ActiveSecondary represents a secondary mission card in the deck/active/achieved/discarded piles.
+type ActiveSecondary struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsFixed     bool   `json:"isFixed"`
+	MaxVP       int    `json:"maxVp"`
+}
+
 type PlayerState struct {
 	UserID              string               `json:"userId"`
 	Username            string               `json:"username"`
@@ -51,6 +60,16 @@ type PlayerState struct {
 	GambitID            string               `json:"gambitId,omitempty"`
 	GambitDeclaredRound int                  `json:"gambitDeclaredRound,omitempty"`
 	Secondaries         []SecondaryObjective `json:"secondaries"`
+
+	// Mission system fields
+	SecondaryMode        string            `json:"secondaryMode"`
+	TacticalDeck         []ActiveSecondary `json:"tacticalDeck"`
+	ActiveSecondaries    []ActiveSecondary `json:"activeSecondaries"`
+	AchievedSecondaries  []ActiveSecondary `json:"achievedSecondaries"`
+	DiscardedSecondaries []ActiveSecondary `json:"discardedSecondaries"`
+	IsChallenger         bool              `json:"isChallenger"`
+	ChallengerCardID     string            `json:"challengerCardId,omitempty"`
+	AdaptOrDieUses       int               `json:"adaptOrDieUses"`
 }
 
 func (p *PlayerState) TotalVP() int {
@@ -68,6 +87,8 @@ type GameState struct {
 	MissionPackID   string          `json:"missionPackId"`
 	MissionID       string          `json:"missionId"`
 	MissionName     string          `json:"missionName"`
+	TwistID         string          `json:"twistId"`
+	TwistName       string          `json:"twistName"`
 	Players         [2]*PlayerState `json:"players"`
 	CreatedAt       time.Time       `json:"createdAt"`
 	CompletedAt     *time.Time      `json:"completedAt,omitempty"`

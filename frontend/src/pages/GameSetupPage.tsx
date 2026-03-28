@@ -5,9 +5,17 @@ import { useGameStore } from '../stores/gameStore';
 import { useGameConnection } from '../hooks/useGameState';
 import { getToken } from '../api/client';
 import { factionsApi } from '../api/factions';
+import { missionsApi } from '../api/missions';
 import { Faction, Detachment } from '../types/faction';
+import { Mission, MissionRule, Secondary } from '../types/mission';
+import { ActiveSecondary } from '../types/game';
 import { FactionPicker } from '../components/setup/FactionPicker';
 import { DetachmentPicker } from '../components/setup/DetachmentPicker';
+import { MissionPicker } from '../components/setup/MissionPicker';
+import { TwistPicker } from '../components/setup/TwistPicker';
+import { SecondaryModePicker } from '../components/setup/SecondaryModePicker';
+
+const PACK_ID = 'chapter-approved-2025-26';
 
 export function GameSetupPage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -21,14 +29,24 @@ export function GameSetupPage() {
 
   const [factions, setFactions] = useState<Faction[]>([]);
   const [detachments, setDetachments] = useState<Detachment[]>([]);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [rules, setRules] = useState<MissionRule[]>([]);
+  const [secondaries, setSecondaries] = useState<Secondary[]>([]);
+  const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     factionsApi.list().then(setFactions);
+    missionsApi.listMissions(PACK_ID).then(setMissions);
+    missionsApi.listRules(PACK_ID).then(setRules);
+    missionsApi.listSecondaries(PACK_ID).then(setSecondaries);
   }, []);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
+
+  const fixedSecondaries = secondaries.filter((s) => s.isFixed);
+  const tacticalSecondaries = secondaries.filter((s) => !s.isFixed);
 
   // Load detachments when faction changes
   useEffect(() => {
@@ -66,6 +84,70 @@ export function GameSetupPage() {
     [sendAction]
   );
 
+  const handleSelectMission = useCallback(
+    (mission: Mission) => {
+      sendAction('select_primary_mission', {
+        missionId: mission.id,
+        missionName: mission.name,
+      });
+    },
+    [sendAction]
+  );
+
+  const handleRandomMission = useCallback(() => {
+    if (missions.length === 0) return;
+    const m = missions[Math.floor(Math.random() * missions.length)];
+    sendAction('select_primary_mission', {
+      missionId: m.id,
+      missionName: m.name,
+    });
+  }, [sendAction, missions]);
+
+  const handleSelectTwist = useCallback(
+    (rule: MissionRule) => {
+      sendAction('select_twist', {
+        twistId: rule.id,
+        twistName: rule.name,
+      });
+    },
+    [sendAction]
+  );
+
+  const handleRandomTwist = useCallback(() => {
+    if (rules.length === 0) return;
+    const r = rules[Math.floor(Math.random() * rules.length)];
+    sendAction('select_twist', {
+      twistId: r.id,
+      twistName: r.name,
+    });
+  }, [sendAction, rules]);
+
+  const handleModeChange = useCallback(
+    (mode: 'fixed' | 'tactical') => {
+      sendAction('select_secondary_mode', { mode });
+      setSelectedFixedIds([]);
+    },
+    [sendAction]
+  );
+
+  const handleFixedSelect = useCallback(
+    (selected: ActiveSecondary[]) => {
+      const ids = selected.map((s) => s.id);
+      setSelectedFixedIds(ids);
+      if (selected.length === 2) {
+        sendAction('set_fixed_secondaries', { secondaries: selected });
+      }
+    },
+    [sendAction]
+  );
+
+  const handleInitDeck = useCallback(
+    (deck: ActiveSecondary[]) => {
+      sendAction('init_tactical_deck', { deck });
+    },
+    [sendAction]
+  );
+
   const handleReady = useCallback(() => {
     sendAction('set_ready', { ready: !myPlayer?.ready });
   }, [sendAction, myPlayer?.ready]);
@@ -86,7 +168,16 @@ export function GameSetupPage() {
     );
   }
 
-  const canReady = myPlayer?.factionId && myPlayer?.detachmentId;
+  const hasFaction = !!myPlayer?.factionId;
+  const hasDetachment = !!myPlayer?.detachmentId;
+  const hasMission = !!gameState.missionId;
+  const hasTwist = !!gameState.twistId;
+  const hasMode = !!myPlayer?.secondaryMode;
+  const hasSecondaries =
+    myPlayer?.secondaryMode === 'fixed'
+      ? (myPlayer?.activeSecondaries?.length ?? 0) === 2
+      : (myPlayer?.tacticalDeck?.length ?? 0) > 0;
+  const canReady = hasFaction && hasDetachment && hasMission && hasTwist && hasMode && hasSecondaries;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -119,13 +210,56 @@ export function GameSetupPage() {
         </section>
 
         {/* Detachment Selection */}
-        {myPlayer?.factionId && (
+        {hasFaction && (
           <section>
             <h2 className="text-lg font-semibold mb-3">Detachment</h2>
             <DetachmentPicker
               detachments={detachments}
               selectedId={myPlayer?.detachmentId || ''}
               onSelect={handleSelectDetachment}
+            />
+          </section>
+        )}
+
+        {/* Primary Mission */}
+        {hasDetachment && (
+          <section>
+            <h2 className="text-lg font-semibold mb-3">Primary Mission</h2>
+            <MissionPicker
+              missions={missions}
+              selectedId={gameState.missionId || ''}
+              onSelect={handleSelectMission}
+              onDrawRandom={handleRandomMission}
+            />
+          </section>
+        )}
+
+        {/* Twist / Mission Rule */}
+        {hasMission && (
+          <section>
+            <h2 className="text-lg font-semibold mb-3">Twist</h2>
+            <TwistPicker
+              rules={rules}
+              selectedId={gameState.twistId || ''}
+              onSelect={handleSelectTwist}
+              onDrawRandom={handleRandomTwist}
+            />
+          </section>
+        )}
+
+        {/* Secondary Mission Mode */}
+        {hasTwist && (
+          <section>
+            <h2 className="text-lg font-semibold mb-3">Secondary Missions</h2>
+            <SecondaryModePicker
+              mode={myPlayer?.secondaryMode || ''}
+              onModeChange={handleModeChange}
+              fixedSecondaries={fixedSecondaries}
+              selectedFixedIds={selectedFixedIds}
+              onFixedSelect={handleFixedSelect}
+              tacticalSecondaries={tacticalSecondaries}
+              deckInitialized={(myPlayer?.tacticalDeck?.length ?? 0) > 0}
+              onInitDeck={handleInitDeck}
             />
           </section>
         )}

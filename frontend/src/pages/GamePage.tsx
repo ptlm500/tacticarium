@@ -12,6 +12,8 @@ import { RoundIndicator } from '../components/game/RoundIndicator';
 import { CPCounter } from '../components/game/CPCounter';
 import { VPCounter } from '../components/game/VPCounter';
 import { StratagemPanel } from '../components/game/StratagemPanel';
+import { SecondaryPanel } from '../components/game/SecondaryPanel';
+import { MissionInfo } from '../components/game/MissionInfo';
 import { GameLog } from '../components/game/GameLog';
 
 export function GamePage() {
@@ -90,6 +92,44 @@ export function GamePage() {
     if (window.confirm('Are you sure you want to concede?')) {
       sendAction('concede');
     }
+  }, [sendAction]);
+
+  const handleAchieveSecondary = useCallback(
+    (secondaryId: string, vpScored: number) => {
+      sendAction('achieve_secondary', { secondaryId, vpScored });
+    },
+    [sendAction]
+  );
+
+  const handleDiscardSecondary = useCallback(
+    (secondaryId: string) => {
+      sendAction('discard_secondary', { secondaryId });
+    },
+    [sendAction]
+  );
+
+  const handleNewOrders = useCallback(
+    (discardSecondaryId: string) => {
+      sendAction('new_orders', { discardSecondaryId });
+    },
+    [sendAction]
+  );
+
+  const handleDrawSecondary = useCallback(() => {
+    sendAction('draw_secondary');
+  }, [sendAction]);
+
+  const handleDrawChallengerCard = useCallback(() => {
+    // For now, pick a placeholder challenger card — the UI could be enhanced
+    // with a card picker in the future
+    sendAction('draw_challenger_card', {
+      challengerCardId: 'challenger-card-generic',
+      challengerCardName: 'Challenger Mission',
+    });
+  }, [sendAction]);
+
+  const handleScoreChallenger = useCallback(() => {
+    sendAction('score_challenger', {});
   }, [sendAction]);
 
   if (!gameState || !myPlayer) {
@@ -198,6 +238,58 @@ export function GamePage() {
             </div>
           </section>
         )}
+
+        {/* Secondary Missions */}
+        <SecondaryPanel
+          mode={myPlayer.secondaryMode}
+          activeSecondaries={myPlayer.activeSecondaries ?? []}
+          achievedSecondaries={myPlayer.achievedSecondaries ?? []}
+          discardedSecondaries={myPlayer.discardedSecondaries ?? []}
+          deckSize={myPlayer.tacticalDeck?.length ?? 0}
+          currentRound={gameState.currentRound}
+          currentCP={myPlayer.cp}
+          onAchieve={handleAchieveSecondary}
+          onDiscard={handleDiscardSecondary}
+          onNewOrders={handleNewOrders}
+          onDraw={handleDrawSecondary}
+          onScoreFixedVP={(delta) => handleScoreVP('secondary', delta)}
+        />
+
+        {/* Challenger Card Banner */}
+        {opponent && totalVP + 6 <= opponentVP && !myPlayer.isChallenger && (
+          <div className="bg-amber-900/50 border border-amber-700 rounded-lg p-4 text-center">
+            <p className="text-sm text-amber-200 mb-2">
+              You are trailing by {opponentVP - totalVP} VP — eligible for a Challenger Card!
+            </p>
+            <button
+              onClick={handleDrawChallengerCard}
+              className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+            >
+              Draw Challenger Card
+            </button>
+          </div>
+        )}
+
+        {/* Active Challenger Card */}
+        {myPlayer.isChallenger && myPlayer.challengerCardId && (
+          <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-4">
+            <p className="text-sm text-purple-200 mb-2">
+              Active Challenger Card
+            </p>
+            <button
+              onClick={handleScoreChallenger}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+            >
+              Complete Mission (+3 VP)
+            </button>
+          </div>
+        )}
+
+        {/* Mission Info */}
+        <MissionInfo
+          missionName={gameState.missionName || ''}
+          twistName={gameState.twistName || ''}
+        />
 
         {/* Stratagem Panel (collapsible) */}
         <section>

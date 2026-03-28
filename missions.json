@@ -1,0 +1,713 @@
+[
+  {
+    "id": "setup-rule-muster-armies",
+    "body": "Players first muster their armies, as described in the Core Rules. Remember, all details of a player's army must be recorded on their Army Roster."
+  },
+  {
+    "id": "setup-rule-determine-mission",
+    "body": "Players split the cards into their respective decks: Deployment deck: Mission Rule deck; Primary Mission deck; Secondary Mission decks (one for the Attacker, one for the Defender); Gambit decks (one for the Attacker, one for the Defender). Set aside the Secondary Mission and Gambit decks (players will receive these later).\n\nPlayers determine their mission by shuffling and randomly drawing one card from the Deployment, Mission Rule and Primary Mission decks."
+  },
+  {
+    "id": "setup-rule-read-mission",
+    "body": "Next players read the Primary Mission and Mission Rule cards they have drawn.\n\nThe Primary Mission card details how and when players score Victory points (VP). Players wil also score VP by achieving Secondary Missions and Gambits, which are detailed later. Some Primary Mission cards also include additional rules that will apply to the battle.\n\nThe Mission Rule card details any special rules that apply for the duration of the battle. Players should read and familiarise themselves with these before proceeding."
+  },
+  {
+    "id": "setup-rule-place-objective-markers",
+    "body": "Players now set up objective markers on the battlefield. Each Deployment card's deployment map will show players how many objective markers to set up and where each should be placed."
+  },
+  {
+    "id": "setup-rule-create-the-battlefield",
+    "body": "Players now create the battlefield and set up terrain features.\n\nMissions are played on rectangular battlefields whose dimensions are approximately 44\" by 60\". This can be achieved by placing four Battlezone boards flat on a surface next to each other.\n\nUnless otherwise stated, when setting up terrain features, use the guidelines detailed in the Core Rules. Players must use the rules for terrain features detailed in the Core Rules. Terrain features should not be set up with any impassable sections (such as the walls of a ruin) within 1\" of any objective markers."
+  },
+  {
+    "id": "setup-rule-determine-attacker-and-defender",
+    "body": "Players consult the Deployment card drawn for the mission and agree which battlefield edge is the Attacker's and which is the Defender's. The players then roll off and the winner decides who will be the Attacker and who will be the Defender this will determine which player uses which deployment zone in the coming battle.\n\nPlayers take their respective Secondary Mission and Gambit deck, shuffle them and place them nearby for later."
+  },
+  {
+    "id": "setup-rule-select-secondary-missions",
+    "body": "There are two Secondary Mission decks (one for the Attacker, one for the Defender), meaning players can draw the same Secondary Missions. These describe goals that players can achieve to score VP. Each Secondary Mission card will detail when and how it is achieved, as well as how many VP that player scores for achieving it.\n\nEach player must now choose whether to use Fixed or Tactical Missions during the battle. To do so, each player first takes their respective Secondary Mission deck. If a player wishes to use Fixed Missions, that player secretly selects two Fixed Mission cards (denoted by the Fixed Mission symbol), from their Secondary Mission deck and places them face down on the battlefield. If a player wishes to use Tactical Missions, they should instead select any two Secondary Mission cards from their deck that do not have the Fixed Mission symbol and place them face down on the battlefield. Once both players have done so, players reveal their selections.\n\nIf a player selects two Fixed Mission cards, those Secondary Mission cards are active in every battle round during the battle, and can be achieved and scored in every battle round. The remainder of their Secondary Mission deck will not be used in the coming battle and can be placed to one side.\n\nPlayers' selected Fixed Mission cards cannot be discarded for any reason.\n\nIf a player did not select two Fixed Mission cards, then they will use Tactical Missions in the coming battle and they should now reshuffle their Secondary Mission deck. At the start of each of that player's Command phases, that player must determine which Secondary Mission cards are active for them by drawing cards from their Secondary Mission deck; if they have fewer than two active Secondary Mission cards, they draw from their Secondary Mission deck until they have two Secondary Mission cards. That player has access to the New Orders Stratagem (see overleaf), and can spend CP to use it after drawing their Secondary Mission cards if they wish. If a player's Secondary Mission deck runs out, they cannot generate any additional Secondary Missions during the battle. Each time that player achieves a Secondary Mission, after scoring the VP described on that card, that Secondary Mission is then discarded."
+  },
+  {
+    "id": "setup-rule-declare-battle-formations",
+    "body": "In the order below, both players secretly note\n\n• Which of their Leader units will start the battle attached (they must specify which Leader unit is attached to which Bodyguard unit)\n• Which of their units will start the battle embarked within TRANSPORT models (they must specify which units are embarked within which models)\n• Which of their Units will start the battle in Reserves (including Strategic Reserves). No more than half the number of units in a player's army can start the battle in Reserves, and the combined points total of those units cannot be more than half the total of their army Units embarked within a TRANSPORT that is set up in Reserves also count as being set up in Reserves for these limits.\n\nWhen both players have done so, they declare their selections to their opponent.\n\nReserves units cannot arrive during the first battle round and any Strategic Reserves or Reserves units that have not arrived on the battlefield by the end of the third battle round count as having been destroyed, as do any units embarked within them. (this does not apply to units that are placed into Strategic Reserves after the first battle round has started)"
+  },
+  {
+    "id": "setup-rule-deploy-armies",
+    "body": "Players alternate setting up their remaining units one at a time, starting with the Defender. A player's models must be set up wholly within their deployment zone. If one player finishes deploying all their units, their opponent then deploys the remainder of their units."
+  },
+  {
+    "id": "setup-rule-determine-first-turn",
+    "body": "Players roll off and the winner takes the first turn."
+  },
+  {
+    "id": "setup-rule-resolve-pre-battle-abilities",
+    "body": "Players alternate resolving any pre-battle rules units from their army may have, starting with the player who will take the first turn."
+  },
+  {
+    "id": "setup-rule-begin-the-battle",
+    "body": "The first battle round begins. Players continue to resolve battle rounds until the battle ends.\n\nAt the end of each player's turn, if that player is using Tactical Mission, they can discard one or more of their active Secondary Mission cards. If they do, and if it is not the fifth battle round, that player gains 1CP. This represents high command diverting strategic resources that had been allocated to now-obsolete objectives to instead engage new targets of opportunity.\n\nAt the end of the third battle round, players generate Gambits."
+  },
+  {
+    "id": "setup-rule-gambits",
+    "body": "There are two Gambit decks (one for each player) with identical cards. These contain challenging goals that players can attempt to achieve by the and of the battle instead of attempting to score any more VP from their Primary Mission.\n\nAt the end of the third battle round, before starting the next battle round, players can generate Gambits and choose whether to attempt to achieve one.\n\nEach player takes their Gambit deck and removes the Proceed as Planned card, placing it to one side, before shuffling the remaining Gambit cards and randomly discarding one. Each player then adds their Proceed as Planned card back in, to have a hand containing three cards.\n\nPlayers then secretly choose one of these three cards and place ti face down on the battlefield. Once both players have done so, they reveal their choice.\n\nIf a player reveals their Proceed as Planned card, they are not attempting a Gambit in this battle and continue to score VP for achieving the goals as listed on their Primary Mission card.\n\nOtherwise, the player is attempting a Gambit, and until the end of the battle that player cannot score any more VP as described on their Primary Mission card (any VP scored\nso far are kept). Instead, at the end of the battle, if they successfully completed the goal described on the Gambit card, they score VP as detailed on that Gambit card."
+  },
+  {
+    "id": "setup-rule-secret-missions",
+    "body": "Secret Missions are challenging covert goals you can pursue if the Primary Mission seems in jeopardy.\n  \nAt the end of the third battle round, starting with the player who had the second turn, if your Primary Mission VP total is less than or equal to your opponent’s, you can choose to undertake a Secret Mission. If you do:\n\n■ Secretly select one card from your Secret Mission deck and place it to one side, face-down.\n■ You cannot score more than 20VP from the Primary Mission card; any excess VP awarded above this maximum are lost.\n■ At the end of the battle, reveal your Secret Mission card to your opponent. If you achieved the goal described on that card, you score VP as described on that card."
+  },
+  {
+    "id": "mission-leviathan-take-and-hold",
+    "lore": "Several strategic locations have been identified in your vicinity. You are ordered to assault these positions, secure them and hold them at any cost.",
+    "body": "In the second, third, and fourth battle rounds:\n  \nAt the end of each Command phase, the player whose turn it is scores 5VP for each objective marker they control [up to 15VP per turn].\n\nIn the fifth battle round:\n\nThe player who has the first turn scores VP as described above. The player who has the second turn scores VP as described above, but does so at the end of their turn instead of at the end of their Command phase."
+  },
+  {
+    "id": "mission-leviathan-scorched-earth",
+    "lore": "What cannot be secured must be burned to ash.",
+    "body": "From the second battle round, in each player's Shooting phase, the player whose turn it is can selected on unit from their army that is not Battle-shocked and is eligible to shoot. Until the end of that turn, that unit is not eligible to shoot or declare a charge. At the start of its controlling player's next Command phase, if that unit is within 1\" of an objective marker that the player whose turn it is controls, that objective marker is burned and removed from the battlefield.\n\nIn the second, third and fourth battle rounds:\n\nAt the end of each Command phase, the player whose turn it is scores 5VP for each objective marker they control (up to 10VP per turn).\n\nIn the fifth battle round:\n\n• The player who has the first turn scores VP as described above\n• The player who has the second turn scores VP as described above, but does so at the end of their turn instead of at the end of their Command phase.\n\nAt the end of the battle:\n\nEach player scores 5VP if one or more objective markers in No Man's Land were burned by a unit from their army, and 10VP if the objective marker in their opponent's deployment zone was burned."
+  },
+  {
+    "id": "mission-leviathan-purge-the-foe",
+    "lore": "Exterminate the enemy. Show them on mercy.",
+    "body": "In the second, third and fourth battle rounds:\n    \nAt the end of each Command phase, the player whose turn it is scores 4VP if they control one or more objective markers, and an extra 4VP if they control more objective markers than their opponent controls.\n\nIn the fifth battle round:\n\n• The player who has the first turn scores VP as described above\n• The player who has the second tum scores VP as described above, but does so at the end of their turn instead of at the end of their Command phase.\n\nAt the end of each battle round:\n\nAt the end of the battle round, each player scores 4VP if one or more enemy units were destroyed that battle round, and an extra 4VP if more enemy units than friendly units were destroyed that battle round.\n\nNote that a unit can if it is returned to the battlefield for any reason, potentially contribute to this Primary Mission several times(assuming tiis returned and subsequently destroyed several times over)."
+  },
+  {
+    "id": "mission-leviathan-sites-of-power",
+    "lore": "There is great power for those bold enough to claim it.",
+    "body": "The objective markers in No Mans' Land are sites of power. At the end of each Command phase, the player whose turn it is empowers all sites of power that they control that have one or more CHARACTER models from their army within range; each site of power remains empowered by that player while one or more of their CHARACTER models remains within range of it.\n    \nIn the second, third and fourth battle rounds:\n    \nAt the end of each player's Command phase, the player whose turn it is scores VP as follows (up to 15VP per turn):\n\n• 3VP for each objective marker they control.\n• 3VP for each site of power that they have empowered.\nNote that these are cumulative, so a player that controls one objective marker they have also empowered will score 6VP that turn.\n\nIn the fifth battle round:\n\n• The player who has the first turn scores VP as described above.\n• The player who has the second turn scores VP as described above, but does so at the end of their turn instead of at the end of their Command phase."
+  },
+  {
+    "id": "mission-leviathan-the-ritual",
+    "lore": "Bitter foes clash in a race to finish a ritual to cither sanctify or corrupt the battlefield.",
+    "body": "When setting up the battlefield, remove all objective markers in No Man's Land except the one closest to the centre of the battlefield.\n    \nIn each player's Shooting phase, the player whose turn it is can select one unit from their army that is not Battle-shocked and is eligible to shoot. Until the end of that turn, that unit is not eligible to shoot or declare a charge. At the end of that turn, the player whose turn it is can set up one objective marker wholly within No Man's Land and within 1\" of that unit provided it can be set up exactly 9\" from one other objective marker and not within 6\" of any other objective marker.\n\nIn the second, third and fourth battle rounds:\n\nAt the end of each Command phase, the player whose turn it is scores 5VP for each objective marker in No Man's Land they control (up to 15VP per turn).\n\nIn the fifth battle round:\n\n• The player who has the first turn scores VP as described above.\n• The player who has the second turn scores VP as described above, but does so at the end of their turn instead of at the end of their Command phase."
+  },
+  {
+    "id": "mission-leviathan-priority-targets",
+    "lore": "The objectives in this area are vital to our war effort and securing them is your highest priority. Spare nothing in ensuring that they do not fall into enemy hands.",
+    "body": "In the second, third, fourth and fifth battle rounds:\n    \nAt the end of each Command phase, the player whose turn it is scores 5VP for each objective marker they control (up to 10VP per turn).\n\nAt the end of the battle:\n\nEach player scores 5VP for each objective marker they control (up to 15VP per player)."
+  },
+  {
+    "id": "mission-leviathan-supply-drop",
+    "lore": "Supplies are inbound Secure the drop coordinates.",
+    "body": "At the start of the battle, players randomly select two different objective markers in No Man's Land: the first selected is the Alpha objective, the second selected is the Omega objective. At the start of the fourth battle round, the Alpha objective is removed from the battlefield At the start of the fifth battle round, all objective markers in No Mans' Land apart from the Omega objective are also removed.\n    \nIn the second and third battle rounds:\n\nAt the end of each Command phase, the player whose turn it is scores 5VP for each objective marker they control in No Man's Land.\n\nIn the fourth battle round:\n\nAt the end of each Command phase, the player whose turn it is scores 8VP for each objective marker they control in No Man's Land.\n\nAt the end of the battle:\n\n• The player who has the first turn scores 15VP at the end of their Command phase if they control the objective marker in No Man's Land.\n• The player who has the second turn scores 15VP at the end of their turn if they control the objective marker in No Man's Land."
+  },
+  {
+    "id": "mission-leviathan-deploy-servo-skulls",
+    "lore": "This area is littered with valuable relics. Secure these artefacts behind our front lines.",
+    "body": "The objective markers that start the battle in No Man's Land are servo-skulls. At the end of each turn, each of these objective markers can be moved up to 6\" in any direction by the player that controls it. When moving objective markers, they cannot end that move on top of any other objective marker or model, or inside impassable parts of terrain features (such as the walls of a ruin).\n\nIn the second, third, fourth and fifth battle rounds:\n    \nAt the end of each turn, the player whose turn it is scores VP as follows:\n• 2VP for each servo-skull that is wholly within 12\" of their opponent's deployment zone.\n• 5VP for each servo-skull that is wholly within 6\" of their opponent's deployment zone.\n• 8VP for each servo-skull that is wholly within their opponent's deployment zone.\n\nNote that these conditions are not cumulative; if more than one applies, the player whose turn it is scores the applicable condition that carries the highest VP reward."
+  },
+  {
+    "id": "mission-leviathan-vital-ground",
+    "lore": "The most vital ground in the region is in enemy hands.",
+    "body": "If you draw this and the Hidden Supplies Mission Rule card, discard this card and draw a new Primary Mission card.\n\nAfter setting up the battlefield, remove the objective marker in No Man s Land that is closest to the centre of the battlefield.\n\nIn the second, third and fourth battle rounds:\n\nAt the end of each Command phase, the player whose turn it is scores VP as follows:\n• If they control the objective marker in their own deployment zone, they score 2VP\n• For each objective marker in No Mans' Land that they control, they score 5VP.\n• If they control the objective marker in their opponent's deployment zone, they score 6VP.\n\nIn the fifth battle round:\n\n• The player who has the first turn scores VP as described above.\n• The player who has the second turn scores VP as described above, but does so at the end of their turn instead of at the end of their Command phase."
+  },
+  {
+    "id": "mission-pariah-nexus-take-and-hold",
+    "lore": "Several strategic locations have been identified in your vicinity. You are ordered to assault these positions, secure them and hold them at any cost.",
+    "body": "SECOND BATTLE ROUND ONWARDS\n  \nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\n\nThe player whose turn it is scores 5VP for each objective marker they control (up to 15VP per turn)."
+  },
+  {
+    "id": "mission-pariah-nexus-scorched-earth",
+    "lore": "What cannot be secured must be burned to ash.",
+    "body": "BURN OBJECTIVE (ACTION)\nSTARTS: Your Shooting phase, from the second battle round onwards.\nUNITS: One unit from your army within range of an objective marker that is not within your deployment zone.\nCOMPLETES: End of your opponent's next turn or the end of the battle (whichever comes first), if your unit is still within range of the same objective marker and you control that objective marker.\nIF COMPLETED: That objective marker is burned and removed from the battlefield.\n\nSECOND BATTLE ROUND ONWARDS\n\nWHEN: Any time.\nEach time a player burns an objective marker, that player scores 5VP if that objective marker was in No Man's Land, or 10VP instead if that objective marker was in their opponent’s deployment zone.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 5VP for each objective marker they control (up to 10VP per turn)."
+  },
+  {
+    "id": "mission-pariah-nexus-purge-the-foe",
+    "lore": "Exterminate the enemy. Show them no mercy.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of the battle round.\nEach player scores 4VP if one or more enemy units were destroyed this battle round.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the battle round.\nEach player scores 4VP if more enemy units than friendly units were destroyed this battle round.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 4VP if they control one or more objective markers, and an additional 4VP if they control more objective markers than their opponent controls."
+  },
+  {
+    "id": "mission-pariah-nexus-the-ritual",
+    "lore": "Bitter foes clash in a race to finish a ritual to cither sanctify or corrupt the battlefield.",
+    "body": "When setting up the battlefield, remove all objective markers in No Man's Land except the one closest to the centre of the battlefield.\n\nTHE RITUAL (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One unit from your army.\nCOMPLETES: End of your turn.\nIF COMPLETED: Set up one objective marker anywhere on the battlefield wholly within No Man's Land and within 1\" of your unit, provided it can be set up exactly 12\" from one other objective marker within No Man's Land and not within 6\" of any other objective marker.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 5VP for each objective marker in No Man's Land that they control (up to 15VP per turn)."
+  },
+  {
+    "id": "mission-pariah-nexus-supply-drop",
+    "lore": "Supplies are inbound Secure the drop coordinates.",
+    "body": "Start of the Battle: Players randomly select two different objective markers in No Man's Land; the first selected is the Alpha objective, the second selected is the Omega objective.\n\nStart of the Fourth Battle Round: The Alpha objective is removed from the battlefield.\n\nStart of the Fifth Battle Round: All objective markers in No Man's Land apart from the Omega objective are removed from the battlefield.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores the following VP for each objective marker in No Man's Land that they control, depending on the current battle round:\n5VP in the second and third battle rounds.\n8VP in the fourth battle round.\n15VP in the fifth battle round."
+  },
+  {
+    "id": "mission-pariah-nexus-burden-of-trust",
+    "lore": "The strategic prizes in this region must be guarded at all costs - a duty that falls upon a chosen few.",
+    "body": "SECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 4VP for each objective marker they control that is not within their deployment zone. Then, for each objective marker that player controls, they can select one unit from their army (excluding AIRCRAFT) within range of that objective marker to guard it until the start of their next turn.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of each player's turn.\nThe opponent of the player whose turn it is scores 2VP for each of their units (excluding Battle-shocked units) that are within range of and guarding an objective marker they control."
+  },
+  {
+    "id": "mission-pariah-nexus-terraform",
+    "lore": "Victory here lies in dominating not only the foe, but also the landscape of the battlefield itself.",
+    "body": "TERRAFORM (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army, each within range of a different objective marker that is not within your deployment zone and has not been terraformed.\nCOMPLETES: End of your opponent's next turn or the end of the battle (whichever comes first), if the unit performing this Action is still within range of the same objective marker and you control that objective marker.\nIF COMPLETED: Each of those objective markers is terraformed.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores VP as follows (up to 15VP per turn):\n• 4VP for each objective marker they control.\n• 2VP for each objective marker they have terraformed during the battle.\n\nNote: The above VP are cumulative, so a player who controls one objective marker that they have also terraformed will score 6VP that turn."
+  },
+  {
+    "id": "mission-pariah-nexus-unexploded-ordinance",
+    "lore": "Volatile undetonated material lies in your path. Shifting such hazards towards enemy territory could be the key to victory.",
+    "body": "The objective markers that start the battle in No Man's Land are Hazard objective markers.\n\nMOVE HAZARD (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army, each within range of a different Hazard objective marker you control.\nCOMPLETES: End of your turn, if the unit performing this Action is still within range of the same Hazard objective marker and you control that objective marker.\nIF COMPLETED: You can move each of those Hazard objective markers up to 6\". When doing so, that objective marker cannot end that move on top of any other objective marker or model, or inside impassable parts of terrain features.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of each player's turn.\nThe player whose turn it is scores VP as follows:\n• 8VP for each Hazard objective marker that is wholly within their opponent's deployment zone.\n• 5VP for each other Hazard objective marker that is wholly within 6\" of their opponent's deployment zone.\n• 2VP for each other Hazard objective marker that is wholly within 12\" of their opponent’s deployment zone."
+  },
+  {
+    "id": "mission-pariah-nexus-linchpin",
+    "lore": "True victory is built upon a firm foundation. If the centre cannot hold then all else swiftly crumbles.",
+    "body": "SECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nIf the player whose turn it is does not control the objective marker in their deployment zone, they score 3VP for each objective marker they control.\n\nOR\n\nIf the player whose turn it is controls the objective marker in their deployment zone, they score 3VP for controlling that objective marker, and 5VP for each other objective marker they control (up to 15VP per turn)."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-take-and-hold",
+    "lore": "Several strategic locations have been identified in your vicinity. You are ordered to assault these positions, secure them and hold them at any cost.",
+    "body": "SECOND BATTLE ROUND ONWARDS\n  \nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\n\nThe player whose turn it is scores 5VP for each objective marker they control (up to 15VP per turn)."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-scorched-earth",
+    "lore": "What cannot be secured must be burned to ash.",
+    "body": "BURN OBJECTIVE (ACTION)\nSTARTS: Your Shooting phase, from the second battle round onwards.\nUNITS: One unit from your army within range of an objective marker that is not within your deployment zone.\nCOMPLETES: End of your opponent's next turn or the end of the battle (whichever comes first), if your unit is still within range of the same objective marker and you control that objective marker.\nIF COMPLETED: That objective marker is burned and removed from the battlefield.\n\nSECOND BATTLE ROUND ONWARDS\n\nWHEN: Any time.\nEach time a player burns an objective marker, that player scores 5VP if that objective marker was in No Man's Land, or 10VP instead if that objective marker was in their opponent’s deployment zone.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 5VP for each objective marker they control (up to 10VP per turn)."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-purge-the-foe",
+    "lore": "Exterminate the enemy. Show them no mercy.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of the battle round.\nEach player scores 4VP if one or more enemy units were destroyed this battle round.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the battle round.\nEach player scores 4VP if more enemy units than friendly units were destroyed this battle round.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 4VP if they control one or more objective markers, and an additional 4VP if they control more objective markers than their opponent controls."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-the-ritual",
+    "lore": "Bitter foes clash in a race to finish a ritual to cither sanctify or corrupt the battlefield.",
+    "body": "THE RITUAL (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One unit from your army.\nCOMPLETES: End of your turn.\nIF COMPLETED: Set up one objective marker anywhere on the battlefield wholly within No Man's Land and within 1\" of your unit, provided it can be set up exactly 12\" from one other objective marker within No Man's Land and not within 6\" of any other objective marker.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 5VP for each objective marker in No Man's Land that they control (up to 15VP per turn)."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-supply-drop",
+    "lore": "Supplies are inbound Secure the drop coordinates.",
+    "body": "Start of the Battle: Players randomly select two different objective markers within No Man's Land that are not in the centre of the battlefield; the first selected is the Alpha objective, the second selected is the Omega objective.\n\nStart of the Fourth Battle Round: The Alpha objective is removed from the battlefield.\n\nStart of the Fifth Battle Round: The Omega objective is removed from the battlefield.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores the following VP for each objective marker within No Man's Land that they control depending on the current battle round:\n• 5VP in the second and third battle rounds.\n• 8VP in the fourth battle round.\n• 15VP in the fifth battle round."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-burden-of-trust",
+    "lore": "The strategic prizes in this region must be guarded at all costs - a duty that falls upon a chosen few.",
+    "body": "At the end of the Command phase, for each objective marker the player whose turn it is controls, they can select one unit from their army (excluding AIRCRAFT) within range of that objective marker to guard it until the start of their next turn.\n    \nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\nThe player whose turn it is scores 4VP for each objective marker they control that is not within their deployment zone.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of each player's turn.\nThe opponent of the player whose turn it is scores 2VP for each of their units (excluding Battle-shocked units) that are within range of and guarding an objective marker they control.\n\nDesigner's Note: Note that the player going second has the first chance to score VP in this way, as they can guard objectives in their first turn and score VP in their opponent's next turn."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-terraform",
+    "lore": "Victory here lies in dominating not only the foe, but also the landscape of the battlefield itself.",
+    "body": "TERRAFORM (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army, each within range of a different objective marker that is not within your deployment zone.\nCOMPLETES: End of the turn, if the unit performing this Action is still within range of the same objective marker and you control that objective marker.\nIF COMPLETED: Each of those objective markers is terraformed by you. If that objective marker was terraformed by your opponent, it no longer is.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\n\nThe player whose turn it is scores 4VP for each objective marker they control (up to 12VP per turn).\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the turn.\n\nEach player scores 1VP for each objective marker that is terraformed by them."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-unexploded-ordinance",
+    "lore": "Volatile undetonated material lies in your path. Shifting such hazards towards enemy territory could be the key to victory.",
+    "body": "Start of the Battle: Each objective marker within No Man's Land becomes a Hazard objective marker.\n\nMOVE HAZARD (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army, each within range of a different Hazard objective marker you control.\nCOMPLETES: End of your turn, if the unit performing this Action is still within range of the same Hazard objective marker and you control that objective marker.\nIF COMPLETED: You can move each of those Hazard objective markers up to 6\". When doing so, that objective marker cannot end that move on top of any other objective marker or model, or inside impassable parts of terrain features.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of each player's turn.\n\nThe player whose turn it is scores VP as follows:\n• BVP for each Hazard objective marker that is wholly within their opponent's deployment zone.\n• 5VP for each other Hazard objective marker that is wholly within 6\" of their opponent's deployment zone.\n• 2VP for each other Hazard objective marker that is wholly within 12\" of their opponent's deployment zone."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-linchpin",
+    "lore": "True victory is built upon a firm foundation. If the centre cannot hold then all else swiftly crumbles.",
+    "body": "SECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\n\nIf the player whose turn it is does not control the objective marker in their deployment zone, they score 3VP for each objective marker they control.\n\nOR\n\nIf the player whose turn it is controls the objective marker in their deployment zone, they score 3VP for controlling that objective marker, and 5VP for each other objective marker they control (up to 15VP per turn)."
+  },
+  {
+    "id": "mission-chapter-approved-2025-26-hidden-supplies",
+    "lore": "Reconnaissance units have uncovered a hidden cache of materiel in this war zone.",
+    "body": "In the Place Objective Markers step, players must set up one additional objective marker in No Man's Land.\n\nBefore setting up this new objective marker, players must first move the objective marker in the centre of the battlefield 6\" directly towards one of the corners of the battlefield (if No Man's Land touches any of the corners of the battlefield, you must move the objective marker towards one of those corners). Otherwise, the players roll off, and the winner selects which corner the objective marker is moved towards. Players then set up the new objective marker 6\" from the centre of the battlefield towards the diagonally opposite corner of the battlefield to the previously moved objective marker.\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of the Command phase (or the end of your turn if it is the fifth battle round and you are going second).\n\nThe player whose turn it is scores VP as follows (these are cumulative):\n\n• 5VP If they control one objective marker not within their deployment zone.\n• 5VP If they control two objective markers not within their deployment zone.\n• 5VP if they control more objective markers than their opponent controls."
+  },
+  {
+    "id": "mission-rule-leviathan-chilling-rain",
+    "lore": "Intense winds gust across the battlefield, whipping through the shattered remains of bombed ruins and heavy with the stench of death. Icy rain drenches and chills the warriors, only adding to their misery and discomfort.",
+    "body": "In this mission, no additional mission rules apply."
+  },
+  {
+    "id": "mission-rule-leviathan-secret-intel",
+    "lore": "Our spies and recon teams have reported back with secret intelligence, allowing us to better coordinate our next tactical move.",
+    "body": "In this mission, in each player's Command phase, the first time that player draws Secondary Mission cards that phase, that player can draw one additional Secondary Mission card, and then discard one of their active Secondary Mission cards."
+  },
+  {
+    "id": "mission-rule-leviathan-scrambler-fields",
+    "lore": "Scrambler fields and more esoteric devices have been activated in this area, restricting the use of advanced stealth and teleportation technologies.",
+    "body": "In this mission:\n\n• Players' units with the Infiltrators ability cannot be set up within range of an objective marker\nthat is either in No Man's Land or their opponent's deployment zone.\n• Players' units with the Scouts ability that make a move before the first turn begins cannot end that move within range of on objective marker that is either in No Man's Land or their opponent's deployment zone.\n• If any rule is used to redeploy a unit, that rule cannot be used to set up that unit within range of an objective marker in No Man's Land.\n• When a player's Reserves and Strategic Reserves units are set up on the battlefield, they cannot be set up within range of an objective marker that is either in No Man's Land or their opponent's deployment zone."
+  },
+  {
+    "id": "mission-rule-leviathan-maelstrom-of-battle",
+    "lore": "Little respire or sanctuary is available across the battlefields of the 41st Millennium.",
+    "body": "In this mission, shuffle the remaining Mission Rule cards together before drewing 2 new Mission Rule cards.\n\nIf either of these new Mission Rule cards is Chilling Rain, discard that Mission Rule card and draw 2 additional new Mission Rule cards (for a total of 3 new Mission Rule cards).\n\nApply all the drawn Mission Rule cards to the battle."
+  },
+  {
+    "id": "mission-rule-leviathan-supply-lines",
+    "lore": "Enemy infiltrators are attempting to sabotage and disrupt your supply lines. Maintain vigilance to secure lines of communication and safeguard vital strategic resources.",
+    "body": "In this mission, if a player controls the objective marker in their own deployment zone at the start of their Command phase, they roll one D6: on a 4+, that player gains 1CP."
+  },
+  {
+    "id": "mission-rule-leviathan-targets-of-opportunity",
+    "lore": "This battle zone is replete with tactical targets of opportunity, ideal for warlords who are eager for glory.",
+    "body": "In this mission, if a player is using Tactical Missions, then each time that player determines which Secondary Mission cards are active for them, if they have fewer than 3 active Secondary Mission cards, that player draws from their Secondary Mission deck until they have 3 Secondary Mission cards.\n\nIn this mission, if a player is using Fixed Missions, then in addition to the 2 Fixed Mission cards, that player wil also draw cards from their Secondary Mission deck during the battle. At the end of the Select Secondary Missions step, that player should retrieve their Secondary Mission deck, remove all the Fixed Mission cards that they did not select at the start of that step, then shuffle the remaining cards. Then, at the start of each of that player's Command phases, if that player has fewer than 3 active Secondary Mission cards (including their Fixed Mission cards), they draw from their Secondary Mission deck until they have 3 Secondary Mission cards. That player has access to the New Orders Stratagem, and can spend CP to use it after drawing their Secondary Mission cards if they wish (remember that Fixed Mission cards cannot be discarded for any reason)."
+  },
+  {
+    "id": "mission-rule-leviathan-hidden-supplies",
+    "lore": "Reconnaissance Units have uncovered a hidden cache of ammunition, fuel and rations in this war zone.",
+    "body": "In this mission, players must set up one additional objective marker in No Man's Land.\n\nUnless the Chosen Battlefield mission rule is also in effect, before setting up this new objective marker, players must first move the objective marker in the centre of the battlefield 6\" directly towards one of the comers of the battlefield (if No Man's Land touches any of the corners of the battlefield, you must move the objective marker towards one of those corners). Players then set up the new objective marker 6\" from the centre of the battlefield towards the diagonally opposite corner of the battlefield to the previously moved objective marker."
+  },
+  {
+    "id": "mission-rule-leviathan-chosen-battlefield",
+    "lore": "Both sides have scouted the area extensively, pinpointing the exact location of vital sites.",
+    "body": "In this mission, objective markers are not placed as shown on the Deployment card drawn. Instead, players roll off at the start of the Place Objective Markers step, then alternate setting Up objective markers, one at a time, starting with the winner of the roll off.\n\nOne objective marker must be placed wholly within each deployment zone, and the remaining objective markers must be placed wholly within No Man's Land, as shown on the Deployment card drawn. Objective markers must be placed more than 6\" away from any battlefield edge and more than 9\" away from all other objective markers.\n\nIf for whatever reason it is not possible to set up an objective marker as described above, it is not placed on the battlefield.\n\nIf any rules require players to set up additional objective markers (e.g. Hidden Supplies) during the Place Objective Markers step, players set them up as described on this Mission Rule card\n\nIf any rules instruct players to remove one or more objective markers, do so after setting them all up."
+  },
+  {
+    "id": "mission-rule-leviathan-delayed-reserves",
+    "lore": "Enemy interceptors roam the skies, strafing and bombing any of our reinforcement units they discover. Our forces will inevitably be delayed as they attempt to dodge these vicious aerial patrols.",
+    "body": "In this mission, until the start of the third battle round, each time a Reserves or Strategic Reserves unit wishes to arrive on the battlefield, the controlling player must make a Reserves roll for it. To do so, that player rolls one D6: on a 3+, that unit arrives on the battlefield; otherwise, the Reserves roll fails and that unit does not arrive this turn."
+  },
+  {
+    "id": "mission-rule-leviathan-vox-static",
+    "lore": "Stellar flares, malicious scrapcode and electromagnetic energy restrict communications.",
+    "body": "In this mission, the Command Re-roll Stratagem and New Orders Stratagem both cost 2CP to use."
+  },
+  {
+    "id": "mission-rule-leviathan-sweep-and-clear",
+    "lore": "Forces have been ordered to perform a firesweep of this battlefield, methodically cleansing strategic sites of enemies one at a time before moving on.",
+    "body": "In this mission, if a player controls an objective marker at the end of their Command phase, that objective marker remains under their control, even if they have no models within range of it, unless their opponent controls it at the end of any subsequent Command phase."
+  },
+  {
+    "id": "mission-rule-leviathan-minefields",
+    "lore": "Buried ordinance and hidden boody traps litter this battlefield, posing a threat to all units that advance recklessly and without due care.",
+    "body": "In this mission, each time an Advance roll of 6 is made for a unit, that unit suffers 1 mortal wound."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-smoke-and-mirrors",
+    "lore": "Be it through technological trickery, sorcerous illusion or sheer cunning, both commanders seek to outfox and outmanoeuvre the other.",
+    "body": "After both players have deployed their armies, starting with the Attacker, each player can place one unit from their army that is on the battlefield into Strategic Reserves, regardless of how many units are already in Strategic Reserves.\n\nThe points value of such a unit cannot exceed 25% of each player's total points limit for the chosen battle size, as shown below.\n\nBATTLE SIZE     MAXIMUM POINTS VALUE OF UNIT\nIncursion       250 pts\nStrike Force    500 pts\nOnslaught       750 pts"
+  },
+  {
+    "id": "mission-rule-pariah-nexus-inspired-leadership",
+    "lore": "Few sights set such an inspiring example upon the battlefield than a commander leading from the very front, wreathed in glory and stained with gore.",
+    "body": "While a player's WARLORD is not within their deployment zone, each time a unit from that player's army takes a Battle-shock test, if that player's WARLORD is within 9\" of and visible to that unit, add 1 to that test."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-swift-action",
+    "lore": "Time is running out. Cataclysm approaches on an unimaginable scale. In the face of such terrors, every warrior fights with the speed and fury of desperation.",
+    "body": "BATTLELINE units that Advance or Fall Back are still eligible to perform an Action in that turn."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-rapid-escalation",
+    "lore": "Armies hurl themselves recklessly into what is swiftly becoming a maelstrom of battle. With every passing moment, the flames of conflict rage higher.",
+    "body": "In the first battle round, each player can set up BATTLELINE units from Strategic Reserves in the Reinforcements step of their Movement phase. If they do, those units must be set up wholly within 6\" of any battlefield edge, but no model in those units can be set up within the enemy deployment zone.\n\nThe points total of the units a player can set up in this way cannot exceed 10% of their total points limit for the chosen battle size, as shown below.\n\nBATTLE SIZE     MAXIMUM POINTS TOTAL OF STRATEGIC RESERVES UNITS\nIncursion       100 pts\nStrike Force    200 pts\nOnslaught       300 pts"
+  },
+  {
+    "id": "mission-rule-pariah-nexus-prepared-positions",
+    "lore": "This is a battle long in the offing, a fight for which both commanders have had ample time to prepare both their warriors and their defences.",
+    "body": "Players can target their BATTLELINE units with the Go to Ground and Heroic Intervention Stratagems for OCP (but cannot do so if they have already used that Stratagem on a different unit that turn)."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-hidden-supplies",
+    "lore": "Reconnaissance units have uncovered a hidden cache of ammunition, fuel and rations in this war zone.",
+    "body": "When Drawn: If you also drew The Ritual Primary Mission card, discard this Mission Rule card and draw a new Mission Rule card.\n    \nIn the Place Objective Markers step, players must set up one additional objective marker in No Man's Land.\n\nBefore setting up this new objective marker, players must first move the objective marker in the centre of the battlefield 6\" directly towards one of the corners of the battlefield (if No Man's Land touches any of the corners of the battlefield, you must move the objective marker towards one of those corners). Otherwise, the players roll-off, and the winner selects which corner the objective marker is moved towards. Players then set up the new objective marker 6\" from the centre of the battlefield towards the diagonally opposite corner of the battlefield to the previously moved objective marker."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-adapt-or-die",
+    "lore": "On this changing battlefield, only a commander who can adapt their strategy swiftly and decisively stands any chance of seizing victory.",
+    "body": "FOR PLAYERS USING FIXED MISSIONS\nOnce per battle, at the end of that player's turn, after scoring any VP, they can discard one of their Secondary Mission cards and replace it with another Secondary Mission card that has the Fixed Mission symbol.\n\nFOR PLAYERS USING TACTICAL MISSIONS\nTwice per battle, after drawing a Secondary Mission card, that player can draw another Secondary Mission card, then shuffle one of those two Secondary Mission cards back into their Secondary Mission deck."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-stalwarts",
+    "lore": "This is not a time for gilded glory, but instead it is the hour when the mud-spattered, blood-drenched rank and file step forward and prove their worth.",
+    "body": "BATTLELINE units that perform an Action are still eligible to shoot in that turn (but cannot start to perform another Action in that turn), and BATTLELINE units can perform Actions while within Engagement Range of one or more enemy units."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-raise-banners",
+    "lore": "It is not enough this day simply to defeat the foe. Instead you must raise your banners high, announcing your conquests to all who witness them.",
+    "body": "At the end of each player's turn, if a BATTLELINE unit from their army is within range of an objective marker that player controls, that unit raises a banner on that objective marker: that player scores 1VP (which is counted towards their Secondary Mission score), and that player's units can no longer raise a banner on that objective marker."
+  },
+  {
+    "id": "mission-rule-pariah-nexus-fog-of-war",
+    "lore": "Due to strange atmospheric conditions or supernatural phenomena, confusion abounds. Enemy positions are unknown, and you dare not commit your resources blindly.",
+    "body": "In the first battle round, units have the Benefit of Cover, and players cannot use Core Stratagems (excluding the New Orders Stratagem)."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-no-twist",
+    "lore": "",
+    "body": "No twist was selected."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-night-fighting",
+    "lore": "",
+    "body": "Each unit can only be the target of a ranged attack if the attacking model is within 18\"."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-ruinscape",
+    "lore": "",
+    "body": "Each time a unit makes a Normal or Advance move, it can move horizontally through terrain features."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-martial-pride",
+    "lore": "",
+    "body": "Advancing does not make a BATTLELINE unit ineligible to start an Action (excluding VEHICLE units).\n\nStarting an Action does not make a BATTLELINE unit ineligible to shoot (excluding VEHICLE units)."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-rapid-escalation",
+    "lore": "",
+    "body": "In the first battle round, players can set up units from Strategic Reserves in the Reinforcements step of their Movement phase. If they do, those units must be set up wholly within 6\" of any battlefield edge, but no model in those units can be set up within the enemy deployment zone. A unit set up in this manner cannot be set up using the Deep Strike ability.\n\nThe maximum points total of units set up in this way is as follows:\n\nBATTLESIZE     MAXIMUM POINTS TOTAL\nIncursion      200pts\nStrike Force   400pts\nAsymmetric War 400pts"
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-adapt-or-die",
+    "lore": "",
+    "body": "FOR PLAYERS USING FIXED MISSIONS\nOnce per battle, at the end of that player's turn, after scoring any VP, they can discard one of their Secondary Mission cards and replace it with another Secondary Mission card that has the Fixed Mission symbol.\n\nFOR PLAYERS USING TACTICAL MISSIONS\nTwice per battle, after drawing a Secondary Mission card, that player can draw another Secondary Mission card, then shuffle one of those two Secondary Mission cards back into their Secondary Mission deck."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-high-octane",
+    "lore": "",
+    "body": "Each time a unit Advances, do not make an Advance roll. Instead, until the end of the phase, add 6\" to the Move characteristic of models in that unit."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-bloodlust",
+    "lore": "",
+    "body": "A unit is eligible to charge if it is within 18\"of one or more enemy units, instead of within 12\".\n    \nEach time you make a Charge roll, roll 3D6."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-point-blank",
+    "lore": "",
+    "body": "Ranged weapons (except Blast weapons) have the PISTOL ability."
+  },
+  {
+    "id": "mission-rule-chapter-approved-2025-26-lords-of-war",
+    "lore": "",
+    "body": "Until the end of the battle, add 3 to the Attacks characteristic of each weapon equipped by WARLORD models (excluding VEHICLES)."
+  },
+  {
+    "id": "secondary-mission-a-tempting-target",
+    "lore": "An opportunity to seize a valuable asset has been identified, but the enemy are likely to use it as bait in a trap. Move to secure the site, but be wary of enemy ambushes.",
+    "body": "When this Secondary Mission card is drawn, your opponent must select one objective marker in No Man's Land.\n\nAt the end of your turn, if you control that selected objective marker, this Secondary Mission is achieved and you score 5VP."
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-a-tempting-target",
+    "lore": "An opportunity to seize a valuable asset has been identified, but the enemy are likely to use it as bait in a trap. Move to secure the site, but be wary of enemy ambushes.",
+    "body": "When Drawn: Your opponent must select one objective marker in No Man's Land to be your Tempting Target objective marker.\n\nANY BATTLE ROUND\nWHEN: End of either player's turn.\nYou control your Tempting Target objective marker. 5VP"
+  },
+  {
+    "id": "secondary-mission-area-denial",
+    "lore": "It is critical that this area is dominated. No enemy vanguard or guerrilla units can be allowed to disrupt our plans.",
+    "body": "At the end of your turn, if one or more units from your army (excluding Battle-shocked units) are wholly within 6\" of the centre of the battlefield, and there are no enemy units wholly within 6\" of the centre of the battlefield, this Secondary Mission is achieved and you score 5VP.\n\nIf, at the end of your turn, there are one or more enemy units wholly within 6\" of the centre of the battlefield, but there are no enemy units within 3\" of the centre of the battlefield, then this Secondary Mission is still achieved, but in this instance you score 3VP instead of 5VP."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-area-denial",
+    "lore": "It is critical that this area is dominated. No enemy vanguard or guerrilla units can be allowed to disrupt our plans.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of your turn.\nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units) are within 3\" of the centre of the battlefield, and there are no enemy units within 3\" of the centre of the battlefield. 2VP\nOR\nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units) are within 3\" of the centre of the battlefield, and there are no enemy units within 6\" of the centre of the battlefield. 5VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-area-denial",
+    "lore": "It is critical that this area is dominated. No enemy vanguard or guerrilla units can be allowed to disrupt our plans.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of your turn.\nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units) are within 3\" of the centre of the battlefield, and there are no enemy units within 3\" of the centre of the battlefield. 2VP\nOR\nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units) are within 3\" of the centre of the battlefield, and there are no enemy units within 6\" of the centre of the battlefield. 5VP"
+  },
+  {
+    "id": "secondary-mission-assassination",
+    "lore": "The enemy look to their champions for courage. Identify and eliminate them with extreme prejudice.",
+    "body": "If you are using Fixed Missions, then while this Secondary Mission is active, each time an enemy CHARACTER model is destroyed, you score 4VP.\n\nIf you are using Tactical Missions, then at the end of the turn, if either of the conditions below are satisfied, this Secondary Mission is achieved and you score 5VP:\n• One or more enemy CHARACTER units were destroyed during this turn.\n• All CHARACTER units from your opponent's Army Roster have been destroyed during the battle.\n\nNote that if you are using Tactical Missions, this Secondary Mission is achieved even if such a unit was destroyed and then subsequently resurrected for any reason."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-assassination",
+    "lore": "The enemy look top their champions for courage. Identify and eliminate them with extreme prejudice.",
+    "body": "ANY BATTLE ROUND\nWHEN: While this card is active (if you are using Fixed Missions).\nEach time an enemy CHARACTER model is destroyed. 4VP\n\nANY BATTLE ROUND\nWHEN: End of either player's turn (if you are using Tactical Missions).\nOne or more enemy CHARACTER models were destroyed this turn. 5VP\nOR\nAll CHARACTER models from your opponent's army have been destroyed during the battle. 5VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-assassination",
+    "lore": "The enemy look top their champions for courage. Identify and eliminate them with extreme prejudice.",
+    "body": "ANY BATTLE ROUND\nWHEN: While this card is active (if you are using Fixed Missions).\nEach time an enemy CHARACTER model with a Wounds characteristic of 4 or higher is destroyed. FIXED 4VP\nEach time an enemy CHARACTER model with a Wounds characteristic of less than 4 is destroyed. FIXED 3VP\n\nANY BATTLE ROUND\nWHEN: End of either player's turn (if you are using Tactical Missions).\nOne or more enemy CHARACTER models were destroyed this turn. TACTICAL 5VP\nOR\nAll enemy CHARACTER models have been destroyed during the battle. TACTICAL 5VP"
+  },
+  {
+    "id": "secondary-mission-behind-enemy-lines",
+    "lore": "Break through the foe's army and cut of their lines of escape.",
+    "body": "At the end of your turn, if two or more units from your army (excluding Aircraft) are wholly within your opponent’s deployment zone, this Secondary Mission is achieved and you score 4VP (or 5VP if you are using Tactical Missions). \n\nIf, at the end of your turn, only one unit from your army (excluding Aircraft) is wholly within your opponent’s deployment zone, then this Secondary Mission is still achieved, but in this instance you score 3VP instead of 4VP (or instead of 5VP)."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-behind-enemy-lines",
+    "lore": "Break through the foe's army and cut of their lines of escape.",
+    "body": "When Drawn: If it is the first battle round, you can draw a new Secondary Mission card and shuffle this card back into your Secondary Mission deck.\n    \nANY BATTLE ROUND\nWHEN: End of your turn.\nOne unit from your army (excluding AIRCRAFT and Battle-shocked units) is wholly within your opponent's deployment zone. 3VP\nOR\nTwo or more units from your army (excluding AIRCRAFT and Battle-shocked units] are wholly within your opponent's deployment zone. 4VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-behind-enemy-lines",
+    "lore": "Break through the foe's army and cut of their lines of escape.",
+    "body": "When Drawn: If it is the first battle round, you can draw a new Secondary Mission card and shuffle this card back into your Secondary Mission deck.\n    \nANY BATTLE ROUND\nWHEN: End of your turn.\nOne unit from your army (excluding AIRCRAFT and Battle-shocked units) is wholly within your opponent's deployment zone. 3VP\nOR\nTwo or more units from your army (excluding AIRCRAFT and Battle-shocked units] are wholly within your opponent's deployment zone. 4VP"
+  },
+  {
+    "id": "secondary-mission-bring-it-down",
+    "lore": "The opposing army contains numerous heavily armoured units. Take any opportunity to bring them down.",
+    "body": "While this Secondary Mission is active, each time an enemy MONSTER or VEHICLE model is destroyed, you score 2VP and an extra 1VP for each of the conditions below that are satisfied (all are cumulative]:\n■ The destroyed model had a Wounds characteristic of 10+.\n■ The destroyed model had a Wounds characteristic of 15+.\n■ The destroyed model had a Wounds characteristic of 20+.\n\nNote that VP are scored even if such a model is destroyed and then subsequently resurrected for any reason. If you score any VP from this Secondary Mission during a turn, then at the end of that turn this Secondary Mission is achieved.\n\nIf you are using Tactical Missions, then when this Secondary Mission is achieved you score an extra 1VP However, if you are using Tactical Missions, you cannot score more than 8VP in total from this Secondary Mission."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-bring-it-down",
+    "lore": "The opposing army contains numerous heavily armoured units. Take any opportunity to bring them down.",
+    "body": "When Drawn: If there are no enemy MONSTER or VEHICLE units on the battlefield, you can discard this card and draw a new Secondary Mission card.\n\nANY BATTLE ROUND\nWHEN: While this card is active.\nEach time an enemy MONSTER or VEHICLE unit is destroyed. 2VP\n+ The total of the Wounds characteristics of the models in that destroyed unit was 15+ (at its Starting Strength). +2VP\n+ The total of the Wounds characteristics of the models in that destroyed unit was 20+ (at its Starting Strength). +2VP\n\nNote: The above VP are cumulative, so destroying a MONSTER or VEHICLE unit with a combined Wounds characteristic of 20 (at its Starting Strength) would award you 6VP."
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-bring-it-down",
+    "lore": "The opposing army contains numerous heavily armoured units. Take any opportunity to bring them down.",
+    "body": "When Drawn: If there are no enemy MONSTER or VEHICLE units on the battlefield, you can discard this card and draw a new Secondary Mission card.\n\nANY BATTLE ROUND\nWHEN: While this card is active (if you are using Fixed Missions).\nEach time an enemy MONSTER or VEHICLE unit is destroyed. FIXED 2VP\n+ The total of the Wounds characteristics of the models in that destroyed unit was 15+ (at its Starting Strength). FIXED +2VP (CUMULATIVE)\n+ The total of the Wounds characteristics of the models in that destroyed unit was 20+ (at its Starting Strength). FIXED +2VP (CUMULATIVE)\n\nANY BATTLE ROUND\nWHEN: End of either players turn (if you are using Tactical Missions).\nOne or more enemy MONSTER or VEHICLE units were destroyed this turn. TACTICAL 4VP"
+  },
+  {
+    "id": "secondary-mission-capture-enemy-outpost",
+    "lore": "A vital objective has been identified in your vicinity, but it is currently held by the enemy. You are ordered to capture it at any cost.",
+    "body": "At the end of your turn, if you control one or more objective markers in your opponent's deployment zone, this Secondary Mission is achieved and you score 8VP."
+  },
+  {
+    "id": "secondary-mission-cleanse",
+    "lore": "The objectives in this area have been tainted and must be cleansed with ritual and purifying flame.",
+    "body": "In your Shooting phase, you can select one or more units from your army that are not Battle-shocked and are eligible to shoot. Until the end of your turn, the units you selected are not eligible to shoot or declare a charge.\n\nAt the end of your turn, each objective marker that is not within your deployment zone that you control that has one or more of these selected units within range is cleansed by your army.\n\nIf one or more objective markers are cleansed by your army this turn, this Secondary Mission is achieved and you score a number of VP depending on the number of objective markers cleansed by your army this turn, as follows:\n\n■ 1 objective marker cleansed = 2VP if you are using Fixed Missions, or 3VP if you are using Tactical Missions.\n■ 2 or more objective markers cleansed = 4VP if you are using Fixed Missions, or 5VP if you are using Tactical Missions.\n"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-cleanse",
+    "lore": "The objectives in this area have been tainted and must be cleansed with ritual and purifying flame.",
+    "body": "CLEANSE (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army within range of an objective marker that is not within your deployment zone.\nCOMPLETES: End of your turn, if the unit performing this Action is still within range of the same objective marker and you control that objective marker.\nIF COMPLETED: That objective marker is cleansed by your army.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nOne objective marker was cleansed by your army this turn. 2VP\nOR\nTwo or more objective markers were cleansed by your army this turn. 4VP\n"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-cleanse",
+    "lore": "The objectives in this area have been tainted and must be cleansed with ritual and purifying flame.",
+    "body": "CLEANSE (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army within range of an objective marker that is not within your deployment zone.\nCOMPLETES: End of your turn, if the unit performing this Action is still within range of the same objective marker and you control that objective marker.\nIF COMPLETED: That objective marker is cleansed by your army.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nOne objective marker was cleansed by your army this turn. 2VP\nOR\nTwo or more objective markers were cleansed by your army this turn. FIXED 4VP TACTICAL 5VP\n"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-containment",
+    "lore": "By setting up servo-sentries, laying booby traps or demolishing routes of egress, you must trap your foes within the bounds of this battiefield.",
+    "body": "CONTAINMENT (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One or more units from your army that are wholly within 9\" of one or more battlefield edges and not within your deployment zone. Select a different one of those battlefield edges for each of those units.\nCOMPLETES: Immediately.\nIF COMPLETED: Each battlefield edge you selected is contained by your army.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nFor each battlefield edge contained by your army this turn. 3VP (UP TO 6VP)"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-cull-the-horde",
+    "lore": "The enemy come forth in teeming masses. Their ranks must be thinned if the day is to be won.",
+    "body": "When Drawn: If there are no enemy units on the battlefield that satisfy either of the conditions required to achieve this card, you can discard this card and draw a new Secondary Mission card.\n    \nANY BATTLE ROUND\nWHEN: While this card is active.\nVICTORY POINTS\nEach time an enemy INFANTRY unit is destroyed, if one or more of the following conditions are satisfied:\n\n• The Starting Strength of the destroyed unit was 20+.\n• The total of the Wounds characteristics of the models in the destroyed unit was 25+ (at its Starting Strength).\n• When that unit's player added that unit to their army, the points value they subtracted from the total permitted for this battle was sufficient for that unit to be composed of 20 or more models.\n\n5VP\n\nNote: For the purposes of the above conditions, models in attached Leader units are ignored."
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-cull-the-horde",
+    "lore": "The enemy come forth in teeming masses. Their ranks must be thinned if the day is to be won.",
+    "body": "When Drawn: If there are no enemy units on the battlefield that satisfy the condition below, you can discard this card and draw a new Secondary Mission card.\n    \nANY BATTLE ROUND\nWHEN: While this card is active (if you are using Fixed Missions).\nEach time an enemy INFANTRY unit with a starting strength of 13+ is destroyed. FIXED 5VP\n\nANY BATTLE ROUND\nWHEN: End of either player's turn (if you are using Tactical Missions).\nOne or more enemy INFANTRY units with a starting strength of 13+ (including Attached units) were destroyed this turn. TACTICAL 5VP"
+  },
+  {
+    "id": "secondary-mission-defend-stronghold",
+    "lore": "You are charged with the defence of a key objective. It must not be permitted to fall into enemy hands.",
+    "body": "At the end of your opponent's turn, or at the end of the battle (whichever comes first), if you control one or more objective markers in your own deployment zone, this Secondary Mission is achieved and you score 3VP.\n\nThis Secondary Mission cannot be achieved during the first battle round; If you draw this Secondary Mission card during the first battle round, draw a new Secondary Mission card and shuffle this Secondary Mission card back into your Secondary Mission deck."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-defend-stronghold",
+    "lore": "You are charged with the defence of a key objective. It must not be permitted to fall into enemy hands.",
+    "body": "WHEN: End of your opponent's turn or the end of the battle (whichever comes first).\nYou control one or more objective markers in your deployment zone. 3VP\nThis Secondary Mission cannot be achieved during the first battle round; If you draw this Secondary Mission card during the first battle round, draw a new Secondary Mission card and shuffle this Secondary Mission card back into your Secondary Mission deck."
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-defend-stronghold",
+    "lore": "You are charged with the defence of a key objective. It must not be permitted to fall into enemy hands.",
+    "body": "When Drawn: If it is the first battle round, draw a new Secondary Mission card and shuffle this card back into your Secondary Mission deck.\n    \nSECOND BATTLE ROUND ONWARDS\nWHEN: End of your opponent's turn or the end of the battle (whichever comes first).\nYou control one or more objective markers in your deployment zone. 3VP"
+  },
+  {
+    "id": "secondary-mission-deploy-teleport-homer",
+    "lore": "An allied fleet approaches ready to launch a full-scale invasion of this planet. If our vanguard forces deploy a series of teleport homers and landing beacons deep within enemy territory, troops aboard our ships will be able to launch a deadly surprise assault from orbit.",
+    "body": "In your Shooting phase, you can select one unit from your army that is not Battle-shocked and is eligible to shoot. Until the end of your turn, that unit is not eligible to shoot or declare a charge.\n\nAt the end of your turn, if that unit is within your opponent’s deployment zone, or within 6\" of the centre of the battlefield, it deploys a teleport homer at that location, this Secondary Mission is achieved and you score a number of VP depending on where the teleport homer was deployed, as follows:\n■ Centre of battlefield = 3VP.\n■ Opponent’s deployment zone = 4VP if you are using Fixed Missions, or 5VP if you are using Tactical Missions"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-display-of-might",
+    "lore": "Intimidation is the most potent of weapons. Degrade the combat abilities of your opponent to demonstrate your superiority and erode enemy morale.",
+    "body": "When Drawn: If it is the first battle round, draw a new Secondary Mission card and shuffle this card back into your Secondary Mission deck\n\nSECOND BATTLE ROUND ONWARDS\nWHEN: End of your turn.\nThere are more units from your army than from your opponent's army wholly within No Man's Land. 4VP"
+  },
+  {
+    "id": "secondary-mission-engage-on-all-fronts",
+    "lore": "This area is of extreme importance. You are to lead an immediate all-out assault to capture it and deny it to our enemy for good.",
+    "body": "At the end of your turn, if you have one or more qualifying units (see below) from your army wholly within three or more different table quarters, and those units are all more than 3\" away from any other table quarter, this Secondary Mission is achieved and you score 4VP if you have qualifying units in four different table quarters, or 2VP if you have qualifying units in three different table quarters. While a unit is Battle-shocked, it is not a qualifying unit.\n\nIf, when you draw this Secondary Mission card, you only have one or two qualifying units remaining in your army, you can discard this Secondary Mission card and draw a new Secondary Mission card.\n\nIf you are using Tactical Missions, then when this Secondary Mission is achieved you score an extra 1VP (for a maximum of 5VP).\n"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-engage-on-all-fronts",
+    "lore": "This area is of extreme importance. You are to lead an immediate all-out assault to capture it and deny it to our enemy for good.",
+    "body": "When Drawn: If there are fewer than three units from your army on the battlefield, you can discard this card and draw a new Secondary Mission card.\n    \nANY BATTLE ROUND\nWHEN: End of your turn.\nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units) are wholly within three different table quarters, and those units are all more than 6\" away from the centre of the battlefield. 2VP\nOR\nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units] are wholly within four different table quarters, and those units are all more than 6\" away from the centre of the battlefield. 4VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-engage-on-all-fronts",
+    "lore": "This area is of extreme importance. You are to lead an immediate all-out assault to capture it and deny it to our enemy for good.",
+    "body": "If one or more units from your army (excluding AIRCRAFT and Battle-shocked units) are wholly within a table quarter and those units are more than 6\" away from the centre of the battlefield, you have a presence in that table quarter.\n    \nANY BATTLE ROUND\nWHEN: End of your turn.\nYou have presence in two table quarters. 1VP\nOR\nYou have presence in three table quarters. 2VP\nOR\nYou have presence in four table quarters. 4VP"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-establish-locus",
+    "lore": "Whether a teleport homer crackling with arcane energies, a daemonic summoning circle, a pheromonal marker or some other means of guiding forces onto the battlefield, this locus must be set up swiftly to pave the road to victory.",
+    "body": "ESTABLISH LOCUS (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One unit from your army.\nCOMPLETES: End of your turn, if that unit is within your opponent's deployment zone or within 6\" of the centre of the battlefield.\nIF COMPLETED: Your unit establishes a locus.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nYour unit established a locus this turn and is within 6\" of the centre of the battlefield. 2VP\nOR\nYour unit established a locus this turn and is within your opponent's deployment zone. 4VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-establish-locus",
+    "lore": "Whether a teleport homer crackling with arcane energies, a daemonic summoning circle, a pheromonal marker or some other means of guiding forces onto the battlefield, this locus must be set up swiftly to pave the road to victory.",
+    "body": "ESTABLISH LOCUS (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One unit from your army.\nCOMPLETES: End of your turn, if that unit is within your opponent's deployment zone or within 6\" of the centre of the battlefield.\nIF COMPLETED: Your unit establishes a locus.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nYour unit established a locus this turn and is within 6\" of the centre of the battlefield. 2VP\nOR\nYour unit established a locus this turn and is within your opponent's deployment zone. 4VP"
+  },
+  {
+    "id": "secondary-mission-extend-battle-lines",
+    "lore": "The battleground is won one gard at a time. Continue to establish a strong military presence in the area.",
+    "body": "At the end of your turn, if you control one or more objective markers in your own deployment zone and you also control one or more objective markers in No Mans' Land, this Secondary Mission is achieved and you score 5VP.\n\nIf you only have one unit remaining in your army, then this Secondary Mission is instead achieved at the end of your turn if that unit controls one objective marker in No Man's Land, but in this instance you score 2VP instead of 5VP."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-extend-battle-lines",
+    "lore": "The battleground is won one yard at a time. Continue to establish a strong military presence in the area.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of your turn.\nYou control one or more objective markers within your deployment zone and one or more objective markers within No Man's Land. 5VP\nOR\nYou only have one unit on the battlefield, and that unit controls one objective marker within No Man's Land.2VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-extend-battle-lines",
+    "lore": "The battleground is won one yard at a time. Continue to establish a strong military presence in the area.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of your turn.\nYou control one or more objective markers within your deployment zone and one or more objective markers within No Man's Land. 4VP\nOR\nYou control one or more objective markers within No Man's Land. 2VP"
+  },
+  {
+    "id": "secondary-mission-investigate-signals",
+    "lore": "Our fleet has received a mysterious signal in this war zone, and its source has been identified as originating somewhere in the vicinity of this battlefield. Locate and secure it without delay.",
+    "body": "In your Shooting phase, you can select one or more units from your army that are not Battle-shocked and are eligible to shoot. Until the end of your turn, the units you selected are not eligible to shoot or declare a charge.\n\nAt the end of your turn, each corner of the battlefield that has one or more of these selected units wholly within 9\" of it is scanned by your army.\n\nIf one or more corners are scanned by your army, this Secondary Mission is achieved and you score 2VP for each corner scanned by your army this turn."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-marked-for-death",
+    "lore": "These specific enemy assets must be eliminated to ensure victory, no matter how insignificant they might seem.",
+    "body": "When Drawn: Your opponent must select three units from their army on the battlefield. If there are only one or two units from their army on the battlefield, they must select those units. If there are no units from their army on the battlefield, discard this card and draw a new Secondary Mission card.\n    \nANY BATTLE ROUND\nWHEN: End of either player's turn.\nOne or more of the selected units were destroyed (or removed from the battlefield for any other reason) this turn. 5VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-marked-for-death",
+    "lore": "These specific enemy assets must be eliminated to ensure victory, no matter how insignificant they might seem.",
+    "body": "When Drawn: Your opponent must select three units from their army on the battlefield. If there are only one or two units from their army on the battlefield, they must select those units. The selected units are your Alpha Target units. You can then select one unit from your opponent's army on the battlefield to be your Gamma Target unit. If there are no units from their army on the battlefield, discard this card and draw a new Secondary Mission card.\n    \nANY BATTLE ROUND\nWHEN: End of either player's turn.\nOne or more of your Alpha Target units were destroyed (or removed from the battlefield for any other reason) this turn. 5VP\n\nOR\n\nNone of your Alpha Target units were destroyed (or removed from the battlefield for any other reason) this turn, but your Gamma Target unit was destroyed (or removed from the battlefield for any other reason) this turn. 2VP"
+  },
+  {
+    "id": "secondary-mission-no-prisoners",
+    "lore": "Exterminate your enemies.",
+    "body": "While this Secondary Mission is active, each time an enemy unit is destroyed, you score 2VP (to a maximum of 5VP].\n\nNote that VP are scored even if such a unit is destroyed and then subsequently resurrected for any reason. If you score any VP from this Secondary Mission during a turn, then at the end of that turn this Secondary Mission is achieved."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-no-prisoners",
+    "lore": "Exterminate your enemies.",
+    "body": "ANY BATTLE ROUND\nWHEN: While this card is active.\nEach time an enemy unit is destroyed. 2VP (UP TO SVP)"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-no-prisoners",
+    "lore": "Show no mercy. Exterminate your enemies.",
+    "body": "ANY BATTLE ROUND\nWHEN: While this card is active (if you are using Fixed Missions).\nEach time an enemy Bodyguard unit or enemy non-CHARACTER unit is destroyed. FIXED 2VP (UP TO SVP)\n\nANY BATTLE ROUND\nWHEN: While this card is active (if you are using Tactical Missions).\nEach time an enemy unit is destroyed. TACTICAL 2VP (UP TO SVP)"
+  },
+  {
+    "id": "secondary-mission-overwhelming-force",
+    "lore": "Scour the enemy from the face of the battlefield.",
+    "body": "While this Secondary Mission is active, each time an enemy unit that started the turn within range of an objective marker is destroyed, you score 3VP (to a maximum of 5VP).\n\nNote that VP are scored even if such a unit is destroyed and then subsequently resurrected for any reason. If you score any VP from this Secondary Mission during a turn, then at the end of that turn this Secondary Mission is achieved."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-overwhelming-force",
+    "lore": "Scour the enemy from the face of the battlefield.",
+    "body": "ANY BATTLE ROUND\nWHEN: While this card is active.\nEach time an enemy unit that started the turn within range of an objective marker is destroyed. 3VP (UP TO 5VP)"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-overwhelming-force",
+    "lore": "Scour the enemy from the face of the battlefield.",
+    "body": "ANY BATTLE ROUND\nWHEN: While this card is active.\nEach time an enemy unit that started the turn within range of an objective marker is destroyed. 3VP (UP TO 5VP)\n\nDesigner's Note: Destroyed Leader and Bodyguard units count separately for the purposes of scoring this Secondary Mission, provided that Attached unit started the turn within range of an objective marker."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-raise-banners-mission-rule",
+    "lore": "It is not enough this day simply to defeat the foe. Instead you must raise your banners high, announcing your conquests to all who witness them.",
+    "body": "At the end of each player's turn, if a BATTLELINE unit from their army is within range of an objective marker that player controls, that unit raises a banner on that objective marker: that player scores 1VP (which is counted towards their Secondary Mission score), and that player's units can no longer raise a banner on that objective marker."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-recover-assets",
+    "lore": "Scattered strategic assets must be swiftly reclaimed.",
+    "body": "When Drawn: If there are fewer than two units from your army on the battlefield, you can discard this card and draw a new Secondary Mission card.\nRECOVER ASSETS (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: Two or more units from your army, if each of those units is wholly within a different one of the following areas: your deployment zone; No Man's Land; your opponent's deployment zone.\nCOMPLETES: End of your opponent's next turn or the end of the battle (whichever comes first), if either two or three of those units are on the battlefield.\nIF COMPLETED: Those units recover assets.\nANY BATTLE ROUND\nWHEN: End of your opponent's turn or the end of the battle (whichever comes first).\nTwo of your units recovered assets this turn.\nOR\nVICTORY POINTS\n3VP\nThree of your units recovered assets this turn.\n6VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-recover-assets",
+    "lore": "Scattered strategic assets must be swiftly reclaimed.",
+    "body": "When Drawn: If you are playing an Incursion mission, or if there are fewer than three units from your army on the battlefield, you can discard this card and draw a new Secondary Mission card.\n\nRECOVER ASSETS (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: Two or more units from your army, if each of those units is wholly within a different one of the following areas: your deployment zone; No Man's Land; your opponent's deployment zone.\nCOMPLETES: End of your turn, if either two or three of those units are on the battlefield.\nIF COMPLETED: Those units recover assets.\n\nANY BATTLE ROUND\nWHEN: End of your turn or the end of the battle (whichever comes first).\nTwo of your units recovered assets this turn. 3VP\nOR\nThree of your units recovered assets this turn.\n5VP"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-sabotage",
+    "lore": "This region is replete with strategic assets or supply caches vital to the foe. See to it that they are reduced to just so much flaming wreckage.",
+    "body": "SABOTAGE (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One unit from your army that is within a terrain feature and not within your deployment zone.\nCOMPLETES: End of your opponent's next turn or the end of the battle (whichever comes first), if your unit is on the battlefield.\nIF COMPLETED: Your unit commits sabotage.\n\nANY BATTLE ROUND\nWHEN: End of your opponent's turn or the end of the battle (whichever comes first).\nYour unit committed sabotage this turn and is not within your opponent's deployment zone. 3VP\nOR\nYour unit committed sabotage this turn and is within your opponent's deployment zone. 6VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-sabotage",
+    "lore": "This region is replete with strategic assets or supply caches vital to the foe. See to it that they are reduced to just so much flaming wreckage.",
+    "body": "SABOTAGE (ACTION)\nSTARTS: Your Shooting phase.\nUNITS: One unit from your army that is within a terrain feature and not within your deployment zone.\nCOMPLETES: End of your opponent's next turn or the end of the battle (whichever comes first), if your unit is on the battlefield.\nIF COMPLETED: Your unit commits sabotage.\n\nANY BATTLE ROUND\nWHEN: End of your opponent's turn or the end of the battle (whichever comes first).\nYour unit committed sabotage this turn and is not within your opponent's deployment zone. 3VP\nOR\nYour unit committed sabotage this turn and is within your opponent's deployment zone. 6VP"
+  },
+  {
+    "id": "secondary-mission-secure-no-mans-land",
+    "lore": "You must advance swiftly into no man's land and seize it before the enemy can, lest they take control of the entire battlefield.",
+    "body": "At the end of your turn, if you control two or more objective markers in No Man's Land, this Secondary Mission is achieved and you score 5VP.\n\nIf, at the end of your turn, you only control one objective marker in No Man's Land, this Secondary Mission is still achieved, but in this instance you score 2VP instead of 5VP.\n"
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-secure-no-mans-land",
+    "lore": "You must advance swiftly into no man's land and seize it before the enemy can, lest they take control of the entire battlefield.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of your turn.\nYou control one objective marker in No Man's Land. 2VP\nOR\nYou control two or more objective markers in No Man's Land. 5VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-secure-no-mans-land",
+    "lore": "You must advance swiftly into no man's land and seize it before the enemy can, lest they take control of the entire battlefield.",
+    "body": "ANY BATTLE ROUND\nWHEN: End of your turn.\nYou control one objective marker in No Man's Land. 2VP\nOR\nYou control two or more objective markers in No Man's Land. 5VP"
+  },
+  {
+    "id": "secondary-mission-storm-hostile-objective",
+    "lore": "Dominate the field of battle. Storm every site of tactical import and leave the foe with no place to hide.",
+    "body": "At the end of your turn, if either of the below conditions are satisfied, this Secondary Mission is achieved and you score 4VP if you are using Fixed Missions, or 5VP If you are using Tactical Missions:\n• You control one or more objective markers that were controlled by your opponent at the start of your turn.\n• Your opponent did not control any objective markers at the start of your turn and you control one or more objective markers that you did not control at the start of your turn.\n\nThis Secondary Mission cannot be achieved during the first battle round; If you randomly drew this Secondary Mission card during the first battle round, drew a new Secondary Mission card and shuffle this Secondary Mission card back into your Secondary Mission deck."
+  },
+  {
+    "id": "secondary-mission-pariah-nexus-storm-hostile-objective",
+    "lore": "Dominate the field of battle. Storm every site of tactical import and leave the foe with no place to hide.",
+    "body": "When Drawn: If it is the first battle round, you can draw a new Secondary Mission card and shuffle this card back into your Secondary Mission deck.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nYou control one or more objective markers that were controlled by your opponent at the start of the turn. 4VP\nOR\nYour opponent did not control any objective markers at the start of the turn, and you control one or more objective markers that you did not control at the start of the turn. 4VP"
+  },
+  {
+    "id": "secondary-mission-chapter-approved-2025-26-storm-hostile-objective",
+    "lore": "Dominate the field of battle. Storm every site of tactical import and leave the foe with no place to hide.",
+    "body": "When Drawn: If it is the first battle round, you can draw a new Secondary Mission card and shuffle this card back into your Secondary Mission deck.\n\nANY BATTLE ROUND\nWHEN: End of your turn.\nYou control one or more objective markers that were controlled by your opponent at the start of the turn. 4VP\nOR\nYour opponent did not control any objective markers at the start of the turn, and you control one or more objective markers that you did not control at the start of the turn. 4VP"
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-secure-extraction-zone",
+    "lore": "",
+    "body": "STARTS: Your shooting phase. \n\nUNITS: One unit from your army that is not within your deployment zone and is wholly within 9\" of one or more battlefield edges.\n            \nCOMPLETES: Immediately.\n\nIF COMPLETED: You score 3VP."
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-establish-comms",
+    "lore": "",
+    "body": "STARTS: Your Shooting phase.\nUNITS: One unit from your army that is more than 15\" away from all other units from your army.\nCOMPLETES: Immediately.\nIF COMPLETED: You score 3VP."
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-self-preservation",
+    "lore": "",
+    "body": "STARTS: Your Shooting phase.\nUNITS: One unit from your army.\nCOMPLETES: End of your turn, if that unit is more than 18\" away from all enemy units.\nIF COMPLETED: You score 3VP."
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-zone-defence",
+    "lore": "",
+    "body": "For each of the following areas, one or more units from your army (excluding AIRCRAFT and Battle-shocked units) are wholly within that area;\n- Your deployment zone.\n- 6\" of the centre of the battlefield.\n- No Man's Land.\n- Your opponent's deployment zone.\n\nTo a maximum of 1VP per unit."
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-dug-in",
+    "lore": "",
+    "body": "WHEN: End of your turn.\n      \n  For each objective marker you control.\n  \n  1VP (up to 3VP)"
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-sow-chaos",
+    "lore": "",
+    "body": "WHEN: End of your turn.\n      \nOne or more enemy models from two or more different units were destroyed this turn.\n\n3VP"
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-focused-effort",
+    "lore": "",
+    "body": "WHEN: End of your turn.\n      \nModels in two or more units from your army made one or more attacks against the same enemy unit this turn, and models in that enemy unit lost one or more wounds as a result of those attacks.\n\n3VP"
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-attrition",
+    "lore": "",
+    "body": "WHEN: End of your turn.\n\nOne or more enemy units were destroyed\nthis turn."
+  },
+  {
+    "id": "challenger-card-mission-chapter-approved-2025-26-over-the-line",
+    "lore": "",
+    "body": "WHEN: End of your turn.\n      \nOne or more units from your army (excluding AIRCRAFT and Battle-shocked units) are within your opponent's deployment zone.\n\n3VP"
+  },
+  {
+    "id": "gambit-proceed-as-planned",
+    "lore": "Your battle plan is unfolding as you had foreseen, and the time to stake the fatal blow is almost at hand. Stay the course, and victory is all but assured.",
+    "body": "If you select this Gambit card, you have chosen not to attempt a gambit.\n    \nUntil the end of the battle, you continue to score VP from your Primary Mission."
+  },
+  {
+    "id": "gambit-delaying-tactics",
+    "lore": "The whole battle was a ruse to buy our covert kill teams the time they need to successfully complete a mission that could turn the tide of the entire war.",
+    "body": "DETERMINE DISTRACTION TARGET: Your Distraction target will be equal to half the number of enemy units that are within Engagement Range of one or more units from your army (rounding up) at the end of your fifth turn. If your Distraction target is less than 4, it is increased to 4.\n\nDISTRACT ENEMY UNITS: At the end of your fifth turn, roll one D6 for each enemy unit that is within Engagement Range of one or more units from your army. Add 1 to the result if that enemy unit is Battle-shocked and subtract 1 if one or more of the units from your army that are within Engagement Range of it are Battle-shocked. On a 4+, that enemy unit has been successfully delayed.\n\nDETERMINE GAMBIT SUCCESS: If the number of enemy units that have been successfully delayed is greater than or equal to your Distraction target, this Gambit is successfully completed and you score 30VP."
+  },
+  {
+    "id": "gambit-emergency-evacuation",
+    "lore": "Remaining in this battlezone is folly. Teleportahums are being sanctified and orbital transports are inbound to exfiltrate what forces remain. Prepare for immediate extraction.",
+    "body": "DETERMINE EVACUATION TARGET: Your Evacuation target will be equal to half the number of units from your army that are on the battlefield at the end of the battle (rounding up), including units embarked within TRANSPORT models that are on the battlefield. If your Evacuation target is less than 4, it is increased to 4.\n\nEVACUATE UNITS: At the end of your fifth turn, roll one D6 for each unit from your army that is wholly within 6\" of the centre of the battlefield, subtracting 1 from the result if that unit is Battle shocked. On a 4+, that unit (and any units embarked within it) are marked for evacuation.\n\nDETERMINE GAMBIT SUCCESS: If the number of your units that are marked for evacuation is greater than or equal to your Evacuation target, this Gambit is successfully completed and you score 30VP."
+  },
+  {
+    "id": "gambit-orbital-strike-coordinates",
+    "lore": "Remaining in this battlezone is folly. Teleportahums are being sanctified and orbital transports are inbound to exfiltrate what forces remain. Prepare for immediate extraction.",
+    "body": "At the end of your fifth turn, if one or more units from your army that are not Battle-shocked are wholly within 9\" of a corner of the battlefield, and those units are not within your own deployment zone, roll 2D6.\n\nAdd 1 to the result for every other corner of the battlefield that has one or more units from your army wholly within 9\" of it (excluding units that are Battle-shocked or within Engagement Range of any enemy units).\n\nIf the final result is 12 or more, this Gambit is successfully completed and you score 30VP."
+  },
+  {
+    "id": "secret-mission-pariah-nexus-command-insertion",
+    "lore": "Sometimes vital tasks cannot be entrusted to underlings. At such times, a commander must lead by example, bloodying their own hands to achieve victory.",
+    "body": "SECRET MISSION\nWHEN: End of the battle.\nYour WARLORD is within range of one or more objective markers in your opponent's deployment zone that you control. 20VP"
+  },
+  {
+    "id": "secret-mission-pariah-nexus-unbroken-wall",
+    "lore": "Intelligence has revealed a secondary enemy attack incoming. Form a wall of warriors across this battlefield, ready to repel it.",
+    "body": "SECRET MISSION\nWHEN: End of the battle.\nYou control three or more objective markers that are not within your deployment zone. 20VP"
+  },
+  {
+    "id": "secret-mission-pariah-nexus-war-of-attrition",
+    "lore": "This is to be a battle of numbers, wherein you must husband your core forces with skill while winnowing those of the foe.",
+    "body": "SECRET MISSION\nWHEN: End of the battle.\nOne or more BATTLELINE units from your army are within your opponent's deployment zone, and one of the following conditions applies:\nVICTORY POINTS\n• There are no BATTLELINE units from your opponent's army on the battlefield.\n• Every BATTLELINE unit from your opponent's army that is on the battlefield is within your opponent's deployment zone. 20VP"
+  },
+  {
+    "id": "secret-mission-pariah-nexus-shatter-cohesion",
+    "lore": "There is no surer way to prevent your foe securing victory than to utterly destroy their strategic and tactical capabilities.",
+    "body": "SECRET MISSION\nWHEN: End of the battle.\nThere are no units from your opponent's army on the battlefield. 20VP\nOR\nEvery unit from your opponent's army that is on the battlefield meets one or more of the following conditions:\n• That unit is Battle-shocked.\nThat unit is Below Half-strength.\n• That unit is more than 3\" away from all objective markers. 20VP"
+  }
+]

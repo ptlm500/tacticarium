@@ -20,6 +20,14 @@ export interface SecondaryObjective {
   vpScored: number;
 }
 
+export interface ActiveSecondary {
+  id: string;
+  name: string;
+  description: string;
+  isFixed: boolean;
+  maxVp: number;
+}
+
 export interface PlayerState {
   userId: string;
   username: string;
@@ -37,6 +45,14 @@ export interface PlayerState {
   gambitId?: string;
   gambitDeclaredRound?: number;
   secondaries: SecondaryObjective[];
+  secondaryMode: string;
+  tacticalDeck: ActiveSecondary[];
+  activeSecondaries: ActiveSecondary[];
+  achievedSecondaries: ActiveSecondary[];
+  discardedSecondaries: ActiveSecondary[];
+  isChallenger: boolean;
+  challengerCardId?: string;
+  adaptOrDieUses: number;
 }
 
 export interface GameState {
@@ -50,6 +66,8 @@ export interface GameState {
   missionPackId: string;
   missionId: string;
   missionName: string;
+  twistId: string;
+  twistName: string;
   players: [PlayerState | null, PlayerState | null];
   createdAt: string;
   completedAt?: string;

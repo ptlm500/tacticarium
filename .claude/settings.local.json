@@ -34,7 +34,9 @@
       "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' get github.com/testcontainers/testcontainers-go/wait@latest; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' mod tidy\")",
       "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' vet ./...\")",
       "Bash(powershell.exe -Command \"docker info 2>&1 | Select-Object -First 5\")",
-      "Bash(powershell.exe -Command \"docker ps 2>&1\")"
+      "Bash(powershell.exe -Command \"docker ps 2>&1\")",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' build ./...\")",
+      "Bash(go build:*)"
     ]
   }
 }

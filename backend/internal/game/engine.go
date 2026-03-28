@@ -54,6 +54,30 @@ func (e *Engine) Apply(action GameAction) ([]GameEvent, error) {
 		return e.applyConcede(action)
 	case ActionSetPaintScore:
 		return e.applySetPaintScore(action)
+	case ActionSelectPrimaryMission:
+		return e.applySelectPrimaryMission(action)
+	case ActionSelectTwist:
+		return e.applySelectTwist(action)
+	case ActionSelectSecondaryMode:
+		return e.applySelectSecondaryMode(action)
+	case ActionSetFixedSecondaries:
+		return e.applySetFixedSecondaries(action)
+	case ActionInitTacticalDeck:
+		return e.applyInitTacticalDeck(action)
+	case ActionDrawSecondary:
+		return e.applyDrawSecondary(action)
+	case ActionAchieveSecondary:
+		return e.applyAchieveSecondary(action)
+	case ActionDiscardSecondary:
+		return e.applyDiscardSecondary(action)
+	case ActionNewOrders:
+		return e.applyNewOrders(action)
+	case ActionDrawChallengerCard:
+		return e.applyDrawChallengerCard(action)
+	case ActionScoreChallenger:
+		return e.applyScoreChallenger(action)
+	case ActionAdaptOrDie:
+		return e.applyAdaptOrDie(action)
 	default:
 		return nil, fmt.Errorf("unknown action type: %s", action.Type)
 	}

@@ -46,18 +46,34 @@ type Mission struct {
 	ID            string `json:"id"`
 	MissionPackID string `json:"missionPackId"`
 	Name          string `json:"name"`
-	Description   string `json:"description,omitempty"`
-	DeploymentMap string `json:"deploymentMap,omitempty"`
-	RulesText     string `json:"rulesText,omitempty"`
+	Lore          string `json:"lore,omitempty"`
+	Description   string `json:"description"`
+}
+
+type MissionRule struct {
+	ID            string `json:"id"`
+	MissionPackID string `json:"missionPackId"`
+	Name          string `json:"name"`
+	Lore          string `json:"lore,omitempty"`
+	Description   string `json:"description"`
 }
 
 type Secondary struct {
 	ID            string `json:"id"`
 	MissionPackID string `json:"missionPackId"`
 	Name          string `json:"name"`
-	Category      string `json:"category"`
+	Lore          string `json:"lore,omitempty"`
 	Description   string `json:"description"`
 	MaxVP         int    `json:"maxVp"`
+	IsFixed       bool   `json:"isFixed"`
+}
+
+type ChallengerCard struct {
+	ID            string `json:"id"`
+	MissionPackID string `json:"missionPackId"`
+	Name          string `json:"name"`
+	Lore          string `json:"lore,omitempty"`
+	Description   string `json:"description"`
 }
 
 type Gambit struct {
