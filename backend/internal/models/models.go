@@ -5,7 +5,7 @@ import "time"
 type User struct {
 	ID              string    `json:"id"`
 	DiscordID       string    `json:"discordId"`
-	DiscordUsername  string    `json:"discordUsername"`
+	DiscordUsername string    `json:"discordUsername"`
 	DiscordAvatar   *string   `json:"discordAvatar,omitempty"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
@@ -69,14 +69,14 @@ type Gambit struct {
 }
 
 type GameSummary struct {
-	ID          string     `json:"id"`
-	InviteCode  string     `json:"inviteCode"`
-	Status      string     `json:"status"`
-	MissionName string     `json:"missionName,omitempty"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	CompletedAt *time.Time `json:"completedAt,omitempty"`
+	ID          string              `json:"id"`
+	InviteCode  string              `json:"inviteCode"`
+	Status      string              `json:"status"`
+	MissionName string              `json:"missionName,omitempty"`
+	CreatedAt   time.Time           `json:"createdAt"`
+	CompletedAt *time.Time          `json:"completedAt,omitempty"`
 	Players     []GamePlayerSummary `json:"players"`
-	WinnerID    *string    `json:"winnerId,omitempty"`
+	WinnerID    *string             `json:"winnerId,omitempty"`
 }
 
 type GamePlayerSummary struct {

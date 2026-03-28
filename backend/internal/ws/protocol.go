@@ -8,8 +8,8 @@ import (
 
 // Client -> Server messages
 type ClientMessage struct {
-	Type string           `json:"type"` // "action", "ping", "sync_request"
-	Data json.RawMessage  `json:"data,omitempty"`
+	Type string          `json:"type"` // "action", "ping", "sync_request"
+	Data json.RawMessage `json:"data,omitempty"`
 }
 
 // Server -> Client messages

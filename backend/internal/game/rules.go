@@ -1,12 +1,12 @@
 package game
 
 const (
-	MaxRounds     = 5
-	MaxVPPrimary  = 50
+	MaxRounds      = 5
+	MaxVPPrimary   = 50
 	MaxVPSecondary = 40
-	MaxVPGambit   = 12
-	MaxVPPaint    = 10
-	MaxVPTotal    = 100
+	MaxVPGambit    = 12
+	MaxVPPaint     = 10
+	MaxVPTotal     = 100
 
 	// CP gained at start of command phase (rounds 2-5)
 	CPPerCommandPhase = 1

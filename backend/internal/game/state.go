@@ -35,22 +35,22 @@ type SecondaryObjective struct {
 }
 
 type PlayerState struct {
-	UserID         string               `json:"userId"`
-	Username       string               `json:"username"`
-	PlayerNumber   int                  `json:"playerNumber"`
-	FactionID      string               `json:"factionId"`
-	FactionName    string               `json:"factionName"`
-	DetachmentID   string               `json:"detachmentId"`
-	DetachmentName string               `json:"detachmentName"`
-	CP             int                  `json:"cp"`
-	VPPrimary      int                  `json:"vpPrimary"`
-	VPSecondary    int                  `json:"vpSecondary"`
-	VPGambit       int                  `json:"vpGambit"`
-	VPPaint        int                  `json:"vpPaint"`
-	Ready          bool                 `json:"ready"`
-	GambitID       string               `json:"gambitId,omitempty"`
-	GambitDeclaredRound int             `json:"gambitDeclaredRound,omitempty"`
-	Secondaries    []SecondaryObjective `json:"secondaries"`
+	UserID              string               `json:"userId"`
+	Username            string               `json:"username"`
+	PlayerNumber        int                  `json:"playerNumber"`
+	FactionID           string               `json:"factionId"`
+	FactionName         string               `json:"factionName"`
+	DetachmentID        string               `json:"detachmentId"`
+	DetachmentName      string               `json:"detachmentName"`
+	CP                  int                  `json:"cp"`
+	VPPrimary           int                  `json:"vpPrimary"`
+	VPSecondary         int                  `json:"vpSecondary"`
+	VPGambit            int                  `json:"vpGambit"`
+	VPPaint             int                  `json:"vpPaint"`
+	Ready               bool                 `json:"ready"`
+	GambitID            string               `json:"gambitId,omitempty"`
+	GambitDeclaredRound int                  `json:"gambitDeclaredRound,omitempty"`
+	Secondaries         []SecondaryObjective `json:"secondaries"`
 }
 
 func (p *PlayerState) TotalVP() int {
@@ -58,20 +58,20 @@ func (p *PlayerState) TotalVP() int {
 }
 
 type GameState struct {
-	GameID          string       `json:"gameId"`
-	InviteCode      string       `json:"inviteCode"`
-	Status          GameStatus   `json:"status"`
-	CurrentRound    int          `json:"currentRound"`
-	CurrentPhase    Phase        `json:"currentPhase"`
-	ActivePlayer    int          `json:"activePlayer"`
-	FirstTurnPlayer int          `json:"firstTurnPlayer"`
-	MissionPackID   string       `json:"missionPackId"`
-	MissionID       string       `json:"missionId"`
-	MissionName     string       `json:"missionName"`
+	GameID          string          `json:"gameId"`
+	InviteCode      string          `json:"inviteCode"`
+	Status          GameStatus      `json:"status"`
+	CurrentRound    int             `json:"currentRound"`
+	CurrentPhase    Phase           `json:"currentPhase"`
+	ActivePlayer    int             `json:"activePlayer"`
+	FirstTurnPlayer int             `json:"firstTurnPlayer"`
+	MissionPackID   string          `json:"missionPackId"`
+	MissionID       string          `json:"missionId"`
+	MissionName     string          `json:"missionName"`
 	Players         [2]*PlayerState `json:"players"`
-	CreatedAt       time.Time    `json:"createdAt"`
-	CompletedAt     *time.Time   `json:"completedAt,omitempty"`
-	WinnerID        string       `json:"winnerId,omitempty"`
+	CreatedAt       time.Time       `json:"createdAt"`
+	CompletedAt     *time.Time      `json:"completedAt,omitempty"`
+	WinnerID        string          `json:"winnerId,omitempty"`
 }
 
 func (gs *GameState) GetPlayer(playerNumber int) *PlayerState {

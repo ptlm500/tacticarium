@@ -27,22 +27,22 @@ type GameAction struct {
 type EventType string
 
 const (
-	EventPhaseAdvance     EventType = "phase_advance"
-	EventCPGain           EventType = "cp_gain"
-	EventCPSpend          EventType = "cp_spend"
-	EventCPAdjust         EventType = "cp_adjust"
-	EventVPPrimaryScore   EventType = "vp_primary_score"
-	EventVPSecondaryScore EventType = "vp_secondary_score"
-	EventVPGambitScore    EventType = "vp_gambit_score"
-	EventStratagemUsed    EventType = "stratagem_used"
+	EventPhaseAdvance      EventType = "phase_advance"
+	EventCPGain            EventType = "cp_gain"
+	EventCPSpend           EventType = "cp_spend"
+	EventCPAdjust          EventType = "cp_adjust"
+	EventVPPrimaryScore    EventType = "vp_primary_score"
+	EventVPSecondaryScore  EventType = "vp_secondary_score"
+	EventVPGambitScore     EventType = "vp_gambit_score"
+	EventStratagemUsed     EventType = "stratagem_used"
 	EventSecondarySelected EventType = "secondary_selected"
-	EventGambitDeclared   EventType = "gambit_declared"
-	EventPlayerConcede    EventType = "player_concede"
-	EventGameStart        EventType = "game_start"
-	EventGameEnd          EventType = "game_end"
-	EventFactionSelected  EventType = "faction_selected"
-	EventMissionSelected  EventType = "mission_selected"
-	EventPlayerReady      EventType = "player_ready"
+	EventGambitDeclared    EventType = "gambit_declared"
+	EventPlayerConcede     EventType = "player_concede"
+	EventGameStart         EventType = "game_start"
+	EventGameEnd           EventType = "game_end"
+	EventFactionSelected   EventType = "faction_selected"
+	EventMissionSelected   EventType = "mission_selected"
+	EventPlayerReady       EventType = "player_ready"
 )
 
 type GameEvent struct {
