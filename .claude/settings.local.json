@@ -24,7 +24,17 @@
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
       "Bash(echo \"EXIT: $?\")",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; go get github.com/stretchr/testify@latest github.com/testcontainers/testcontainers-go@latest github.com/testcontainers/testcontainers-go/modules/postgres@latest\")",
+      "Bash(powershell.exe -Command \"where.exe go\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe''; Test-Path ''C:\\\\Users\\\\peter\\\\go\\\\bin\\\\go.exe''; Get-ChildItem ''C:\\\\Program Files\\\\Go'' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' get github.com/stretchr/testify@latest github.com/testcontainers/testcontainers-go@latest github.com/testcontainers/testcontainers-go/modules/postgres@latest\")",
+      "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' mod tidy\")",
+      "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' build ./...\")",
+      "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' get github.com/testcontainers/testcontainers-go/wait@latest; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' mod tidy\")",
+      "Bash(powershell.exe -Command \"cd C:\\\\Users\\\\peter\\\\dev\\\\turn-tracker\\\\backend; & ''C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe'' vet ./...\")",
+      "Bash(powershell.exe -Command \"docker info 2>&1 | Select-Object -First 5\")",
+      "Bash(powershell.exe -Command \"docker ps 2>&1\")"
     ]
   }
 }

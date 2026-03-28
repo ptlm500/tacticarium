@@ -1,11 +1,15 @@
 package ws
 
-import "github.com/peter/tacticarium/backend/internal/game"
+import (
+	"encoding/json"
+
+	"github.com/peter/tacticarium/backend/internal/game"
+)
 
 // Client -> Server messages
 type ClientMessage struct {
-	Type string          `json:"type"` // "action", "ping", "sync_request"
-	Data *game.GameAction `json:"data,omitempty"`
+	Type string           `json:"type"` // "action", "ping", "sync_request"
+	Data json.RawMessage  `json:"data,omitempty"`
 }
 
 // Server -> Client messages

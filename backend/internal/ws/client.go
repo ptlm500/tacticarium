@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/peter/tacticarium/backend/internal/game"
+
 	"nhooyr.io/websocket"
 )
 
@@ -62,8 +64,20 @@ func (c *Client) ReadPump(ctx context.Context) {
 			c.Send(StateUpdateMsg(state))
 		case "action":
 			if msg.Data != nil {
-				msg.Data.PlayerNumber = c.playerNumber
-				c.room.actions <- msg.Data
+				var raw map[string]any
+				if err := json.Unmarshal(msg.Data, &raw); err != nil {
+					c.Send(ErrorMsg("invalid action data", "INVALID_FORMAT"))
+					continue
+				}
+				actionType, _ := raw["type"].(string)
+				delete(raw, "type")
+				delete(raw, "playerNumber")
+				action := &game.GameAction{
+					Type:         game.ActionType(actionType),
+					PlayerNumber: c.playerNumber,
+					Data:         raw,
+				}
+				c.room.actions <- action
 			}
 		}
 	}
