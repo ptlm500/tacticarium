@@ -14,9 +14,11 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
   const reconnectTimer = useRef<number>();
   const reconnectDelay = useRef(1000);
   const pingInterval = useRef<number>();
+  const mountedRef = useRef(false);
   const [connected, setConnected] = useState(false);
 
   const connect = useCallback(() => {
+    if (!mountedRef.current) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const ws = new WebSocket(`${WS_URL}/ws/game/${gameId}?token=${token}`);
@@ -49,11 +51,13 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
         clearInterval(pingInterval.current);
       }
 
-      // Reconnect with exponential backoff
-      reconnectTimer.current = window.setTimeout(() => {
-        reconnectDelay.current = Math.min(reconnectDelay.current * 2, 30000);
-        connect();
-      }, reconnectDelay.current);
+      // Only reconnect if still mounted
+      if (mountedRef.current) {
+        reconnectTimer.current = window.setTimeout(() => {
+          reconnectDelay.current = Math.min(reconnectDelay.current * 2, 30000);
+          connect();
+        }, reconnectDelay.current);
+      }
     };
 
     ws.onerror = () => {
@@ -62,9 +66,11 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
   }, [gameId, token, onMessage]);
 
   useEffect(() => {
+    mountedRef.current = true;
     connect();
 
     return () => {
+      mountedRef.current = false;
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       if (pingInterval.current) clearInterval(pingInterval.current);
       wsRef.current?.close();
