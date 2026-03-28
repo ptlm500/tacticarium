@@ -17,6 +17,15 @@ func (e *Engine) State() GameState {
 	return *e.state
 }
 
+// AddPlayer adds a player to the state if the slot is empty.
+// Used when a player joins after the room was already created.
+func (e *Engine) AddPlayer(player *PlayerState) {
+	idx := player.PlayerNumber - 1
+	if idx >= 0 && idx < 2 && e.state.Players[idx] == nil {
+		e.state.Players[idx] = player
+	}
+}
+
 func (e *Engine) Apply(action GameAction) ([]GameEvent, error) {
 	switch action.Type {
 	case ActionSelectFaction:

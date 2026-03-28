@@ -39,6 +39,15 @@ func (r *Room) Run() {
 			r.clients[client] = true
 			r.mu.Unlock()
 
+			// Ensure the player exists in the engine state.
+			// This handles the case where player 2 joins after the room
+			// was created by player 1's connection.
+			r.engine.AddPlayer(&game.PlayerState{
+				UserID:       client.userID,
+				Username:     client.username,
+				PlayerNumber: client.playerNumber,
+			})
+
 			// Notify others
 			r.broadcastExcept(PlayerConnectedMsg(client.playerNumber, client.username), client)
 

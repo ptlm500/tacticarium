@@ -409,6 +409,125 @@ func TestWSPersistence(t *testing.T) {
 	assert.GreaterOrEqual(t, eventCount, 1)
 }
 
+// TestWSLateJoin_Player2CanAct verifies that when player 2 connects to a room
+// that was already created by player 1, player 2 is properly added to the engine
+// state and can perform actions without getting "invalid player number".
+func TestWSLateJoin_Player2CanAct(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	// Create game with only player 1 initially
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+
+	token1 := testutil.GenerateToken(t, user1ID, "player1")
+	token2 := testutil.GenerateToken(t, user2ID, "player2")
+
+	testutil.SeedFaction(t, env.Pool, "SM", "Space Marines")
+
+	// Player 1 connects first — this creates the room with only player 1 in engine state
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	testutil.ReadWSMessage(t, conn1, 5*time.Second) // initial state_update
+
+	// Player 2 joins the game via REST
+	testutil.JoinTestGame(t, env.Pool, gameID, user2ID)
+
+	// Player 2 connects via WS — should be added to engine state by AddPlayer
+	conn2 := testutil.DialWS(t, env, gameID, token2)
+	p2State := testutil.ReadWSMessage(t, conn2, 5*time.Second) // initial state_update
+	assert.Equal(t, "state_update", p2State["type"])
+
+	// Verify player 2's state_update contains both players
+	data := p2State["data"].(map[string]interface{})
+	players := data["players"].([]interface{})
+	assert.Equal(t, 2, len(players))
+	// Both player slots should be non-nil
+	assert.NotNil(t, players[0])
+	assert.NotNil(t, players[1])
+
+	// Player 1 should receive player_connected for player 2
+	p1Msg := testutil.ReadWSMessage(t, conn1, 5*time.Second)
+	assert.Equal(t, "player_connected", p1Msg["type"])
+
+	// Drain the player_connected notification on conn1's state
+	// Now player 2 selects a faction — this should NOT return "invalid player number"
+	testutil.SendWSMessage(t, conn2, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{
+			"type":        "select_faction",
+			"factionId":   "SM",
+			"factionName": "Space Marines",
+		},
+	})
+
+	// Player 2 should receive event + state_update, NOT an error
+	event := testutil.DrainUntil(t, conn2, "event", 5*time.Second)
+	assert.Equal(t, "event", event["type"])
+
+	state := testutil.DrainUntil(t, conn2, "state_update", 5*time.Second)
+	assert.Equal(t, "state_update", state["type"])
+
+	// Verify the faction was actually set on player 2
+	stateData := state["data"].(map[string]interface{})
+	statePlayers := stateData["players"].([]interface{})
+	p2 := statePlayers[1].(map[string]interface{})
+	assert.Equal(t, "SM", p2["factionId"])
+	assert.Equal(t, "Space Marines", p2["factionName"])
+}
+
+// TestWSLateJoin_Player1CanActAfterPlayer2Joins verifies that player 1 can still
+// perform actions after player 2 late-joins the room.
+func TestWSLateJoin_Player1CanActAfterPlayer2Joins(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+
+	token1 := testutil.GenerateToken(t, user1ID, "player1")
+	token2 := testutil.GenerateToken(t, user2ID, "player2")
+
+	testutil.SeedFaction(t, env.Pool, "SM", "Space Marines")
+
+	// Player 1 connects first
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	testutil.ReadWSMessage(t, conn1, 5*time.Second) // initial state
+
+	// Player 2 joins and connects
+	testutil.JoinTestGame(t, env.Pool, gameID, user2ID)
+	conn2 := testutil.DialWS(t, env, gameID, token2)
+	testutil.ReadWSMessage(t, conn2, 5*time.Second) // initial state
+	testutil.ReadWSMessage(t, conn1, 5*time.Second) // player_connected
+
+	// Player 1 selects faction — should still work fine
+	testutil.SendWSMessage(t, conn1, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{
+			"type":        "select_faction",
+			"factionId":   "SM",
+			"factionName": "Space Marines",
+		},
+	})
+
+	event := testutil.DrainUntil(t, conn1, "event", 5*time.Second)
+	assert.Equal(t, "event", event["type"])
+
+	state := testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)
+	stateData := state["data"].(map[string]interface{})
+	statePlayers := stateData["players"].([]interface{})
+	p1 := statePlayers[0].(map[string]interface{})
+	assert.Equal(t, "SM", p1["factionId"])
+
+	// Player 2 should also receive the updates
+	event2 := testutil.DrainUntil(t, conn2, "event", 5*time.Second)
+	assert.Equal(t, "event", event2["type"])
+
+	state2 := testutil.DrainUntil(t, conn2, "state_update", 5*time.Second)
+	assert.Equal(t, "state_update", state2["type"])
+}
+
 func TestWSPlayerDisconnect(t *testing.T) {
 	env := testutil.SharedEnv
 	_, _, token1, token2, gameID := setupGameWithTwoPlayers(t)
