@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useGameStore } from '../stores/gameStore';
 import { useGameConnection } from '../hooks/useGameState';
+import { getToken } from '../api/client';
 import { factionsApi } from '../api/factions';
 import { Faction, Detachment } from '../types/faction';
 import { FactionPicker } from '../components/setup/FactionPicker';
@@ -14,11 +15,7 @@ export function GameSetupPage() {
   const { user } = useAuth();
   const { gameState } = useGameStore();
 
-  // Get token from cookie for WS connection
-  const token = document.cookie
-    .split('; ')
-    .find((c) => c.startsWith('token='))
-    ?.split('=')[1] || '';
+  const token = getToken();
 
   const { connected, sendAction } = useGameConnection(gameId!, token);
 

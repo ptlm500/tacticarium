@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { authApi, User } from '../api/auth';
+import { getToken, clearToken } from '../api/client';
 
 interface AuthContextType {
   user: User | null;
@@ -20,10 +21,17 @@ export function useAuthProvider() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!getToken()) {
+      setLoading(false);
+      return;
+    }
     authApi
       .getMe()
       .then(setUser)
-      .catch(() => setUser(null))
+      .catch(() => {
+        clearToken();
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,7 +40,8 @@ export function useAuthProvider() {
   }, []);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
+    await authApi.logout().catch(() => {});
+    clearToken();
     setUser(null);
   }, []);
 

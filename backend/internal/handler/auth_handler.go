@@ -5,8 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -112,18 +114,9 @@ func (h *AuthHandler) HandleDiscordCallback(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Set cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
-		Path:     "/",
-		MaxAge:   7 * 24 * 60 * 60,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	// Redirect to frontend
-	http.Redirect(w, r, h.cfg.FrontendURL, http.StatusTemporaryRedirect)
+	// Redirect to frontend with token
+	redirectURL := fmt.Sprintf("%s/auth/callback?token=%s", h.cfg.FrontendURL, url.QueryEscape(token))
+	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
 
 func (h *AuthHandler) HandleMe(w http.ResponseWriter, r *http.Request) {

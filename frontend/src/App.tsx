@@ -6,6 +6,7 @@ import { GameSetupPage } from './pages/GameSetupPage';
 import { GamePage } from './pages/GamePage';
 import { GameHistoryPage } from './pages/GameHistoryPage';
 import { JoinRedirect } from './pages/JoinRedirect';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -33,6 +34,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route
             path="/"
             element={

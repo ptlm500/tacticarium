@@ -1,10 +1,19 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
+export function getToken(): string {
+  return localStorage.getItem('token') || '';
+}
+
+export function clearToken() {
+  localStorage.removeItem('token');
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
     ...options,

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useGameStore } from '../stores/gameStore';
 import { useGameConnection } from '../hooks/useGameState';
+import { getToken } from '../api/client';
 import { factionsApi } from '../api/factions';
 import { Stratagem } from '../types/faction';
 import { PHASE_LABELS, PHASE_ORDER } from '../types/game';
@@ -18,10 +19,7 @@ export function GamePage() {
   const { user } = useAuth();
   const { gameState, events, error } = useGameStore();
 
-  const token = document.cookie
-    .split('; ')
-    .find((c) => c.startsWith('token='))
-    ?.split('=')[1] || '';
+  const token = getToken();
 
   const { connected, sendAction } = useGameConnection(gameId!, token);
 
