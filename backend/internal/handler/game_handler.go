@@ -157,7 +157,7 @@ func (h *GameHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var games []models.GameSummary
+	games := make([]models.GameSummary, 0)
 	for rows.Next() {
 		var g models.GameSummary
 		if err := rows.Scan(&g.ID, &g.InviteCode, &g.Status, &g.MissionName, &g.CreatedAt, &g.CompletedAt, &g.WinnerID); err != nil {
@@ -209,7 +209,7 @@ func (h *GameHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var games []models.GameSummary
+	games := make([]models.GameSummary, 0)
 	for rows.Next() {
 		var g models.GameSummary
 		if err := rows.Scan(&g.ID, &g.InviteCode, &g.Status, &g.MissionName, &g.CreatedAt, &g.CompletedAt, &g.WinnerID); err != nil {

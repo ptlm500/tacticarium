@@ -13,7 +13,7 @@ export function LobbyPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    gamesApi.list().then(setGames).catch(() => {});
+    gamesApi.list().then((g) => setGames(g || [])).catch(() => {});
   }, []);
 
   const handleCreate = async () => {
