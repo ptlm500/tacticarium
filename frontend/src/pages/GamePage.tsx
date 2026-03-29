@@ -18,6 +18,7 @@ import { SecondaryPanel } from '../components/game/SecondaryPanel';
 import { MissionInfo } from '../components/game/MissionInfo';
 import { MissionScoring } from '../components/game/MissionScoring';
 import { GameLog } from '../components/game/GameLog';
+import { ScoringPrompt, ScoringPromptItem } from '../components/game/ScoringPrompt';
 
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -38,6 +39,7 @@ export function GamePage() {
   const isMyTurn = myPlayer?.playerNumber === gameState?.activePlayer;
 
   const [loadError, setLoadError] = useState('');
+  const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
 
   // Load stratagems for player's faction
   useEffect(() => {
@@ -76,9 +78,97 @@ export function GamePage() {
     return phaseMatch && turnMatch && detachmentMatch;
   });
 
-  const handleAdvancePhase = useCallback(() => {
+  const doAdvancePhase = useCallback(() => {
+    setScoringPromptItems(null);
     sendAction('advance_phase');
   }, [sendAction]);
+
+  const handleAdvancePhase = useCallback(() => {
+    if (!gameState || !myPlayer) return;
+
+    const phase = gameState.currentPhase;
+    const round = gameState.currentRound;
+    const isSecondPlayerTurn = gameState.currentTurn === 2;
+    const isFightPhase = phase === 'fight';
+    const isCommandPhase = phase === 'command';
+    const scoringTiming = currentMission?.scoringTiming;
+
+    const items: ScoringPromptItem[] = [];
+
+    // Primary scoring prompts
+    if (currentMission && scoringTiming) {
+      if (scoringTiming === 'end_of_command_phase') {
+        // Prompt when advancing out of Command Phase (BR2+)
+        if (isCommandPhase && round >= 2) {
+          items.push({
+            kind: 'primary',
+            missionName: currentMission.name,
+            scoringRules: currentMission.scoringRules.filter(
+              (r) => !r.scoringTiming || r.scoringTiming === 'end_of_command_phase'
+            ),
+            currentRound: round,
+          });
+        }
+        // Also prompt second player at end of turn in BR5
+        if (isFightPhase && round === 5 && isSecondPlayerTurn) {
+          items.push({
+            kind: 'primary',
+            missionName: currentMission.name,
+            scoringRules: currentMission.scoringRules.filter(
+              (r) => !r.scoringTiming || r.scoringTiming === 'end_of_command_phase'
+            ),
+            currentRound: round,
+          });
+        }
+      }
+
+      if (scoringTiming === 'end_of_battle_round') {
+        // Prompt at end of round (second player advancing out of Fight)
+        if (isFightPhase && isSecondPlayerTurn) {
+          items.push({
+            kind: 'end_of_round_primary',
+            missionName: currentMission.name,
+            note: 'Both players score at the end of each battle round. Make sure your opponent has scored too.',
+          });
+        }
+      }
+
+      // Per-action end_of_turn scoring (e.g., Terraform bonus)
+      if (isFightPhase) {
+        const endOfTurnActions = currentMission.scoringRules.filter(
+          (r) => r.scoringTiming === 'end_of_turn'
+        );
+        if (endOfTurnActions.length > 0) {
+          items.push({
+            kind: 'primary',
+            missionName: currentMission.name + ' (end of turn)',
+            scoringRules: endOfTurnActions,
+            currentRound: round,
+          });
+        }
+      }
+    }
+
+    // Tactical draw prompt — advancing out of Command Phase
+    if (isCommandPhase && myPlayer.secondaryMode === 'tactical') {
+      const activeCount = myPlayer.activeSecondaries?.length ?? 0;
+      const deckSize = myPlayer.tacticalDeck?.length ?? 0;
+      if (activeCount < 2 && deckSize > 0) {
+        items.push({ kind: 'tactical_draw' });
+      }
+    }
+
+    // Secondary scoring prompt — advancing out of Fight Phase (end of turn)
+    if (isFightPhase) {
+      items.push({ kind: 'secondary' });
+    }
+
+    if (items.length > 0) {
+      setScoringPromptItems(items);
+    } else {
+      doAdvancePhase();
+    }
+  }, [gameState, myPlayer, currentMission, doAdvancePhase]);
 
   const handleAdjustCP = useCallback(
     (delta: number) => {
@@ -372,6 +462,23 @@ export function GamePage() {
           Concede
         </button>
       </div>
+
+      {/* Scoring Prompt Modal */}
+      {scoringPromptItems && (
+        <ScoringPrompt
+          items={scoringPromptItems}
+          onScore={handleScoreVP}
+          activeSecondaries={myPlayer.activeSecondaries ?? []}
+          onAchieveSecondary={handleAchieveSecondary}
+          onDiscardSecondary={handleDiscardSecondary}
+          onDrawSecondary={handleDrawSecondary}
+          canGainCP={myPlayer.cpGainedThisRound < 1}
+          deckSize={myPlayer.tacticalDeck?.length ?? 0}
+          activeSecondaryCount={myPlayer.activeSecondaries?.length ?? 0}
+          onConfirm={doAdvancePhase}
+          onCancel={() => setScoringPromptItems(null)}
+        />
+      )}
     </div>
   );
 }
