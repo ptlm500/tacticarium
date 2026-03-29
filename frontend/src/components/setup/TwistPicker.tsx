@@ -1,4 +1,4 @@
-import { MissionRule } from '../../types/mission';
+import { MissionRule } from "../../types/mission";
 
 interface Props {
   rules: MissionRule[];
@@ -37,9 +37,7 @@ export function TwistPicker({ rules, selectedId, onSelect, onDrawRandom }: Props
       </div>
       {selected && (
         <div className="bg-gray-800 rounded-lg p-3 text-sm text-gray-300">
-          {selected.lore && (
-            <p className="italic text-gray-400 mb-2">{selected.lore}</p>
-          )}
+          {selected.lore && <p className="italic text-gray-400 mb-2">{selected.lore}</p>}
           <p className="whitespace-pre-wrap">{selected.description}</p>
         </div>
       )}

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { ClientMessage, ServerMessage } from '../types/ws';
+import { useEffect, useRef, useCallback, useState } from "react";
+import { ClientMessage, ServerMessage } from "../types/ws";
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
 
 interface UseWebSocketOptions {
   gameId: string;
@@ -31,7 +31,7 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
       // Start ping interval
       pingInterval.current = window.setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'ping' }));
+          ws.send(JSON.stringify({ type: "ping" }));
         }
       }, 30000);
     };
@@ -41,7 +41,7 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
         const msg: ServerMessage = JSON.parse(event.data);
         onMessage(msg);
       } catch {
-        console.error('Failed to parse WS message');
+        console.error("Failed to parse WS message");
       }
     };
 
@@ -85,9 +85,9 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
 
   const sendAction = useCallback(
     (type: string, data?: Record<string, unknown>) => {
-      sendMessage({ type: 'action', data: { type, ...data } });
+      sendMessage({ type: "action", data: { type, ...data } });
     },
-    [sendMessage]
+    [sendMessage],
   );
 
   return { connected, sendAction, sendMessage };

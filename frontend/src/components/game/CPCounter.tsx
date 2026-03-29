@@ -21,14 +21,12 @@ export function CPCounter({ cp, canGainCP, onAdjust }: Props) {
           onClick={() => onAdjust(1)}
           disabled={!canGainCP}
           className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-xl font-bold transition-colors"
-          title={!canGainCP ? 'CP gain cap reached this battle round' : 'Gain 1 CP'}
+          title={!canGainCP ? "CP gain cap reached this battle round" : "Gain 1 CP"}
         >
           +
         </button>
       </div>
-      {!canGainCP && (
-        <p className="text-xs text-amber-400 mt-1">CP gain cap reached</p>
-      )}
+      {!canGainCP && <p className="text-xs text-amber-400 mt-1">CP gain cap reached</p>}
     </div>
   );
 }

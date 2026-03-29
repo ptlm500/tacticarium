@@ -1,15 +1,15 @@
-export type Phase = 'setup' | 'command' | 'movement' | 'shooting' | 'charge' | 'fight';
-export type GameStatus = 'setup' | 'active' | 'completed' | 'abandoned';
+export type Phase = "setup" | "command" | "movement" | "shooting" | "charge" | "fight";
+export type GameStatus = "setup" | "active" | "completed" | "abandoned";
 
-export const PHASE_ORDER: Phase[] = ['command', 'movement', 'shooting', 'charge', 'fight'];
+export const PHASE_ORDER: Phase[] = ["command", "movement", "shooting", "charge", "fight"];
 
 export const PHASE_LABELS: Record<Phase, string> = {
-  setup: 'Setup',
-  command: 'Command',
-  movement: 'Movement',
-  shooting: 'Shooting',
-  charge: 'Charge',
-  fight: 'Fight',
+  setup: "Setup",
+  command: "Command",
+  movement: "Movement",
+  shooting: "Shooting",
+  charge: "Charge",
+  fight: "Fight",
 };
 
 export interface SecondaryObjective {

@@ -1,12 +1,12 @@
-import { GameEvent, GameState } from './game';
+import { GameEvent, GameState } from "./game";
 
 export type ServerMessageType =
-  | 'state_update'
-  | 'event'
-  | 'error'
-  | 'pong'
-  | 'player_connected'
-  | 'player_disconnected';
+  | "state_update"
+  | "event"
+  | "error"
+  | "pong"
+  | "player_connected"
+  | "player_disconnected";
 
 export interface ServerMessage {
   type: ServerMessageType;
@@ -14,26 +14,26 @@ export interface ServerMessage {
 }
 
 export interface StateUpdateMessage {
-  type: 'state_update';
+  type: "state_update";
   data: GameState;
 }
 
 export interface EventMessage {
-  type: 'event';
+  type: "event";
   data: GameEvent;
 }
 
 export interface ErrorMessage {
-  type: 'error';
+  type: "error";
   data: { message: string; code: string };
 }
 
 export interface PlayerConnectionMessage {
-  type: 'player_connected' | 'player_disconnected';
+  type: "player_connected" | "player_disconnected";
   data: { playerNumber: number; username?: string };
 }
 
-export type ClientMessageType = 'action' | 'ping' | 'sync_request';
+export type ClientMessageType = "action" | "ping" | "sync_request";
 
 export interface ClientMessage {
   type: ClientMessageType;

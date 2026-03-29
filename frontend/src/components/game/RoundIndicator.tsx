@@ -17,10 +17,10 @@ export function RoundIndicator({ currentRound, currentTurn, maxRounds }: Props) 
               key={round}
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                 isActive
-                  ? 'bg-indigo-600 text-white'
+                  ? "bg-indigo-600 text-white"
                   : isPast
-                  ? 'bg-indigo-900 text-indigo-300'
-                  : 'bg-gray-800 text-gray-500'
+                    ? "bg-indigo-900 text-indigo-300"
+                    : "bg-gray-800 text-gray-500"
               }`}
             >
               {round}

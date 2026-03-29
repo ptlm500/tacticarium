@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { gamesApi } from '../api/games';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { gamesApi } from "../api/games";
 
 export function JoinRedirect() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!code) return;
     gamesApi
       .join(code)
       .then(({ id }) => navigate(`/game/${id}/setup`))
-      .catch(() => setError('Failed to join game. Invalid or expired code.'));
+      .catch(() => setError("Failed to join game. Invalid or expired code."));
   }, [code, navigate]);
 
   if (error) {
