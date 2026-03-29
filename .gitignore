@@ -1,6 +1,6 @@
 # Dependencies
 frontend/node_modules/
-scraper/node_modules/
+node_modules/
 
 # Build output
 frontend/dist/
@@ -35,3 +35,6 @@ pgdata/
 # Seed data
 Factions.csv
 Stratagems.csv
+
+# Claude
+.claude/settings.local.json

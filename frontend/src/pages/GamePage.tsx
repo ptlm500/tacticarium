@@ -200,8 +200,8 @@ export function GamePage() {
           isMyTurn ? 'bg-indigo-900' : 'bg-gray-800'
         }`}
       >
-        Round {gameState.currentRound} —{' '}
-        {isMyTurn ? 'Your' : `${opponent?.username}'s`}{' '}
+        Battle Round {gameState.currentRound} —{' '}
+        {isMyTurn ? 'Your' : `${opponent?.username}'s`} Turn —{' '}
         {PHASE_LABELS[gameState.currentPhase]} Phase
       </div>
 
@@ -214,7 +214,7 @@ export function GamePage() {
 
       {/* Round & Phase */}
       <div className="px-4 py-3 space-y-2 border-b border-gray-800">
-        <RoundIndicator currentRound={gameState.currentRound} maxRounds={5} />
+        <RoundIndicator currentRound={gameState.currentRound} currentTurn={gameState.currentTurn} maxRounds={5} />
         <PhaseTracker
           currentPhase={gameState.currentPhase}
           phases={PHASE_ORDER}

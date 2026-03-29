@@ -60,6 +60,7 @@ export interface GameState {
   inviteCode: string;
   status: GameStatus;
   currentRound: number;
+  currentTurn: number;
   currentPhase: Phase;
   activePlayer: number;
   firstTurnPlayer: number;

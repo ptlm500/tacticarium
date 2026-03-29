@@ -233,16 +233,31 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 		e.state.Players[0].Ready && e.state.Players[1].Ready {
 		e.state.Status = StatusActive
 		e.state.CurrentRound = 1
+		e.state.CurrentTurn = 1
 		e.state.CurrentPhase = PhaseCommand
-		e.state.ActivePlayer = e.state.FirstTurnPlayer
-		if e.state.ActivePlayer == 0 {
-			e.state.ActivePlayer = 1
+		if e.state.FirstTurnPlayer == 0 {
+			e.state.FirstTurnPlayer = 1
 		}
+		e.state.ActivePlayer = e.state.FirstTurnPlayer
 
 		events = append(events, GameEvent{
 			Type: EventGameStart,
 			Data: map[string]any{"round": 1, "firstPlayer": e.state.ActivePlayer},
 		})
+
+		// Both players gain 1 CP at the start of battle round 1
+		for _, p := range e.state.Players {
+			if p != nil {
+				p.CP += CPPerCommandPhase
+				events = append(events, GameEvent{
+					Type:         EventCPGain,
+					PlayerNumber: p.PlayerNumber,
+					Round:        1,
+					Phase:        PhaseCommand,
+					Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
+				})
+			}
+		}
 	}
 
 	return events, nil
@@ -265,27 +280,32 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 		// Switch active player
 		otherPlayer := 3 - e.state.ActivePlayer
 		if e.state.ActivePlayer != e.state.FirstTurnPlayer {
-			// Both players have had their turn, advance round
+			// Second player just finished — advance to next battle round
 			e.state.CurrentRound++
 			if e.state.CurrentRound > MaxRounds {
 				return e.endGame(events)
 			}
+			e.state.CurrentTurn = 1
+
+			// Both players gain 1 CP at the start of each new battle round
+			for _, p := range e.state.Players {
+				if p != nil {
+					p.CP += CPPerCommandPhase
+					events = append(events, GameEvent{
+						Type:         EventCPGain,
+						PlayerNumber: p.PlayerNumber,
+						Round:        e.state.CurrentRound,
+						Phase:        PhaseCommand,
+						Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
+					})
+				}
+			}
+		} else {
+			// First player just finished — second player's turn begins
+			e.state.CurrentTurn = 2
 		}
 		e.state.ActivePlayer = otherPlayer
 		e.state.CurrentPhase = PhaseCommand
-
-		// Auto CP gain for command phase (rounds 2+)
-		if ShouldGainCP(e.state.CurrentRound) {
-			activePlayer := e.state.GetPlayer(e.state.ActivePlayer)
-			activePlayer.CP += CPPerCommandPhase
-			events = append(events, GameEvent{
-				Type:         EventCPGain,
-				PlayerNumber: e.state.ActivePlayer,
-				Round:        e.state.CurrentRound,
-				Phase:        PhaseCommand,
-				Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": activePlayer.CP},
-			})
-		}
 	} else {
 		e.state.CurrentPhase = nextPhase
 	}

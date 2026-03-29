@@ -81,6 +81,7 @@ type GameState struct {
 	InviteCode      string          `json:"inviteCode"`
 	Status          GameStatus      `json:"status"`
 	CurrentRound    int             `json:"currentRound"`
+	CurrentTurn     int             `json:"currentTurn"`
 	CurrentPhase    Phase           `json:"currentPhase"`
 	ActivePlayer    int             `json:"activePlayer"`
 	FirstTurnPlayer int             `json:"firstTurnPlayer"`

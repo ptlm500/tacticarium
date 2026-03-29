@@ -18,9 +18,9 @@ const (
 )
 
 // ShouldGainCP returns true if CP should be auto-gained this round.
-// Players gain 1 CP at the start of their command phase from round 2 onward.
+// Both players gain 1 CP at the start of each Command Phase (all rounds).
 func ShouldGainCP(round int) bool {
-	return round >= 2
+	return round >= 1
 }
 
 func NextPhase(current Phase) (Phase, bool) {
