@@ -288,8 +288,10 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 			e.state.CurrentTurn = 1
 
 			// Both players gain 1 CP at the start of each new battle round
+			// and reset the per-round additional CP cap
 			for _, p := range e.state.Players {
 				if p != nil {
+					p.CPGainedThisRound = 0
 					p.CP += CPPerCommandPhase
 					events = append(events, GameEvent{
 						Type:         EventCPGain,
@@ -332,12 +334,19 @@ func (e *Engine) applyAdjustCP(action GameAction) ([]GameEvent, error) {
 	}
 
 	delta := intFromData(action.Data, "delta")
+	// Positive adjustments are subject to the per-round CP gain cap
+	if delta > 0 && player.CPGainedThisRound >= 1 {
+		return nil, fmt.Errorf("cannot gain more than 1 additional CP per battle round")
+	}
 	newCP := player.CP + delta
 	if newCP < 0 {
 		return nil, fmt.Errorf("insufficient CP")
 	}
 
 	player.CP = newCP
+	if delta > 0 {
+		player.CPGainedThisRound++
+	}
 
 	return []GameEvent{{
 		Type:         EventCPAdjust,

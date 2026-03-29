@@ -229,7 +229,7 @@ export function GamePage() {
             {myPlayer.username} — {myPlayer.factionName}
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <CPCounter cp={myPlayer.cp} onAdjust={handleAdjustCP} />
+            <CPCounter cp={myPlayer.cp} canGainCP={myPlayer.cpGainedThisRound < 1} onAdjust={handleAdjustCP} />
             <VPCounter
               vpPrimary={myPlayer.vpPrimary}
               vpSecondary={myPlayer.vpSecondary}
@@ -270,6 +270,7 @@ export function GamePage() {
           deckSize={myPlayer.tacticalDeck?.length ?? 0}
           currentRound={gameState.currentRound}
           currentCP={myPlayer.cp}
+          canGainCP={myPlayer.cpGainedThisRound < 1}
           onAchieve={handleAchieveSecondary}
           onDiscard={handleDiscardSecondary}
           onNewOrders={handleNewOrders}

@@ -101,7 +101,7 @@ Beyond the automatic Command Phase gain, players can gain at most 1 additional C
 - If granted, increment `player.CPGainedThisRound`.
 
 **`backend/internal/game/engine.go` — `applyAdjustCP()`:**
-- Manual adjustments (`adjust_cp`) are **exempt** from this cap — they are for error correction.
+- Manual adjustments (`adjust_cp`) are not exempt from this cap
 
 **Any other future CP-granting mechanics** should check and increment `CPGainedThisRound`.
 

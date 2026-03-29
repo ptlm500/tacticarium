@@ -9,6 +9,7 @@ interface Props {
   deckSize: number;
   currentRound: number;
   currentCP: number;
+  canGainCP: boolean;
   onAchieve: (secondaryId: string, vpScored: number) => void;
   onDiscard: (secondaryId: string, free: boolean) => void;
   onNewOrders: (discardSecondaryId: string) => void;
@@ -24,6 +25,7 @@ export function SecondaryPanel({
   deckSize,
   currentRound,
   currentCP,
+  canGainCP,
   onAchieve,
   onDiscard,
   onNewOrders,
@@ -95,10 +97,11 @@ export function SecondaryPanel({
                       {currentRound < 5 && (
                         <button
                           onClick={() => onDiscard(s.id, false)}
-                          className="bg-teal-800 hover:bg-teal-700 text-white text-xs px-3 py-1 rounded transition-colors"
-                          title="End-of-turn discard: gain 1 CP"
+                          disabled={!canGainCP}
+                          className="bg-teal-800 hover:bg-teal-700 disabled:opacity-50 text-white text-xs px-3 py-1 rounded transition-colors"
+                          title={canGainCP ? 'End-of-turn discard: gain 1 CP' : 'CP gain cap reached this battle round'}
                         >
-                          Discard +1CP
+                          {canGainCP ? 'Discard +1CP' : 'Discard (CP capped)'}
                         </button>
                       )}
                       <button

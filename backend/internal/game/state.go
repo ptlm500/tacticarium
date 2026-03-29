@@ -67,6 +67,7 @@ type PlayerState struct {
 	ActiveSecondaries    []ActiveSecondary `json:"activeSecondaries"`
 	AchievedSecondaries  []ActiveSecondary `json:"achievedSecondaries"`
 	DiscardedSecondaries []ActiveSecondary `json:"discardedSecondaries"`
+	CPGainedThisRound    int               `json:"cpGainedThisRound"`
 	IsChallenger         bool              `json:"isChallenger"`
 	ChallengerCardID     string            `json:"challengerCardId,omitempty"`
 	AdaptOrDieUses       int               `json:"adaptOrDieUses"`

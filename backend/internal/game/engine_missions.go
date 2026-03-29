@@ -269,14 +269,17 @@ func (e *Engine) applyDiscardSecondary(action GameAction) ([]GameEvent, error) {
 	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
 	player.DiscardedSecondaries = append(player.DiscardedSecondaries, discarded)
 
-	// End-of-turn discard grants 1CP (except round 5); free discard grants nothing
+	// End-of-turn discard grants 1CP (except round 5); free discard grants nothing.
+	// Players can only gain a maximum of 1 additional CP per battle round beyond
+	// the automatic Command Phase gain.
 	free := false
 	if v, ok := action.Data["free"].(bool); ok {
 		free = v
 	}
 	cpGained := 0
-	if !free && e.state.CurrentRound < MaxRounds {
+	if !free && e.state.CurrentRound < MaxRounds && player.CPGainedThisRound < 1 {
 		player.CP++
+		player.CPGainedThisRound++
 		cpGained = 1
 	}
 

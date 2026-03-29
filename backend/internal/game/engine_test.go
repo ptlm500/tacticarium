@@ -1497,6 +1497,188 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	}
 }
 
+// --- CP Gain Cap Tests ---
+
+func TestDiscardSecondary_CPCappedAt1PerRound(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 3
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 0
+	state.Players[0].CPGainedThisRound = 0
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondary("s1", "Sec 1"),
+		makeActiveSecondary("s2", "Sec 2"),
+	}
+	e := NewEngine(state)
+
+	// First discard: should gain 1 CP
+	e.Apply(GameAction{
+		Type:         ActionDiscardSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1"},
+	})
+	if state.Players[0].CP != 1 {
+		t.Fatalf("expected 1 CP after first discard, got %d", state.Players[0].CP)
+	}
+	if state.Players[0].CPGainedThisRound != 1 {
+		t.Fatalf("expected CPGainedThisRound=1, got %d", state.Players[0].CPGainedThisRound)
+	}
+
+	// Second discard: should NOT gain CP (cap reached)
+	e.Apply(GameAction{
+		Type:         ActionDiscardSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s2"},
+	})
+	if state.Players[0].CP != 1 {
+		t.Fatalf("expected still 1 CP after second discard (capped), got %d", state.Players[0].CP)
+	}
+}
+
+func TestDiscardSecondary_CPCapResetsNextRound(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 2
+	state.CurrentTurn = 1
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 0
+	state.Players[0].CPGainedThisRound = 1 // already gained 1 this round
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondary("s1", "Sec 1"),
+	}
+	state.Players[0].TacticalDeck = makeDeck(5)
+	e := NewEngine(state)
+
+	// Discard in round 2 should not gain CP (cap already reached)
+	e.Apply(GameAction{
+		Type:         ActionDiscardSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1"},
+	})
+	if state.Players[0].CP != 0 {
+		t.Fatalf("expected 0 CP (cap hit), got %d", state.Players[0].CP)
+	}
+
+	// Play through rest of round 2 to trigger round 3
+	// Player 1 finishes their turn (already past some phases, set to fight)
+	state.CurrentPhase = PhaseFight
+	e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+	// Player 2's full turn
+	for range 5 {
+		e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+	}
+
+	// Now in round 3 — CPGainedThisRound should be reset
+	if state.CurrentRound != 3 {
+		t.Fatalf("expected round 3, got %d", state.CurrentRound)
+	}
+	if state.Players[0].CPGainedThisRound != 0 {
+		t.Fatalf("expected CPGainedThisRound reset to 0, got %d", state.Players[0].CPGainedThisRound)
+	}
+}
+
+func TestDiscardSecondary_FreeDiscardDoesNotCountTowardCap(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 3
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 0
+	state.Players[0].CPGainedThisRound = 0
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondary("s1", "Sec 1"),
+		makeActiveSecondary("s2", "Sec 2"),
+	}
+	e := NewEngine(state)
+
+	// Free discard: no CP, should not affect cap
+	e.Apply(GameAction{
+		Type:         ActionDiscardSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "free": true},
+	})
+	if state.Players[0].CPGainedThisRound != 0 {
+		t.Fatalf("free discard should not affect CPGainedThisRound, got %d", state.Players[0].CPGainedThisRound)
+	}
+
+	// Normal discard after free: should still gain CP
+	e.Apply(GameAction{
+		Type:         ActionDiscardSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s2"},
+	})
+	if state.Players[0].CP != 1 {
+		t.Fatalf("expected 1 CP after normal discard, got %d", state.Players[0].CP)
+	}
+}
+
+func TestAdjustCP_PositiveSubjectToCap(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 0
+	state.Players[0].CPGainedThisRound = 1 // cap already reached
+	e := NewEngine(state)
+
+	// Positive adjust should be blocked by cap
+	_, err := e.Apply(GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": 1},
+	})
+	if err == nil {
+		t.Fatal("expected error when CP gain cap reached")
+	}
+	if state.Players[0].CP != 0 {
+		t.Fatalf("expected CP unchanged at 0, got %d", state.Players[0].CP)
+	}
+}
+
+func TestAdjustCP_NegativeNotAffectedByCap(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 5
+	state.Players[0].CPGainedThisRound = 1 // cap reached
+	e := NewEngine(state)
+
+	// Negative adjust (spending) should always work
+	_, err := e.Apply(GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": -2},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].CP != 3 {
+		t.Fatalf("expected CP=3, got %d", state.Players[0].CP)
+	}
+}
+
+func TestAdjustCP_PositiveCountsTowardCap(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 0
+	state.Players[0].CPGainedThisRound = 0
+	e := NewEngine(state)
+
+	// First positive adjust succeeds
+	_, err := e.Apply(GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].CPGainedThisRound != 1 {
+		t.Fatalf("expected CPGainedThisRound=1, got %d", state.Players[0].CPGainedThisRound)
+	}
+
+	// Second positive adjust blocked
+	_, err = e.Apply(GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": 1},
+	})
+	if err == nil {
+		t.Fatal("expected error on second positive adjust")
+	}
+}
+
 // --- Rules helpers ---
 
 func TestClampVP(t *testing.T) {

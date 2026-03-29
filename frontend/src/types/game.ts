@@ -50,6 +50,7 @@ export interface PlayerState {
   activeSecondaries: ActiveSecondary[];
   achievedSecondaries: ActiveSecondary[];
   discardedSecondaries: ActiveSecondary[];
+  cpGainedThisRound: number;
   isChallenger: boolean;
   challengerCardId?: string;
   adaptOrDieUses: number;
