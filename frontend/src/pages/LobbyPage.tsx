@@ -13,7 +13,9 @@ export function LobbyPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    gamesApi.list().then((g) => setGames(g || [])).catch(() => {});
+    gamesApi.list().then((g) => setGames(g || [])).catch(() => {
+      setError('Failed to load your games');
+    });
   }, []);
 
   const handleCreate = async () => {

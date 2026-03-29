@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext, useAuthProvider, useAuth } from './hooks/useAuth';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginPage } from './pages/LoginPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { GameSetupPage } from './pages/GameSetupPage';
@@ -30,6 +31,7 @@ function App() {
   const auth = useAuthProvider();
 
   return (
+    <ErrorBoundary>
     <AuthContext.Provider value={auth}>
       <BrowserRouter>
         <Routes>
@@ -78,6 +80,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
+    </ErrorBoundary>
   );
 }
 

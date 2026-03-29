@@ -8,9 +8,14 @@ export function GameHistoryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [games, setGames] = useState<GameSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    gamesApi.getHistory().then(setGames).catch(() => {});
+    gamesApi.getHistory()
+      .then(setGames)
+      .catch(() => setError('Failed to load game history'))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -26,7 +31,13 @@ export function GameHistoryPage() {
       </header>
 
       <main className="max-w-md mx-auto p-6">
-        {games.length === 0 ? (
+        {error ? (
+          <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded text-center">
+            {error}
+          </div>
+        ) : loading ? (
+          <p className="text-gray-500 text-center">Loading...</p>
+        ) : games.length === 0 ? (
           <p className="text-gray-500 text-center">No completed games yet.</p>
         ) : (
           <div className="space-y-3">
