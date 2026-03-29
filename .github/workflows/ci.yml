@@ -23,6 +23,8 @@ jobs:
           node-version: 'lts'
           cache: true
           run-install: true
+          working-directory: frontend
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Type check
         run: vp check
@@ -70,4 +72,3 @@ jobs:
       - name: Run tests
         working-directory: backend
         run: go test ./... -v -timeout 120s
-
