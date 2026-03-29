@@ -20,8 +20,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    let message = `Request failed: ${res.status}`;
+    try {
+      const body = await res.json();
+      message = body.error || body.message || message;
+    } catch {
+      const text = await res.text();
+      if (text) message = text;
+    }
+    throw new Error(message);
   }
 
   return res.json();

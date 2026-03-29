@@ -37,10 +37,13 @@ export function GamePage() {
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
   const isMyTurn = myPlayer?.playerNumber === gameState?.activePlayer;
 
+  const [loadError, setLoadError] = useState('');
+
   // Load stratagems for player's faction
   useEffect(() => {
     if (myPlayer?.factionId) {
-      factionsApi.getStratagems(myPlayer.factionId).then(setStratagems);
+      factionsApi.getStratagems(myPlayer.factionId).then(setStratagems)
+        .catch(() => setLoadError('Failed to load stratagems'));
     }
   }, [myPlayer?.factionId]);
 
@@ -50,7 +53,7 @@ export function GamePage() {
       missionsApi.listMissions(gameState.missionPackId).then((missions) => {
         const m = missions.find((m) => m.id === gameState.missionId);
         setCurrentMission(m ?? null);
-      });
+      }).catch(() => setLoadError('Failed to load mission data'));
     }
   }, [gameState?.missionPackId, gameState?.missionId]);
 
@@ -205,10 +208,15 @@ export function GamePage() {
         {PHASE_LABELS[gameState.currentPhase]} Phase
       </div>
 
-      {/* Error Banner */}
+      {/* Error Banners */}
       {error && (
         <div className="bg-red-900/50 text-red-200 text-center py-2 text-sm">
           {error}
+        </div>
+      )}
+      {loadError && (
+        <div className="bg-red-900/50 border border-red-700 text-red-200 text-center py-2 text-sm">
+          {loadError}
         </div>
       )}
 

@@ -34,12 +34,15 @@ export function GameSetupPage() {
   const [secondaries, setSecondaries] = useState<Secondary[]>([]);
   const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    factionsApi.list().then(setFactions);
-    missionsApi.listMissions(PACK_ID).then(setMissions);
-    missionsApi.listRules(PACK_ID).then(setRules);
-    missionsApi.listSecondaries(PACK_ID).then(setSecondaries);
+    Promise.all([
+      factionsApi.list().then(setFactions),
+      missionsApi.listMissions(PACK_ID).then(setMissions),
+      missionsApi.listRules(PACK_ID).then(setRules),
+      missionsApi.listSecondaries(PACK_ID).then(setSecondaries),
+    ]).catch(() => setLoadError('Failed to load game data. Please refresh the page.'));
   }, []);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
@@ -51,7 +54,8 @@ export function GameSetupPage() {
   // Load detachments when faction changes
   useEffect(() => {
     if (myPlayer?.factionId) {
-      factionsApi.getDetachments(myPlayer.factionId).then(setDetachments);
+      factionsApi.getDetachments(myPlayer.factionId).then(setDetachments)
+        .catch(() => setLoadError('Failed to load detachments'));
     } else {
       setDetachments([]);
     }
@@ -199,6 +203,12 @@ export function GameSetupPage() {
       </header>
 
       <main className="max-w-md mx-auto p-6 space-y-6">
+        {loadError && (
+          <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded">
+            {loadError}
+          </div>
+        )}
+
         {/* Faction Selection */}
         <section>
           <h2 className="text-lg font-semibold mb-3">Your Faction</h2>
