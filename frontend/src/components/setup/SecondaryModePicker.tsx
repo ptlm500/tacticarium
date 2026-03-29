@@ -28,6 +28,7 @@ function secondaryToActive(s: Secondary): ActiveSecondary {
     description: s.description,
     isFixed: s.isFixed,
     maxVp: s.maxVp,
+    scoringOptions: s.scoringOptions,
   };
 }
 
