@@ -22,6 +22,12 @@ export interface Mission {
   scoringTiming: string;
 }
 
+export interface ScoringOption {
+  label: string;
+  vp: number;
+  mode?: string; // "fixed", "tactical", or undefined (both)
+}
+
 export interface Secondary {
   id: string;
   missionPackId: string;
@@ -30,6 +36,7 @@ export interface Secondary {
   description: string;
   maxVp: number;
   isFixed: boolean;
+  scoringOptions: ScoringOption[];
 }
 
 export interface MissionRule {

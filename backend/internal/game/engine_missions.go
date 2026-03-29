@@ -224,6 +224,23 @@ func (e *Engine) applyAchieveSecondary(action GameAction) ([]GameEvent, error) {
 	}
 
 	achieved := player.ActiveSecondaries[idx]
+
+	// Validate vpScored against scoring options
+	if len(achieved.ScoringOptions) > 0 && vpScored > 0 {
+		valid := false
+		for _, opt := range achieved.ScoringOptions {
+			if opt.Mode != "" && opt.Mode != player.SecondaryMode {
+				continue
+			}
+			if opt.VP == vpScored {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return nil, fmt.Errorf("invalid VP score %d: does not match any scoring option", vpScored)
+		}
+	}
 	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
 	player.AchievedSecondaries = append(player.AchievedSecondaries, achieved)
 
@@ -535,11 +552,12 @@ func activeSecondariesFromData(data map[string]any, key string) ([]ActiveSeconda
 			return nil, fmt.Errorf("expected object in %s array", key)
 		}
 		s := ActiveSecondary{
-			ID:          strFromMapAny(m, "id"),
-			Name:        strFromMapAny(m, "name"),
-			Description: strFromMapAny(m, "description"),
-			IsFixed:     boolFromMapAny(m, "isFixed"),
-			MaxVP:       intFromMapAny(m, "maxVp"),
+			ID:             strFromMapAny(m, "id"),
+			Name:           strFromMapAny(m, "name"),
+			Description:    strFromMapAny(m, "description"),
+			IsFixed:        boolFromMapAny(m, "isFixed"),
+			MaxVP:          intFromMapAny(m, "maxVp"),
+			ScoringOptions: scoringOptionsFromMapAny(m, "scoringOptions"),
 		}
 		result = append(result, s)
 	}
@@ -556,11 +574,12 @@ func singleActiveSecondaryFromData(data map[string]any, key string) (ActiveSecon
 		return ActiveSecondary{}, fmt.Errorf("expected object for %s", key)
 	}
 	return ActiveSecondary{
-		ID:          strFromMapAny(m, "id"),
-		Name:        strFromMapAny(m, "name"),
-		Description: strFromMapAny(m, "description"),
-		IsFixed:     boolFromMapAny(m, "isFixed"),
-		MaxVP:       intFromMapAny(m, "maxVp"),
+		ID:             strFromMapAny(m, "id"),
+		Name:           strFromMapAny(m, "name"),
+		Description:    strFromMapAny(m, "description"),
+		IsFixed:        boolFromMapAny(m, "isFixed"),
+		MaxVP:          intFromMapAny(m, "maxVp"),
+		ScoringOptions: scoringOptionsFromMapAny(m, "scoringOptions"),
 	}, nil
 }
 
@@ -586,4 +605,28 @@ func intFromMapAny(m map[string]any, key string) int {
 		return v
 	}
 	return 0
+}
+
+func scoringOptionsFromMapAny(m map[string]any, key string) []ScoringOption {
+	raw, ok := m[key]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	opts := make([]ScoringOption, 0, len(items))
+	for _, item := range items {
+		om, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		opts = append(opts, ScoringOption{
+			Label: strFromMapAny(om, "label"),
+			VP:    intFromMapAny(om, "vp"),
+			Mode:  strFromMapAny(om, "mode"),
+		})
+	}
+	return opts
 }

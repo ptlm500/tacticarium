@@ -1787,3 +1787,125 @@ func TestDrawChallengerCard_RequiresCommandPhase(t *testing.T) {
 		t.Fatal("expected error when drawing challenger card outside Command Phase")
 	}
 }
+
+// --- Scoring Options Validation ---
+
+func makeActiveSecondaryWithOptions(id, name string, opts []ScoringOption) ActiveSecondary {
+	return ActiveSecondary{
+		ID:             id,
+		Name:           name,
+		Description:    "desc",
+		MaxVP:          20,
+		ScoringOptions: opts,
+	}
+}
+
+func TestAchieveSecondary_ValidScoringOption(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondaryWithOptions("s1", "Behind Enemy Lines", []ScoringOption{
+			{Label: "1 unit in enemy zone", VP: 3},
+			{Label: "2+ units in enemy zone", VP: 4},
+		}),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(GameAction{
+		Type:         ActionAchieveSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "vpScored": 4},
+	})
+	if err != nil {
+		t.Fatalf("expected valid scoring option to be accepted, got: %v", err)
+	}
+	if state.Players[0].VPSecondary != 4 {
+		t.Fatalf("expected 4 VP, got %d", state.Players[0].VPSecondary)
+	}
+}
+
+func TestAchieveSecondary_InvalidScoringOption(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondaryWithOptions("s1", "Behind Enemy Lines", []ScoringOption{
+			{Label: "1 unit in enemy zone", VP: 3},
+			{Label: "2+ units in enemy zone", VP: 4},
+		}),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(GameAction{
+		Type:         ActionAchieveSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid VP score")
+	}
+}
+
+func TestAchieveSecondary_ModeFiltering(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondaryWithOptions("s1", "Assassination", []ScoringOption{
+			{Label: "W4+ char", VP: 4, Mode: "fixed"},
+			{Label: "W<4 char", VP: 3, Mode: "fixed"},
+			{Label: "1+ chars destroyed", VP: 5, Mode: "tactical"},
+		}),
+	}
+	e := NewEngine(state)
+
+	// VP=5 should work (tactical option)
+	_, err := e.Apply(GameAction{
+		Type:         ActionAchieveSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
+	})
+	if err != nil {
+		t.Fatalf("expected tactical VP=5 to be accepted, got: %v", err)
+	}
+}
+
+func TestAchieveSecondary_ModeFiltering_RejectsWrongMode(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondaryWithOptions("s1", "Assassination", []ScoringOption{
+			{Label: "W4+ char", VP: 4, Mode: "fixed"},
+			{Label: "W<4 char", VP: 3, Mode: "fixed"},
+			{Label: "1+ chars destroyed", VP: 5, Mode: "tactical"},
+		}),
+	}
+	e := NewEngine(state)
+
+	// VP=4 should be rejected (fixed-only option, player is in tactical mode)
+	_, err := e.Apply(GameAction{
+		Type:         ActionAchieveSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "vpScored": 4},
+	})
+	if err == nil {
+		t.Fatal("expected error: VP=4 is a fixed-only option but player is in tactical mode")
+	}
+}
+
+func TestAchieveSecondary_NoOptionsSkipsValidation(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondary("s1", "Legacy Secondary"),
+	}
+	e := NewEngine(state)
+
+	// With no scoring options, any VP should be accepted
+	_, err := e.Apply(GameAction{
+		Type:         ActionAchieveSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "s1", "vpScored": 7},
+	})
+	if err != nil {
+		t.Fatalf("expected no validation when scoring options are empty, got: %v", err)
+	}
+}

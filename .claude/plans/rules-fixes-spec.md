@@ -260,28 +260,123 @@ The New Orders stratagem is used at the end of the Command Phase.
 
 ---
 
+## 9. Secondary Scoring Options — Multiple VP Criteria Per Secondary
+
+### Problem
+Secondaries currently have a single `maxVp` field. Fixed secondaries show only an "Achieve +maxVp" button, and tactical secondaries likewise. But most secondaries have **multiple scoring criteria** with different VP values — e.g., Assassination awards 4VP for a W4+ character destroyed and 3VP for a W<4 character. Some secondaries also have **different criteria depending on mode** (fixed vs tactical).
+
+### Rules
+Each secondary mission card lists specific scoring conditions, each with its own VP reward. Some conditions are mode-specific:
+- **Fixed mode:** Scored each time a condition is met (cumulative), up to a per-game cap (`maxVp`).
+- **Tactical mode:** Typically scored once at end of turn (achieve), with the highest applicable condition.
+
+### Data Model
+
+**New type — `ScoringOption`:**
+```go
+type ScoringOption struct {
+    Label string `json:"label"`
+    VP    int    `json:"vp"`
+    Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
+}
+```
+
+- `Label`: Short description of the condition (e.g., "W4+ CHARACTER destroyed").
+- `VP`: Victory points awarded when this condition is met.
+- `Mode`: If `"fixed"`, only shown in fixed mode. If `"tactical"`, only shown in tactical mode. If empty/omitted, shown in both modes.
+
+### Changes
+
+**`backend/internal/models/models.go` — `Secondary`:**
+- Add field: `ScoringOptions []ScoringOption `json:"scoringOptions"``
+
+**`backend/internal/game/state.go` — `ActiveSecondary`:**
+- Add field: `ScoringOptions []ScoringOption `json:"scoringOptions"``
+
+**`backend/internal/db/migrations/006_secondary_scoring_options.sql`:**
+```sql
+-- +goose Up
+ALTER TABLE secondaries ADD COLUMN IF NOT EXISTS scoring_options JSONB NOT NULL DEFAULT '[]';
+```
+
+**`backend/internal/seed/missions.go`:**
+- Add `secondaryScoringOptions()` map (similar to `missionScoringRules()`) returning `map[string][]ScoringOption`.
+- Update secondary INSERT to include `scoring_options` column.
+- Populate scoring options for all 19 Chapter Approved 2025-26 secondaries:
+
+| Secondary | Scoring Options |
+|-----------|----------------|
+| A Tempting Target | 5VP (both) |
+| Area Denial | 2VP (within 3", no enemy within 3"); 5VP (within 3", no enemy within 6") |
+| Assassination | 4VP W4+ char (fixed); 3VP W<4 char (fixed); 5VP 1+ chars destroyed (tactical) |
+| Behind Enemy Lines | 3VP (1 unit in enemy zone); 4VP (2+ units in enemy zone) |
+| Bring It Down | 2VP per MONSTER/VEHICLE (fixed); +2VP if W15+ (fixed); +2VP if W20+ (fixed); 4VP 1+ destroyed (tactical) |
+| Cleanse | 2VP (1 objective cleansed); 4VP (2+ cleansed, fixed); 5VP (2+ cleansed, tactical) |
+| Cull the Horde | 5VP per 13+ model unit (fixed); 5VP 1+ destroyed (tactical) |
+| Defend Stronghold | 3VP (both) |
+| Display of Might | 4VP (both) |
+| Engage on All Fronts | 1VP (2 quarters); 2VP (3 quarters); 4VP (4 quarters) |
+| Establish Locus | 2VP (locus near centre); 4VP (locus in enemy zone) |
+| Extend Battle Lines | 2VP (NML only); 4VP (deployment zone + NML) |
+| Marked for Death | 5VP (alpha target destroyed); 2VP (gamma target only) |
+| No Prisoners | 2VP per Bodyguard/non-char (fixed); 2VP per unit (tactical) |
+| Overwhelming Force | 3VP per unit destroyed near objective (both, up to 5VP) |
+| Recover Assets | 3VP (2 units); 5VP (3 units) |
+| Sabotage | 3VP (not in enemy zone); 6VP (in enemy zone) |
+| Secure No Man's Land | 2VP (1 NML objective); 5VP (2+ NML objectives) |
+| Storm Hostile Objective | 4VP (both) |
+
+**`backend/internal/handler/mission_handler.go` — `ListSecondaries()`:**
+- Update SELECT query to include `scoring_options`.
+- Scan `scoring_options` from JSONB into `[]ScoringOption`.
+
+**`backend/internal/game/engine_missions.go` — `applyAchieveSecondary()`:**
+- Validate that `vpScored` matches one of the secondary's `scoringOptions[].vp` values (filtered by the player's current mode). If no match, return an error.
+- Note: scoring options are stored on the `ActiveSecondary` in player state, so no DB lookup needed.
+
+**`frontend/src/types/mission.ts`:**
+- Add `ScoringOption` interface: `{ label: string; vp: number; mode?: string }`.
+- Add `scoringOptions: ScoringOption[]` to `Secondary`.
+
+**`frontend/src/types/game.ts` — `ActiveSecondary`:**
+- Add `scoringOptions: ScoringOption[]`.
+
+**`frontend/src/components/game/SecondaryPanel.tsx`:**
+- For tactical secondaries: replace single "Achieve +maxVp" button with one button per scoring option (filtered to `mode !== 'fixed'`).
+- For fixed secondaries: replace single "Score +maxVp" button with one button per scoring option (filtered to `mode !== 'tactical'`).
+
+**`frontend/src/components/game/ScoringPrompt.tsx`:**
+- `SecondaryReminder`: render scoring option buttons per active secondary instead of a single achieve button.
+- `FixedSecondaryReminder`: render scoring option buttons per fixed secondary instead of a free-text VP input.
+
+---
+
 ## Summary of Files to Modify
 
 ### Backend
 | File | Changes |
 |------|---------|
-| `game/state.go` | Add `CurrentTurn` to `GameState`; add `CPGainedThisRound` to `PlayerState` |
+| `game/state.go` | Add `CurrentTurn` to `GameState`; add `CPGainedThisRound` to `PlayerState`; add `ScoringOptions` to `ActiveSecondary` |
 | `game/rules.go` | Fix `ShouldGainCP` to include round 1 |
 | `game/engine.go` | Fix `FirstTurnPlayer` initialization; track `CurrentTurn`; grant CP to both players at round start; reset CP cap per round; grant CP at game start |
-| `game/engine_missions.go` | Enforce CP cap on discard; restrict draw/challenger/new-orders to command phase |
-| `models/models.go` | Add `ScoringTiming` to `Mission`; add `ScoringTiming` to `ScoringAction` |
-| `seed/missions.go` | Add `ScoringTiming` to `scoringAction` struct; populate timing for all missions |
+| `game/engine_missions.go` | Enforce CP cap on discard; restrict draw/challenger/new-orders to command phase; validate `vpScored` against scoring options in `applyAchieveSecondary` |
+| `models/models.go` | Add `ScoringTiming` to `Mission`; add `ScoringTiming` to `ScoringAction`; add `ScoringOption` type; add `ScoringOptions` to `Secondary` |
+| `seed/missions.go` | Add `ScoringTiming` to `scoringAction` struct; populate timing for all missions; add `secondaryScoringOptions()` map; populate scoring options for all secondaries |
+| `handler/mission_handler.go` | Update `ListSecondaries` to SELECT and scan `scoring_options` |
 | `db/migrations/005_*.sql` | Add `scoring_timing` column to `missions` table |
+| `db/migrations/006_*.sql` | Add `scoring_options` column to `secondaries` table |
 
 ### Frontend
 | File | Changes |
 |------|---------|
-| `types/game.ts` | Add `currentTurn` to `GameState` type |
-| `types/mission.ts` | Add `scoringTiming` to `Mission` and `ScoringAction` types |
+| `types/game.ts` | Add `currentTurn` to `GameState` type; add `ScoringOption` to `ActiveSecondary` |
+| `types/mission.ts` | Add `scoringTiming` to `Mission` and `ScoringAction` types; add `ScoringOption` type; add `scoringOptions` to `Secondary` |
 | `pages/GamePage.tsx` | Update turn banner to show round + turn; add scoring prompt logic before phase advance |
 | `components/game/RoundIndicator.tsx` | Show round and turn context (e.g., "Round 1 · Turn 1 of 2") |
-| `components/game/ScoringPrompt.tsx` | New component for scoring reminder modal |
+| `components/game/ScoringPrompt.tsx` | Scoring reminder modal; render per-option buttons for tactical and fixed secondaries |
+| `components/game/SecondaryPanel.tsx` | Render per-option achieve/score buttons instead of single maxVp button |
 | Challenger card UI | Only show during Command Phase |
 
 ### Migration
-- New migration `005_scoring_timing.sql` adding `scoring_timing` column to `missions` table.
+- Migration `005_scoring_timing.sql` adding `scoring_timing` column to `missions` table.
+- Migration `006_secondary_scoring_options.sql` adding `scoring_options` JSONB column to `secondaries` table.

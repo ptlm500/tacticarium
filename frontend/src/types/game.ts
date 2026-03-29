@@ -20,12 +20,19 @@ export interface SecondaryObjective {
   vpScored: number;
 }
 
+export interface ScoringOption {
+  label: string;
+  vp: number;
+  mode?: string; // "fixed", "tactical", or undefined (both)
+}
+
 export interface ActiveSecondary {
   id: string;
   name: string;
   description: string;
   isFixed: boolean;
   maxVp: number;
+  scoringOptions: ScoringOption[];
 }
 
 export interface PlayerState {

@@ -72,7 +72,7 @@ func (h *MissionHandler) ListSecondaries(w http.ResponseWriter, r *http.Request)
 	packID := chi.URLParam(r, "packId")
 
 	rows, err := h.db.Query(r.Context(),
-		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed
+		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options
 		 FROM secondaries WHERE mission_pack_id = $1 ORDER BY name`, packID)
 	if err != nil {
 		http.Error(w, "database error", http.StatusInternalServerError)
@@ -83,9 +83,14 @@ func (h *MissionHandler) ListSecondaries(w http.ResponseWriter, r *http.Request)
 	secondaries := make([]models.Secondary, 0)
 	for rows.Next() {
 		var s models.Secondary
-		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed); err != nil {
+		var optionsJSON []byte
+		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON); err != nil {
 			http.Error(w, "scan error", http.StatusInternalServerError)
 			return
+		}
+		json.Unmarshal(optionsJSON, &s.ScoringOptions)
+		if s.ScoringOptions == nil {
+			s.ScoringOptions = []models.ScoringOption{}
 		}
 		secondaries = append(secondaries, s)
 	}

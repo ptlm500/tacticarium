@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { ActiveSecondary } from '../../types/game';
+import { ActiveSecondary, ScoringOption } from '../../types/game';
+
+function filterOptions(options: ScoringOption[] | undefined, mode: string): ScoringOption[] {
+  if (!options || options.length === 0) return [];
+  return options.filter((o) => !o.mode || o.mode === mode);
+}
 
 interface Props {
   mode: string;
@@ -33,7 +38,6 @@ export function SecondaryPanel({
   onScoreFixedVP,
 }: Props) {
   const [expanded, setExpanded] = useState(true);
-  const [achieveVP, setAchieveVP] = useState<Record<string, number>>({});
 
   if (!mode) return null;
 
@@ -69,25 +73,17 @@ export function SecondaryPanel({
                   </p>
 
                   {mode === 'tactical' ? (
-                    <div className="flex gap-2">
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          min={1}
-                          max={s.maxVp}
-                          value={achieveVP[s.id] ?? s.maxVp}
-                          onChange={(e) =>
-                            setAchieveVP({ ...achieveVP, [s.id]: Number(e.target.value) })
-                          }
-                          className="w-12 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-center"
-                        />
+                    <div className="flex flex-wrap gap-2">
+                      {filterOptions(s.scoringOptions, 'tactical').map((opt, i) => (
                         <button
-                          onClick={() => onAchieve(s.id, achieveVP[s.id] ?? s.maxVp)}
+                          key={i}
+                          onClick={() => onAchieve(s.id, opt.vp)}
                           className="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded transition-colors"
+                          title={opt.label}
                         >
-                          Achieve
+                          {opt.label} +{opt.vp}VP
                         </button>
-                      </div>
+                      ))}
                       <button
                         onClick={() => onDiscard(s.id, true)}
                         className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-3 py-1 rounded transition-colors"
@@ -114,13 +110,17 @@ export function SecondaryPanel({
                       </button>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onScoreFixedVP(s.maxVp)}
-                        className="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded transition-colors"
-                      >
-                        Score {s.maxVp} VP
-                      </button>
+                    <div className="flex flex-wrap gap-2">
+                      {filterOptions(s.scoringOptions, 'fixed').map((opt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => onScoreFixedVP(opt.vp)}
+                          className="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded transition-colors"
+                          title={opt.label}
+                        >
+                          {opt.label} +{opt.vp}VP
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ScoringAction } from '../../types/mission';
 import { ActiveSecondary } from '../../types/game';
 
@@ -171,34 +170,43 @@ function SecondaryReminder({
       {activeSecondaries.length === 0 ? (
         <p className="text-xs text-emerald-300 mt-1">No active secondary missions.</p>
       ) : (
-        <div className="space-y-2 mt-2">
-          {activeSecondaries.map((s) => (
-            <div key={s.id} className="flex items-center justify-between gap-2">
-              <span className="text-xs text-white truncate">{s.name}</span>
-              <div className="flex gap-1 shrink-0">
-                <button
-                  onClick={() => onAchieve(s.id, s.maxVp)}
-                  className="bg-green-700 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors"
-                >
-                  Achieve +{s.maxVp}
-                </button>
-                <button
-                  onClick={() => onDiscard(s.id, true)}
-                  className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded transition-colors"
-                >
-                  Discard
-                </button>
-                {canGainCP && (
+        <div className="space-y-3 mt-2">
+          {activeSecondaries.map((s) => {
+            const opts = (s.scoringOptions ?? []).filter(
+              (o) => !o.mode || o.mode === 'tactical'
+            );
+            return (
+              <div key={s.id}>
+                <span className="text-xs text-white font-medium">{s.name}</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {opts.map((opt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => onAchieve(s.id, opt.vp)}
+                      className="bg-green-700 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors"
+                      title={opt.label}
+                    >
+                      {opt.label} +{opt.vp}
+                    </button>
+                  ))}
                   <button
-                    onClick={() => onDiscard(s.id, false)}
-                    className="bg-teal-800 hover:bg-teal-700 text-white text-xs px-2 py-1 rounded transition-colors"
+                    onClick={() => onDiscard(s.id, true)}
+                    className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded transition-colors"
                   >
-                    +1CP
+                    Discard
                   </button>
-                )}
+                  {canGainCP && (
+                    <button
+                      onClick={() => onDiscard(s.id, false)}
+                      className="bg-teal-800 hover:bg-teal-700 text-white text-xs px-2 py-1 rounded transition-colors"
+                    >
+                      +1CP
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -252,54 +260,29 @@ function FixedSecondaryReminder({
         Score Fixed Secondaries
       </h3>
       <div className="space-y-3 mt-2">
-        {secondaries.map((s) => (
-          <FixedSecondaryRow key={s.id} secondary={s} onScore={onScore} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function FixedSecondaryRow({
-  secondary,
-  onScore,
-}: {
-  secondary: ActiveSecondary;
-  onScore: (vp: number) => void;
-}) {
-  const [vp, setVp] = useState('');
-
-  const handleScore = () => {
-    const value = parseInt(vp, 10);
-    if (value > 0) {
-      onScore(value);
-      setVp('');
-    }
-  };
-
-  return (
-    <div>
-      <p className="text-xs text-white font-medium">{secondary.name}</p>
-      {secondary.description && (
-        <p className="text-xs text-emerald-300 mt-0.5">{secondary.description}</p>
-      )}
-      <div className="flex items-center gap-2 mt-1">
-        <input
-          type="number"
-          min="1"
-          value={vp}
-          onChange={(e) => setVp(e.target.value)}
-          placeholder="VP"
-          className="w-16 bg-gray-700 border border-gray-600 text-white text-xs px-2 py-1.5 rounded focus:outline-none focus:border-emerald-500"
-        />
-        <button
-          onClick={handleScore}
-          disabled={!vp || parseInt(vp, 10) <= 0}
-          className="bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs px-3 py-1.5 rounded transition-colors"
-        >
-          Score
-        </button>
-        <span className="text-xs text-gray-400">max {secondary.maxVp} VP total</span>
+        {secondaries.map((s) => {
+          const opts = (s.scoringOptions ?? []).filter(
+            (o) => !o.mode || o.mode === 'fixed'
+          );
+          return (
+            <div key={s.id}>
+              <p className="text-xs text-white font-medium">{s.name}</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {opts.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onScore(opt.vp)}
+                    className="bg-green-700 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors"
+                    title={opt.label}
+                  >
+                    {opt.label} +{opt.vp}VP
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">max {s.maxVp} VP total</p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -63,6 +63,7 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 
 	scoringRules := missionScoringRules()
 	scoringTimings := missionScoringTimings()
+	secondaryScoringOpts := secondaryScoringOptions()
 
 	for _, entry := range entries {
 		// Skip generic setup rules and entries without a pack prefix
@@ -114,11 +115,15 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 			if isFixed {
 				maxVP = 20
 			}
+			optionsJSON := []byte("[]")
+			if opts, ok := secondaryScoringOpts[entry.ID]; ok {
+				optionsJSON, _ = json.Marshal(opts)
+			}
 			_, err := pool.Exec(ctx,
-				`INSERT INTO secondaries (id, mission_pack_id, name, lore, description, max_vp, is_fixed)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7)
-				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, max_vp = $6, is_fixed = $7`,
-				entry.ID, packID, name, entry.Lore, entry.Body, maxVP, isFixed)
+				`INSERT INTO secondaries (id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, max_vp = $6, is_fixed = $7, scoring_options = $8`,
+				entry.ID, packID, name, entry.Lore, entry.Body, maxVP, isFixed, optionsJSON)
 			if err != nil {
 				return stats, fmt.Errorf("inserting secondary %s: %w", entry.ID, err)
 			}
@@ -299,6 +304,94 @@ func missionScoringRules() map[string][]scoringAction {
 			{Label: "1 Obj outside zone", VP: 5, MinRound: 2},
 			{Label: "2 Obj outside zone", VP: 10, MinRound: 2, Description: "Cumulative: 5+5"},
 			{Label: "2 Obj + more than opp", VP: 15, MinRound: 2, Description: "Cumulative: 5+5+5"},
+		},
+	}
+}
+
+type scoringOption struct {
+	Label string `json:"label"`
+	VP    int    `json:"vp"`
+	Mode  string `json:"mode,omitempty"`
+}
+
+func secondaryScoringOptions() map[string][]scoringOption {
+	ca := "secondary-mission-chapter-approved-2025-26-"
+	return map[string][]scoringOption{
+		ca + "a-tempting-target": {
+			{Label: "Control Tempting Target", VP: 5},
+		},
+		ca + "area-denial": {
+			{Label: "Within 3\", no enemy within 3\"", VP: 2},
+			{Label: "Within 3\", no enemy within 6\"", VP: 5},
+		},
+		ca + "assassination": {
+			{Label: "CHARACTER W4+ destroyed", VP: 4, Mode: "fixed"},
+			{Label: "CHARACTER W<4 destroyed", VP: 3, Mode: "fixed"},
+			{Label: "1+ CHARACTERs destroyed this turn", VP: 5, Mode: "tactical"},
+		},
+		ca + "behind-enemy-lines": {
+			{Label: "1 unit in enemy zone", VP: 3},
+			{Label: "2+ units in enemy zone", VP: 4},
+		},
+		ca + "bring-it-down": {
+			{Label: "MONSTER/VEHICLE destroyed", VP: 2, Mode: "fixed"},
+			{Label: "MONSTER/VEHICLE W15+ destroyed", VP: 4, Mode: "fixed"},
+			{Label: "MONSTER/VEHICLE W20+ destroyed", VP: 6, Mode: "fixed"},
+			{Label: "1+ MONSTER/VEHICLE destroyed", VP: 4, Mode: "tactical"},
+		},
+		ca + "cleanse": {
+			{Label: "1 objective cleansed", VP: 2},
+			{Label: "2+ objectives cleansed", VP: 4, Mode: "fixed"},
+			{Label: "2+ objectives cleansed", VP: 5, Mode: "tactical"},
+		},
+		ca + "cull-the-horde": {
+			{Label: "INFANTRY 13+ destroyed", VP: 5, Mode: "fixed"},
+			{Label: "1+ INFANTRY 13+ destroyed", VP: 5, Mode: "tactical"},
+		},
+		ca + "defend-stronghold": {
+			{Label: "Control deployment zone objective", VP: 3},
+		},
+		ca + "display-of-might": {
+			{Label: "More units in No Man's Land", VP: 4},
+		},
+		ca + "engage-on-all-fronts": {
+			{Label: "2 table quarters", VP: 1},
+			{Label: "3 table quarters", VP: 2},
+			{Label: "4 table quarters", VP: 4},
+		},
+		ca + "establish-locus": {
+			{Label: "Locus within 6\" of centre", VP: 2},
+			{Label: "Locus in enemy deployment zone", VP: 4},
+		},
+		ca + "extend-battle-lines": {
+			{Label: "Control NML objective only", VP: 2},
+			{Label: "Control deployment + NML objectives", VP: 4},
+		},
+		ca + "marked-for-death": {
+			{Label: "Alpha Target destroyed", VP: 5},
+			{Label: "Gamma Target only destroyed", VP: 2},
+		},
+		ca + "no-prisoners": {
+			{Label: "Bodyguard/non-CHARACTER destroyed", VP: 2, Mode: "fixed"},
+			{Label: "Enemy unit destroyed", VP: 2, Mode: "tactical"},
+		},
+		ca + "overwhelming-force": {
+			{Label: "Unit near objective destroyed", VP: 3},
+		},
+		ca + "recover-assets": {
+			{Label: "2 units recovered assets", VP: 3},
+			{Label: "3 units recovered assets", VP: 5},
+		},
+		ca + "sabotage": {
+			{Label: "Sabotage outside enemy zone", VP: 3},
+			{Label: "Sabotage in enemy zone", VP: 6},
+		},
+		ca + "secure-no-mans-land": {
+			{Label: "1 NML objective", VP: 2},
+			{Label: "2+ NML objectives", VP: 5},
+		},
+		ca + "storm-hostile-objective": {
+			{Label: "Control hostile objective", VP: 4},
 		},
 	}
 }

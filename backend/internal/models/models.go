@@ -68,14 +68,21 @@ type MissionRule struct {
 	Description   string `json:"description"`
 }
 
+type ScoringOption struct {
+	Label string `json:"label"`
+	VP    int    `json:"vp"`
+	Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
+}
+
 type Secondary struct {
-	ID            string `json:"id"`
-	MissionPackID string `json:"missionPackId"`
-	Name          string `json:"name"`
-	Lore          string `json:"lore,omitempty"`
-	Description   string `json:"description"`
-	MaxVP         int    `json:"maxVp"`
-	IsFixed       bool   `json:"isFixed"`
+	ID             string          `json:"id"`
+	MissionPackID  string          `json:"missionPackId"`
+	Name           string          `json:"name"`
+	Lore           string          `json:"lore,omitempty"`
+	Description    string          `json:"description"`
+	MaxVP          int             `json:"maxVp"`
+	IsFixed        bool            `json:"isFixed"`
+	ScoringOptions []ScoringOption `json:"scoringOptions"`
 }
 
 type ChallengerCard struct {
