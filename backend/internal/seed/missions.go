@@ -62,6 +62,7 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 	}
 
 	scoringRules := missionScoringRules()
+	scoringTimings := missionScoringTimings()
 
 	for _, entry := range entries {
 		// Skip generic setup rules and entries without a pack prefix
@@ -82,11 +83,15 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 			if rules, ok := scoringRules[entry.ID]; ok {
 				rulesJSON, _ = json.Marshal(rules)
 			}
+			timing := "end_of_command_phase"
+			if t, ok := scoringTimings[entry.ID]; ok {
+				timing = t
+			}
 			_, err := pool.Exec(ctx,
-				`INSERT INTO missions (id, mission_pack_id, name, lore, description, scoring_rules)
-				 VALUES ($1, $2, $3, $4, $5, $6)
-				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, scoring_rules = $6`,
-				entry.ID, packID, name, entry.Lore, entry.Body, rulesJSON)
+				`INSERT INTO missions (id, mission_pack_id, name, lore, description, scoring_rules, scoring_timing)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7)
+				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, scoring_rules = $6, scoring_timing = $7`,
+				entry.ID, packID, name, entry.Lore, entry.Body, rulesJSON, timing)
 			if err != nil {
 				return stats, fmt.Errorf("inserting mission %s: %w", entry.ID, err)
 			}
@@ -231,10 +236,11 @@ type MissionSeedStats struct {
 }
 
 type scoringAction struct {
-	Label       string `json:"label"`
-	VP          int    `json:"vp"`
-	MinRound    int    `json:"minRound,omitempty"`
-	Description string `json:"description,omitempty"`
+	Label         string `json:"label"`
+	VP            int    `json:"vp"`
+	MinRound      int    `json:"minRound,omitempty"`
+	Description   string `json:"description,omitempty"`
+	ScoringTiming string `json:"scoringTiming,omitempty"`
 }
 
 func missionScoringRules() map[string][]scoringAction {
@@ -276,7 +282,7 @@ func missionScoringRules() map[string][]scoringAction {
 			{Label: "1 Objective controlled", VP: 4, MinRound: 2},
 			{Label: "2 Objectives controlled", VP: 8, MinRound: 2},
 			{Label: "3 Objectives controlled", VP: 12, MinRound: 2},
-			{Label: "Terraformed marker", VP: 1, MinRound: 2},
+			{Label: "Terraformed marker", VP: 1, MinRound: 2, ScoringTiming: "end_of_turn"},
 		},
 		"mission-chapter-approved-2025-26-unexploded-ordinance": {
 			{Label: "Hazard in enemy zone", VP: 8, MinRound: 2},
@@ -294,5 +300,23 @@ func missionScoringRules() map[string][]scoringAction {
 			{Label: "2 Obj outside zone", VP: 10, MinRound: 2, Description: "Cumulative: 5+5"},
 			{Label: "2 Obj + more than opp", VP: 15, MinRound: 2, Description: "Cumulative: 5+5+5"},
 		},
+	}
+}
+
+// missionScoringTimings returns the scoring timing for each mission.
+// Missions not listed here default to "end_of_command_phase".
+func missionScoringTimings() map[string]string {
+	return map[string]string{
+		// Chapter Approved 2025-26
+		"mission-chapter-approved-2025-26-take-and-hold":          "end_of_command_phase",
+		"mission-chapter-approved-2025-26-scorched-earth":         "end_of_command_phase",
+		"mission-chapter-approved-2025-26-purge-the-foe":          "end_of_battle_round",
+		"mission-chapter-approved-2025-26-the-ritual":             "end_of_command_phase",
+		"mission-chapter-approved-2025-26-supply-drop":            "end_of_command_phase",
+		"mission-chapter-approved-2025-26-burden-of-trust":        "end_of_command_phase",
+		"mission-chapter-approved-2025-26-terraform":              "end_of_command_phase",
+		"mission-chapter-approved-2025-26-unexploded-ordinance":   "end_of_command_phase",
+		"mission-chapter-approved-2025-26-linchpin":               "end_of_command_phase",
+		"mission-chapter-approved-2025-26-hidden-supplies":        "end_of_command_phase",
 	}
 }

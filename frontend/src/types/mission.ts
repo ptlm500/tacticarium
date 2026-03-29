@@ -9,6 +9,7 @@ export interface ScoringAction {
   vp: number;
   minRound?: number;
   description?: string;
+  scoringTiming?: string;
 }
 
 export interface Mission {
@@ -18,6 +19,7 @@ export interface Mission {
   lore: string;
   description: string;
   scoringRules: ScoringAction[];
+  scoringTiming: string;
 }
 
 export interface Secondary {

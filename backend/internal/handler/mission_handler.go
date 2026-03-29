@@ -42,7 +42,7 @@ func (h *MissionHandler) ListMissions(w http.ResponseWriter, r *http.Request) {
 	packID := chi.URLParam(r, "packId")
 
 	rows, err := h.db.Query(r.Context(),
-		`SELECT id, mission_pack_id, name, lore, description, scoring_rules
+		`SELECT id, mission_pack_id, name, lore, description, scoring_rules, scoring_timing
 		 FROM missions WHERE mission_pack_id = $1 ORDER BY name`, packID)
 	if err != nil {
 		http.Error(w, "database error", http.StatusInternalServerError)
@@ -54,7 +54,7 @@ func (h *MissionHandler) ListMissions(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var m models.Mission
 		var scoringJSON []byte
-		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description, &scoringJSON); err != nil {
+		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description, &scoringJSON, &m.ScoringTiming); err != nil {
 			http.Error(w, "scan error", http.StatusInternalServerError)
 			return
 		}
