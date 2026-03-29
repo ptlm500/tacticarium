@@ -1,4 +1,4 @@
-import { ScoringAction } from '../../types/mission';
+import { ScoringAction } from "../../types/mission";
 
 interface Props {
   scoringRules: ScoringAction[];

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 interface Props {
   vpPrimary: number;
@@ -15,17 +15,20 @@ export function VPCounter({ vpPrimary, vpSecondary, vpGambit, vpPaint, onScore }
   return (
     <div className="text-center">
       <p className="text-xs text-gray-400 mb-1">Victory Points</p>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="text-3xl font-bold"
-      >
+      <button onClick={() => setExpanded(!expanded)} className="text-3xl font-bold">
         {total}
       </button>
 
       {expanded && (
         <div className="mt-3 space-y-2 text-sm">
           <VPRow label="Primary" value={vpPrimary} max={50} category="primary" onScore={onScore} />
-          <VPRow label="Secondary" value={vpSecondary} max={40} category="secondary" onScore={onScore} />
+          <VPRow
+            label="Secondary"
+            value={vpSecondary}
+            max={40}
+            category="secondary"
+            onScore={onScore}
+          />
           <VPRow label="Gambit" value={vpGambit} max={12} category="gambit" onScore={onScore} />
           <div className="flex items-center justify-between text-gray-400">
             <span>Paint</span>

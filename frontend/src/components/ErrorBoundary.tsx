@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from 'react';
+import { Component, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -23,12 +23,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="text-center p-8 space-y-4 max-w-md">
             <h1 className="text-2xl font-bold text-red-400">Something went wrong</h1>
             <p className="text-gray-400">
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {this.state.error?.message || "An unexpected error occurred."}
             </p>
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
-                window.location.href = '/';
+                window.location.href = "/";
               }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
             >

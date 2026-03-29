@@ -1,4 +1,4 @@
-import { Faction } from '../../types/faction';
+import { Faction } from "../../types/faction";
 
 interface Props {
   factions: Faction[];
@@ -15,8 +15,8 @@ export function FactionPicker({ factions, selectedId, onSelect }: Props) {
           onClick={() => onSelect(faction)}
           className={`p-3 rounded-lg text-left text-sm transition-colors ${
             faction.id === selectedId
-              ? 'bg-indigo-600 text-white border-2 border-indigo-400'
-              : 'bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300'
+              ? "bg-indigo-600 text-white border-2 border-indigo-400"
+              : "bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300"
           }`}
         >
           {faction.name}

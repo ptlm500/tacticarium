@@ -1,8 +1,8 @@
-import { api } from './client';
-import { Faction, Detachment, Stratagem } from '../types/faction';
+import { api } from "./client";
+import { Faction, Detachment, Stratagem } from "../types/faction";
 
 export const factionsApi = {
-  list: () => api.get<Faction[]>('/api/factions'),
+  list: () => api.get<Faction[]>("/api/factions"),
   getDetachments: (factionId: string) =>
     api.get<Detachment[]>(`/api/factions/${factionId}/detachments`),
   getStratagems: (factionId: string) =>

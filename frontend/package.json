@@ -1,7 +1,7 @@
 {
   "name": "tacticarium",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vp dev",
@@ -30,9 +30,9 @@
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plus": "latest"
   },
-  "packageManager": "npm@11.12.1",
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
-  }
+  },
+  "packageManager": "npm@11.12.1"
 }

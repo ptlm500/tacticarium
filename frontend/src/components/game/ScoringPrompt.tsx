@@ -1,12 +1,12 @@
-import { ScoringAction } from '../../types/mission';
-import { ActiveSecondary } from '../../types/game';
+import { ScoringAction } from "../../types/mission";
+import { ActiveSecondary } from "../../types/game";
 
 export type ScoringPromptItem =
-  | { kind: 'primary'; missionName: string; scoringRules: ScoringAction[]; currentRound: number }
-  | { kind: 'secondary' }
-  | { kind: 'fixed_secondary'; secondaries: ActiveSecondary[] }
-  | { kind: 'tactical_draw' }
-  | { kind: 'end_of_round_primary'; missionName: string; note: string };
+  | { kind: "primary"; missionName: string; scoringRules: ScoringAction[]; currentRound: number }
+  | { kind: "secondary" }
+  | { kind: "fixed_secondary"; secondaries: ActiveSecondary[] }
+  | { kind: "tactical_draw" }
+  | { kind: "end_of_round_primary"; missionName: string; note: string };
 
 interface Props {
   items: ScoringPromptItem[];
@@ -50,15 +50,15 @@ export function ScoringPrompt({
         <div className="px-5 py-4 space-y-4">
           {items.map((item, i) => (
             <div key={i}>
-              {item.kind === 'primary' && (
+              {item.kind === "primary" && (
                 <PrimaryReminder
                   missionName={item.missionName}
                   scoringRules={item.scoringRules}
                   currentRound={item.currentRound}
-                  onScore={(vp) => onScore('primary', vp)}
+                  onScore={(vp) => onScore("primary", vp)}
                 />
               )}
-              {item.kind === 'end_of_round_primary' && (
+              {item.kind === "end_of_round_primary" && (
                 <div className="bg-indigo-900/40 border border-indigo-700 rounded-lg p-3">
                   <h3 className="text-sm font-semibold text-indigo-200">
                     Primary Mission — {item.missionName}
@@ -66,13 +66,10 @@ export function ScoringPrompt({
                   <p className="text-xs text-indigo-300 mt-1">{item.note}</p>
                 </div>
               )}
-              {item.kind === 'fixed_secondary' && (
-                <FixedSecondaryReminder
-                  secondaries={item.secondaries}
-                  onScore={onScoreFixedVP}
-                />
+              {item.kind === "fixed_secondary" && (
+                <FixedSecondaryReminder secondaries={item.secondaries} onScore={onScoreFixedVP} />
               )}
-              {item.kind === 'secondary' && (
+              {item.kind === "secondary" && (
                 <SecondaryReminder
                   activeSecondaries={activeSecondaries}
                   onAchieve={onAchieveSecondary}
@@ -80,7 +77,7 @@ export function ScoringPrompt({
                   canGainCP={canGainCP}
                 />
               )}
-              {item.kind === 'tactical_draw' && (
+              {item.kind === "tactical_draw" && (
                 <TacticalDrawReminder
                   deckSize={deckSize}
                   activeCount={activeSecondaryCount}
@@ -123,9 +120,7 @@ function PrimaryReminder({
 }) {
   return (
     <div className="bg-indigo-900/40 border border-indigo-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-indigo-200">
-        Score Primary — {missionName}
-      </h3>
+      <h3 className="text-sm font-semibold text-indigo-200">Score Primary — {missionName}</h3>
       <div className="flex flex-wrap gap-2 mt-2">
         {scoringRules.map((action, i) => {
           const locked = action.minRound != null && currentRound < action.minRound;
@@ -164,17 +159,13 @@ function SecondaryReminder({
 }) {
   return (
     <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-emerald-200">
-        Score / Discard Secondaries
-      </h3>
+      <h3 className="text-sm font-semibold text-emerald-200">Score / Discard Secondaries</h3>
       {activeSecondaries.length === 0 ? (
         <p className="text-xs text-emerald-300 mt-1">No active secondary missions.</p>
       ) : (
         <div className="space-y-3 mt-2">
           {activeSecondaries.map((s) => {
-            const opts = (s.scoringOptions ?? []).filter(
-              (o) => !o.mode || o.mode === 'tactical'
-            );
+            const opts = (s.scoringOptions ?? []).filter((o) => !o.mode || o.mode === "tactical");
             return (
               <div key={s.id}>
                 <span className="text-xs text-white font-medium">{s.name}</span>
@@ -225,15 +216,13 @@ function TacticalDrawReminder({
   const canDraw = activeCount < 2 && deckSize > 0;
   return (
     <div className="bg-amber-900/40 border border-amber-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-amber-200">
-        Draw Tactical Secondaries
-      </h3>
+      <h3 className="text-sm font-semibold text-amber-200">Draw Tactical Secondaries</h3>
       <p className="text-xs text-amber-300 mt-1">
         {canDraw
-          ? `You have ${activeCount} active secondary mission${activeCount === 1 ? '' : 's'}. Draw up to 2.`
+          ? `You have ${activeCount} active secondary mission${activeCount === 1 ? "" : "s"}. Draw up to 2.`
           : activeCount >= 2
-          ? 'You already have 2 active secondaries.'
-          : 'Deck is empty.'}
+            ? "You already have 2 active secondaries."
+            : "Deck is empty."}
       </p>
       {canDraw && (
         <button
@@ -256,14 +245,10 @@ function FixedSecondaryReminder({
 }) {
   return (
     <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-emerald-200">
-        Score Fixed Secondaries
-      </h3>
+      <h3 className="text-sm font-semibold text-emerald-200">Score Fixed Secondaries</h3>
       <div className="space-y-3 mt-2">
         {secondaries.map((s) => {
-          const opts = (s.scoringOptions ?? []).filter(
-            (o) => !o.mode || o.mode === 'fixed'
-          );
+          const opts = (s.scoringOptions ?? []).filter((o) => !o.mode || o.mode === "fixed");
           return (
             <div key={s.id}>
               <p className="text-xs text-white font-medium">{s.name}</p>

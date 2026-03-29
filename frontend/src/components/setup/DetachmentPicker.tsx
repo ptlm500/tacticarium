@@ -1,4 +1,4 @@
-import { Detachment } from '../../types/faction';
+import { Detachment } from "../../types/faction";
 
 interface Props {
   detachments: Detachment[];
@@ -19,8 +19,8 @@ export function DetachmentPicker({ detachments, selectedId, onSelect }: Props) {
           onClick={() => onSelect(d)}
           className={`w-full p-3 rounded-lg text-left text-sm transition-colors ${
             d.id === selectedId
-              ? 'bg-indigo-600 text-white border-2 border-indigo-400'
-              : 'bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300'
+              ? "bg-indigo-600 text-white border-2 border-indigo-400"
+              : "bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300"
           }`}
         >
           {d.name}

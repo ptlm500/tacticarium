@@ -1,21 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { useGameStore } from '../stores/gameStore';
-import { useGameConnection } from '../hooks/useGameState';
-import { getToken } from '../api/client';
-import { factionsApi } from '../api/factions';
-import { missionsApi } from '../api/missions';
-import { Faction, Detachment } from '../types/faction';
-import { Mission, MissionRule, Secondary } from '../types/mission';
-import { ActiveSecondary } from '../types/game';
-import { FactionPicker } from '../components/setup/FactionPicker';
-import { DetachmentPicker } from '../components/setup/DetachmentPicker';
-import { MissionPicker } from '../components/setup/MissionPicker';
-import { TwistPicker } from '../components/setup/TwistPicker';
-import { SecondaryModePicker } from '../components/setup/SecondaryModePicker';
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useGameStore } from "../stores/gameStore";
+import { useGameConnection } from "../hooks/useGameState";
+import { getToken } from "../api/client";
+import { factionsApi } from "../api/factions";
+import { missionsApi } from "../api/missions";
+import { Faction, Detachment } from "../types/faction";
+import { Mission, MissionRule, Secondary } from "../types/mission";
+import { ActiveSecondary } from "../types/game";
+import { FactionPicker } from "../components/setup/FactionPicker";
+import { DetachmentPicker } from "../components/setup/DetachmentPicker";
+import { MissionPicker } from "../components/setup/MissionPicker";
+import { TwistPicker } from "../components/setup/TwistPicker";
+import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
 
-const PACK_ID = 'chapter-approved-2025-26';
+const PACK_ID = "chapter-approved-2025-26";
 
 export function GameSetupPage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -34,7 +34,7 @@ export function GameSetupPage() {
   const [secondaries, setSecondaries] = useState<Secondary[]>([]);
   const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
-  const [loadError, setLoadError] = useState('');
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -42,7 +42,7 @@ export function GameSetupPage() {
       missionsApi.listMissions(PACK_ID).then(setMissions),
       missionsApi.listRules(PACK_ID).then(setRules),
       missionsApi.listSecondaries(PACK_ID).then(setSecondaries),
-    ]).catch(() => setLoadError('Failed to load game data. Please refresh the page.'));
+    ]).catch(() => setLoadError("Failed to load game data. Please refresh the page."));
   }, []);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
@@ -54,8 +54,10 @@ export function GameSetupPage() {
   // Load detachments when faction changes
   useEffect(() => {
     if (myPlayer?.factionId) {
-      factionsApi.getDetachments(myPlayer.factionId).then(setDetachments)
-        .catch(() => setLoadError('Failed to load detachments'));
+      factionsApi
+        .getDetachments(myPlayer.factionId)
+        .then(setDetachments)
+        .catch(() => setLoadError("Failed to load detachments"));
     } else {
       setDetachments([]);
     }
@@ -63,45 +65,45 @@ export function GameSetupPage() {
 
   // Navigate to game when it starts
   useEffect(() => {
-    if (gameState?.status === 'active') {
+    if (gameState?.status === "active") {
       navigate(`/game/${gameId}`);
     }
   }, [gameState?.status, gameId, navigate]);
 
   const handleSelectFaction = useCallback(
     (faction: Faction) => {
-      sendAction('select_faction', {
+      sendAction("select_faction", {
         factionId: faction.id,
         factionName: faction.name,
       });
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleSelectDetachment = useCallback(
     (detachment: Detachment) => {
-      sendAction('select_detachment', {
+      sendAction("select_detachment", {
         detachmentId: detachment.id,
         detachmentName: detachment.name,
       });
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleSelectMission = useCallback(
     (mission: Mission) => {
-      sendAction('select_primary_mission', {
+      sendAction("select_primary_mission", {
         missionId: mission.id,
         missionName: mission.name,
       });
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleRandomMission = useCallback(() => {
     if (missions.length === 0) return;
     const m = missions[Math.floor(Math.random() * missions.length)];
-    sendAction('select_primary_mission', {
+    sendAction("select_primary_mission", {
       missionId: m.id,
       missionName: m.name,
     });
@@ -109,29 +111,29 @@ export function GameSetupPage() {
 
   const handleSelectTwist = useCallback(
     (rule: MissionRule) => {
-      sendAction('select_twist', {
+      sendAction("select_twist", {
         twistId: rule.id,
         twistName: rule.name,
       });
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleRandomTwist = useCallback(() => {
     if (rules.length === 0) return;
     const r = rules[Math.floor(Math.random() * rules.length)];
-    sendAction('select_twist', {
+    sendAction("select_twist", {
       twistId: r.id,
       twistName: r.name,
     });
   }, [sendAction, rules]);
 
   const handleModeChange = useCallback(
-    (mode: 'fixed' | 'tactical') => {
-      sendAction('select_secondary_mode', { mode });
+    (mode: "fixed" | "tactical") => {
+      sendAction("select_secondary_mode", { mode });
       setSelectedFixedIds([]);
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleFixedSelect = useCallback(
@@ -139,21 +141,21 @@ export function GameSetupPage() {
       const ids = selected.map((s) => s.id);
       setSelectedFixedIds(ids);
       if (selected.length === 2) {
-        sendAction('set_fixed_secondaries', { secondaries: selected });
+        sendAction("set_fixed_secondaries", { secondaries: selected });
       }
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleInitDeck = useCallback(
     (deck: ActiveSecondary[]) => {
-      sendAction('init_tactical_deck', { deck });
+      sendAction("init_tactical_deck", { deck });
     },
-    [sendAction]
+    [sendAction],
   );
 
   const handleReady = useCallback(() => {
-    sendAction('set_ready', { ready: !myPlayer?.ready });
+    sendAction("set_ready", { ready: !myPlayer?.ready });
   }, [sendAction, myPlayer?.ready]);
 
   const copyInviteCode = () => {
@@ -167,7 +169,7 @@ export function GameSetupPage() {
   if (!gameState) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p>{connected ? 'Loading game...' : 'Connecting...'}</p>
+        <p>{connected ? "Loading game..." : "Connecting..."}</p>
       </div>
     );
   }
@@ -178,10 +180,11 @@ export function GameSetupPage() {
   const hasTwist = !!gameState.twistId;
   const hasMode = !!myPlayer?.secondaryMode;
   const hasSecondaries =
-    myPlayer?.secondaryMode === 'fixed'
+    myPlayer?.secondaryMode === "fixed"
       ? (myPlayer?.activeSecondaries?.length ?? 0) === 2
       : (myPlayer?.tacticalDeck?.length ?? 0) > 0;
-  const canReady = hasFaction && hasDetachment && hasMission && hasTwist && hasMode && hasSecondaries;
+  const canReady =
+    hasFaction && hasDetachment && hasMission && hasTwist && hasMode && hasSecondaries;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -192,13 +195,11 @@ export function GameSetupPage() {
             onClick={copyInviteCode}
             className="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-4 py-2 rounded-lg text-sm transition-colors"
           >
-            {copied ? 'Copied!' : `Invite: ${gameState.inviteCode}`}
+            {copied ? "Copied!" : `Invite: ${gameState.inviteCode}`}
           </button>
         </div>
         {!opponent && (
-          <p className="text-yellow-400 text-sm mt-2">
-            Waiting for opponent to join...
-          </p>
+          <p className="text-yellow-400 text-sm mt-2">Waiting for opponent to join...</p>
         )}
       </header>
 
@@ -214,7 +215,7 @@ export function GameSetupPage() {
           <h2 className="text-lg font-semibold mb-3">Your Faction</h2>
           <FactionPicker
             factions={factions}
-            selectedId={myPlayer?.factionId || ''}
+            selectedId={myPlayer?.factionId || ""}
             onSelect={handleSelectFaction}
           />
         </section>
@@ -225,7 +226,7 @@ export function GameSetupPage() {
             <h2 className="text-lg font-semibold mb-3">Detachment</h2>
             <DetachmentPicker
               detachments={detachments}
-              selectedId={myPlayer?.detachmentId || ''}
+              selectedId={myPlayer?.detachmentId || ""}
               onSelect={handleSelectDetachment}
             />
           </section>
@@ -237,7 +238,7 @@ export function GameSetupPage() {
             <h2 className="text-lg font-semibold mb-3">Primary Mission</h2>
             <MissionPicker
               missions={missions}
-              selectedId={gameState.missionId || ''}
+              selectedId={gameState.missionId || ""}
               onSelect={handleSelectMission}
               onDrawRandom={handleRandomMission}
             />
@@ -250,7 +251,7 @@ export function GameSetupPage() {
             <h2 className="text-lg font-semibold mb-3">Twist</h2>
             <TwistPicker
               rules={rules}
-              selectedId={gameState.twistId || ''}
+              selectedId={gameState.twistId || ""}
               onSelect={handleSelectTwist}
               onDrawRandom={handleRandomTwist}
             />
@@ -262,7 +263,7 @@ export function GameSetupPage() {
           <section>
             <h2 className="text-lg font-semibold mb-3">Secondary Missions</h2>
             <SecondaryModePicker
-              mode={myPlayer?.secondaryMode || ''}
+              mode={myPlayer?.secondaryMode || ""}
               onModeChange={handleModeChange}
               fixedSecondaries={fixedSecondaries}
               selectedFixedIds={selectedFixedIds}
@@ -281,7 +282,7 @@ export function GameSetupPage() {
               Opponent: {opponent.username}
             </h2>
             <p className="text-sm">
-              {opponent.factionName || 'Selecting faction...'}
+              {opponent.factionName || "Selecting faction..."}
               {opponent.detachmentName && ` - ${opponent.detachmentName}`}
             </p>
             <p className="text-sm mt-1">
@@ -300,11 +301,11 @@ export function GameSetupPage() {
           disabled={!canReady}
           className={`w-full font-semibold py-3 rounded-lg transition-colors ${
             myPlayer?.ready
-              ? 'bg-green-700 hover:bg-green-800 text-white'
-              : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white'
+              ? "bg-green-700 hover:bg-green-800 text-white"
+              : "bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
           }`}
         >
-          {myPlayer?.ready ? 'Ready! (click to unready)' : 'Ready Up'}
+          {myPlayer?.ready ? "Ready! (click to unready)" : "Ready Up"}
         </button>
       </main>
     </div>

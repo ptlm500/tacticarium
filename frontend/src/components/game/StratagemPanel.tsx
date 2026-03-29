@@ -1,4 +1,4 @@
-import { Stratagem } from '../../types/faction';
+import { Stratagem } from "../../types/faction";
 
 interface Props {
   stratagems: Stratagem[];
@@ -20,10 +20,7 @@ export function StratagemPanel({ stratagems, currentCP, onUse }: Props) {
       {stratagems.map((s) => {
         const canAfford = currentCP >= s.cpCost;
         return (
-          <div
-            key={s.id}
-            className="bg-gray-800/50 border border-gray-700 rounded-lg p-3"
-          >
+          <div key={s.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-3">
             <div className="flex justify-between items-start mb-1">
               <div>
                 <h3 className="font-semibold text-sm">{s.name}</h3>
@@ -31,17 +28,13 @@ export function StratagemPanel({ stratagems, currentCP, onUse }: Props) {
               </div>
               <span
                 className={`text-xs font-bold px-2 py-1 rounded ${
-                  s.cpCost === 0
-                    ? 'bg-green-900 text-green-300'
-                    : 'bg-indigo-900 text-indigo-300'
+                  s.cpCost === 0 ? "bg-green-900 text-green-300" : "bg-indigo-900 text-indigo-300"
                 }`}
               >
                 {s.cpCost} CP
               </span>
             </div>
-            {s.legend && (
-              <p className="text-xs text-gray-400 mb-2">{s.legend}</p>
-            )}
+            {s.legend && <p className="text-xs text-gray-400 mb-2">{s.legend}</p>}
             <div className="flex justify-between items-center mt-2">
               <span className="text-xs text-gray-500">
                 {s.turn} | {s.phase}

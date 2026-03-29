@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { GameState, GameEvent } from '../types/game';
+import { create } from "zustand";
+import { GameState, GameEvent } from "../types/game";
 
 interface GameStore {
   gameState: GameState | null;

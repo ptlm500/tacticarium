@@ -1,4 +1,4 @@
-import { Phase, PHASE_LABELS } from '../../types/game';
+import { Phase, PHASE_LABELS } from "../../types/game";
 
 interface Props {
   currentPhase: Phase;
@@ -13,18 +13,14 @@ export function PhaseTracker({ currentPhase, phases }: Props) {
         const isPast = phases.indexOf(currentPhase) > i;
         return (
           <div key={phase} className="flex items-center">
-            {i > 0 && (
-              <div
-                className={`w-4 h-0.5 ${isPast ? 'bg-indigo-500' : 'bg-gray-700'}`}
-              />
-            )}
+            {i > 0 && <div className={`w-4 h-0.5 ${isPast ? "bg-indigo-500" : "bg-gray-700"}`} />}
             <span
               className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
                 isActive
-                  ? 'bg-indigo-600 text-white font-semibold'
+                  ? "bg-indigo-600 text-white font-semibold"
                   : isPast
-                  ? 'text-indigo-400'
-                  : 'text-gray-500'
+                    ? "text-indigo-400"
+                    : "text-gray-500"
               }`}
             >
               {PHASE_LABELS[phase]}
