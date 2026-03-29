@@ -160,6 +160,14 @@ func (e *Engine) applyDrawSecondary(action GameAction) ([]GameEvent, error) {
 		return nil, fmt.Errorf("game is not active")
 	}
 
+	if e.state.CurrentPhase != PhaseCommand {
+		return nil, fmt.Errorf("can only draw secondaries during the Command Phase")
+	}
+
+	if action.PlayerNumber != e.state.ActivePlayer {
+		return nil, fmt.Errorf("only the active player can draw secondaries")
+	}
+
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
@@ -302,6 +310,10 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 		return nil, fmt.Errorf("game is not active")
 	}
 
+	if e.state.CurrentPhase != PhaseCommand {
+		return nil, fmt.Errorf("can only use New Orders during the Command Phase")
+	}
+
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
@@ -368,6 +380,10 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 func (e *Engine) applyDrawChallengerCard(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
+	}
+
+	if e.state.CurrentPhase != PhaseCommand {
+		return nil, fmt.Errorf("can only draw challenger cards during the Command Phase")
 	}
 
 	player := e.state.GetPlayer(action.PlayerNumber)

@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { ScoringAction } from '../../types/mission';
 import { ActiveSecondary } from '../../types/game';
 
 export type ScoringPromptItem =
   | { kind: 'primary'; missionName: string; scoringRules: ScoringAction[]; currentRound: number }
   | { kind: 'secondary' }
+  | { kind: 'fixed_secondary'; secondaries: ActiveSecondary[] }
   | { kind: 'tactical_draw' }
   | { kind: 'end_of_round_primary'; missionName: string; note: string };
 
@@ -17,6 +19,7 @@ interface Props {
   canGainCP: boolean;
   deckSize: number;
   activeSecondaryCount: number;
+  onScoreFixedVP: (delta: number) => void;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -31,6 +34,7 @@ export function ScoringPrompt({
   canGainCP,
   deckSize,
   activeSecondaryCount,
+  onScoreFixedVP,
   onConfirm,
   onCancel,
 }: Props) {
@@ -62,6 +66,12 @@ export function ScoringPrompt({
                   </h3>
                   <p className="text-xs text-indigo-300 mt-1">{item.note}</p>
                 </div>
+              )}
+              {item.kind === 'fixed_secondary' && (
+                <FixedSecondaryReminder
+                  secondaries={item.secondaries}
+                  onScore={onScoreFixedVP}
+                />
               )}
               {item.kind === 'secondary' && (
                 <SecondaryReminder
@@ -225,6 +235,72 @@ function TacticalDrawReminder({
           Draw Secondaries ({deckSize} remaining)
         </button>
       )}
+    </div>
+  );
+}
+
+function FixedSecondaryReminder({
+  secondaries,
+  onScore,
+}: {
+  secondaries: ActiveSecondary[];
+  onScore: (vp: number) => void;
+}) {
+  return (
+    <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3">
+      <h3 className="text-sm font-semibold text-emerald-200">
+        Score Fixed Secondaries
+      </h3>
+      <div className="space-y-3 mt-2">
+        {secondaries.map((s) => (
+          <FixedSecondaryRow key={s.id} secondary={s} onScore={onScore} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FixedSecondaryRow({
+  secondary,
+  onScore,
+}: {
+  secondary: ActiveSecondary;
+  onScore: (vp: number) => void;
+}) {
+  const [vp, setVp] = useState('');
+
+  const handleScore = () => {
+    const value = parseInt(vp, 10);
+    if (value > 0) {
+      onScore(value);
+      setVp('');
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-xs text-white font-medium">{secondary.name}</p>
+      {secondary.description && (
+        <p className="text-xs text-emerald-300 mt-0.5">{secondary.description}</p>
+      )}
+      <div className="flex items-center gap-2 mt-1">
+        <input
+          type="number"
+          min="1"
+          value={vp}
+          onChange={(e) => setVp(e.target.value)}
+          placeholder="VP"
+          className="w-16 bg-gray-700 border border-gray-600 text-white text-xs px-2 py-1.5 rounded focus:outline-none focus:border-emerald-500"
+        />
+        <button
+          onClick={handleScore}
+          disabled={!vp || parseInt(vp, 10) <= 0}
+          className="bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs px-3 py-1.5 rounded transition-colors"
+        >
+          Score
+        </button>
+        <span className="text-xs text-gray-400">max {secondary.maxVp} VP total</span>
+      </div>
     </div>
   );
 }

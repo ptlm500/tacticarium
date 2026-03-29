@@ -91,12 +91,12 @@ export function GamePage() {
     const isSecondPlayerTurn = gameState.currentTurn === 2;
     const isFightPhase = phase === 'fight';
     const isCommandPhase = phase === 'command';
-    const scoringTiming = currentMission?.scoringTiming;
+    const scoringTiming = currentMission?.scoringTiming || 'end_of_command_phase';
 
     const items: ScoringPromptItem[] = [];
 
     // Primary scoring prompts
-    if (currentMission && scoringTiming) {
+    if (currentMission) {
       if (scoringTiming === 'end_of_command_phase') {
         // Prompt when advancing out of Command Phase (BR2+)
         if (isCommandPhase && round >= 2) {
@@ -160,7 +160,14 @@ export function GamePage() {
 
     // Secondary scoring prompt — advancing out of Fight Phase (end of turn)
     if (isFightPhase) {
-      items.push({ kind: 'secondary' });
+      if (myPlayer.secondaryMode === 'fixed') {
+        const fixedSecondaries = (myPlayer.activeSecondaries ?? []).filter((s) => s.isFixed);
+        if (fixedSecondaries.length > 0) {
+          items.push({ kind: 'fixed_secondary', secondaries: fixedSecondaries });
+        }
+      } else {
+        items.push({ kind: 'secondary' });
+      }
     }
 
     if (items.length > 0) {
@@ -376,8 +383,8 @@ export function GamePage() {
           onScoreFixedVP={(delta) => handleScoreVP('secondary', delta)}
         />
 
-        {/* Challenger Card Banner */}
-        {opponent && totalVP + 6 <= opponentVP && !myPlayer.isChallenger && (
+        {/* Challenger Card Banner — only during Command Phase */}
+        {opponent && gameState.currentPhase === 'command' && totalVP + 6 <= opponentVP && !myPlayer.isChallenger && (
           <div className="bg-amber-900/50 border border-amber-700 rounded-lg p-4 text-center">
             <p className="text-sm text-amber-200 mb-2">
               You are trailing by {opponentVP - totalVP} VP — eligible for a Challenger Card!
@@ -475,6 +482,7 @@ export function GamePage() {
           canGainCP={myPlayer.cpGainedThisRound < 1}
           deckSize={myPlayer.tacticalDeck?.length ?? 0}
           activeSecondaryCount={myPlayer.activeSecondaries?.length ?? 0}
+          onScoreFixedVP={(delta) => handleScoreVP('secondary', delta)}
           onConfirm={doAdvancePhase}
           onCancel={() => setScoringPromptItems(null)}
         />

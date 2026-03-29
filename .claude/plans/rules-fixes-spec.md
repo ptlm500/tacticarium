@@ -185,11 +185,13 @@ Before sending `advance_phase`, check if the current phase/timing is a scoring w
 | `end_of_battle_round` | Second player is about to advance out of Fight Phase (end of round). Prompt both — but since only the active player clicks, prompt the active player and include a note about the opponent. |
 | `end_of_turn` | Active player is about to advance out of Fight Phase (end of their turn). |
 
-**Secondary mission scoring prompt triggers:**
-- Always prompt when active player is about to advance **out of Fight Phase** (end of their turn): "Have you scored/discarded your secondary missions?"
+**Primary prompt robustness:**
+- If `scoringTiming` is empty/undefined (pre-migration or non-CA2025 packs), default to `end_of_command_phase` behaviour when the mission has scoring rules.
 
-**Tactical secondary draw prompt:**
-- Prompt when active player is about to advance **out of Command Phase** (tactical mode): "Have you drawn your tactical secondary missions?"
+**Secondary mission scoring prompt triggers:**
+- **Tactical mode:** Prompt when advancing out of Fight Phase (end of turn) — show active secondaries with Achieve/Discard buttons.
+- **Fixed mode:** Prompt when advancing out of Fight Phase (end of turn) — show each fixed secondary with its name, description, and a VP number input + "Score" button. The `maxVp` on a fixed secondary is a per-game cap, NOT a per-turn score — scoring is variable per turn (e.g., Assassination scores 3 or 4 VP per character destroyed).
+- **Tactical secondary draw prompt:** Prompt when advancing out of Command Phase (tactical mode, <2 active secondaries and deck not empty): "Have you drawn your tactical secondary missions?"
 
 **Prompt UI:**
 - Use a modal/dialog (not `window.confirm`) with:
@@ -199,12 +201,12 @@ Before sending `advance_phase`, check if the current phase/timing is a scoring w
 - The prompt should show the relevant scoring actions (primary quick-score buttons, secondary cards) inline so the player can score directly from the prompt without dismissing it.
 
 **New component: `frontend/src/components/game/ScoringPrompt.tsx`:**
-- Props: `type` ("primary" | "secondary" | "tactical_draw"), `mission`, `onConfirm`, `onCancel`
-- Renders the appropriate reminder and inline scoring controls.
+- Renders context-specific reminders based on a list of `ScoringPromptItem` entries.
+- Supports item kinds: `primary`, `end_of_round_primary`, `secondary` (tactical), `fixed_secondary`, `tactical_draw`.
 
 **State management:**
-- Add `pendingAdvance: boolean` and `scoringPromptType: string | null` to local component state in `GamePage.tsx`.
-- When the player clicks "Advance Phase", check if a prompt is needed. If yes, set `scoringPromptType` and show the modal. If no, send the action immediately.
+- Add `scoringPromptItems: ScoringPromptItem[] | null` to local component state in `GamePage.tsx`.
+- When the player clicks "Advance Phase", check what prompts are needed. If any, set `scoringPromptItems` and show the modal. If none, send the action immediately.
 
 ---
 

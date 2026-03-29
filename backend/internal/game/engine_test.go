@@ -1715,3 +1715,75 @@ func TestShouldGainCP(t *testing.T) {
 		t.Fatal("should gain CP in round 5")
 	}
 }
+
+// --- Phase Restriction Tests ---
+
+func TestDrawSecondary_RequiresCommandPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseMovement
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].TacticalDeck = makeDeck(5)
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
+	e := NewEngine(state)
+
+	_, err := e.Apply(GameAction{
+		Type:         ActionDrawSecondary,
+		PlayerNumber: 1,
+	})
+	if err == nil {
+		t.Fatal("expected error when drawing outside Command Phase")
+	}
+}
+
+func TestDrawSecondary_RequiresActivePlayer(t *testing.T) {
+	state := newActiveTestState()
+	state.ActivePlayer = 1
+	state.Players[1].SecondaryMode = "tactical"
+	state.Players[1].TacticalDeck = makeDeck(5)
+	state.Players[1].ActiveSecondaries = []ActiveSecondary{}
+	e := NewEngine(state)
+
+	_, err := e.Apply(GameAction{
+		Type:         ActionDrawSecondary,
+		PlayerNumber: 2,
+	})
+	if err == nil {
+		t.Fatal("expected error when non-active player tries to draw")
+	}
+}
+
+func TestNewOrders_RequiresCommandPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseShooting
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 2
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	state.Players[0].TacticalDeck = makeDeck(3)
+	e := NewEngine(state)
+
+	_, err := e.Apply(GameAction{
+		Type:         ActionNewOrders,
+		PlayerNumber: 1,
+		Data:         map[string]any{"discardSecondaryId": "s1"},
+	})
+	if err == nil {
+		t.Fatal("expected error when using New Orders outside Command Phase")
+	}
+}
+
+func TestDrawChallengerCard_RequiresCommandPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseFight
+	state.Players[0].VPPrimary = 0
+	state.Players[1].VPPrimary = 10
+	e := NewEngine(state)
+
+	_, err := e.Apply(GameAction{
+		Type:         ActionDrawChallengerCard,
+		PlayerNumber: 1,
+		Data:         map[string]any{"challengerCardId": "cc1", "challengerCardName": "Test"},
+	})
+	if err == nil {
+		t.Fatal("expected error when drawing challenger card outside Command Phase")
+	}
+}
