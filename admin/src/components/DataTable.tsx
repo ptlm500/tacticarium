@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 interface Column<T> {
   key: string;
@@ -24,15 +24,16 @@ export function DataTable<T extends Record<string, any>>({
   onDelete,
   searchField,
 }: DataTableProps<T>) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const filtered = searchField && search
-    ? data.filter((item) => {
-        const val = item[searchField];
-        return typeof val === 'string' && val.toLowerCase().includes(search.toLowerCase());
-      })
-    : data;
+  const filtered =
+    searchField && search
+      ? data.filter((item) => {
+          const val = item[searchField];
+          return typeof val === "string" && val.toLowerCase().includes(search.toLowerCase());
+        })
+      : data;
 
   return (
     <div>
@@ -66,7 +67,7 @@ export function DataTable<T extends Record<string, any>>({
                 <tr key={key} className="border-b border-gray-800 hover:bg-gray-800/50">
                   {columns.map((col) => (
                     <td key={col.key} className="px-3 py-2">
-                      {col.render ? col.render(item) : String(item[col.key] ?? '')}
+                      {col.render ? col.render(item) : String(item[col.key] ?? "")}
                     </td>
                   ))}
                   {(onEdit || onDelete) && (
@@ -79,11 +80,14 @@ export function DataTable<T extends Record<string, any>>({
                           Edit
                         </button>
                       )}
-                      {onDelete && (
-                        deleteConfirm === key ? (
+                      {onDelete &&
+                        (deleteConfirm === key ? (
                           <>
                             <button
-                              onClick={() => { onDelete(item); setDeleteConfirm(null); }}
+                              onClick={() => {
+                                onDelete(item);
+                                setDeleteConfirm(null);
+                              }}
                               className="text-red-400 hover:text-red-300 text-xs"
                             >
                               Confirm
@@ -102,8 +106,7 @@ export function DataTable<T extends Record<string, any>>({
                           >
                             Delete
                           </button>
-                        )
-                      )}
+                        ))}
                     </td>
                   )}
                 </tr>

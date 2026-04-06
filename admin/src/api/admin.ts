@@ -1,4 +1,4 @@
-import { api, uploadFile } from './client';
+import { api, uploadFile } from "./client";
 
 // Types matching backend models
 export interface Faction {
@@ -96,12 +96,12 @@ export interface ImportResult {
   [key: string]: unknown;
 }
 
-const base = '/api/admin';
+const base = "/api/admin";
 
 function crud<T>(path: string) {
   return {
     list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
       return api.get<T[]>(`${base}${path}${qs}`);
     },
     get: (id: string) => api.get<T>(`${base}${path}/${id}`),
@@ -112,15 +112,15 @@ function crud<T>(path: string) {
 }
 
 export const adminApi = {
-  factions: crud<Faction>('/factions'),
-  detachments: crud<Detachment>('/detachments'),
-  stratagems: crud<Stratagem>('/stratagems'),
-  missionPacks: crud<MissionPack>('/mission-packs'),
-  missions: crud<Mission>('/missions'),
-  secondaries: crud<Secondary>('/secondaries'),
-  gambits: crud<Gambit>('/gambits'),
-  challengerCards: crud<ChallengerCard>('/challenger-cards'),
-  missionRules: crud<MissionRule>('/mission-rules'),
+  factions: crud<Faction>("/factions"),
+  detachments: crud<Detachment>("/detachments"),
+  stratagems: crud<Stratagem>("/stratagems"),
+  missionPacks: crud<MissionPack>("/mission-packs"),
+  missions: crud<Mission>("/missions"),
+  secondaries: crud<Secondary>("/secondaries"),
+  gambits: crud<Gambit>("/gambits"),
+  challengerCards: crud<ChallengerCard>("/challenger-cards"),
+  missionRules: crud<MissionRule>("/mission-rules"),
 
   import: {
     factions: (file: File) => uploadFile<ImportResult>(`${base}/import/factions`, file),

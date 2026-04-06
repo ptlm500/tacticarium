@@ -1,15 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 const sections = [
-  { to: '/factions', label: 'Factions', desc: 'Manage army factions and Wahapedia links' },
-  { to: '/detachments', label: 'Detachments', desc: 'Manage faction detachments' },
-  { to: '/stratagems', label: 'Stratagems', desc: 'Manage stratagems across factions and detachments' },
-  { to: '/mission-packs', label: 'Mission Packs', desc: 'Manage mission pack collections' },
-  { to: '/missions', label: 'Missions', desc: 'Manage primary missions and scoring rules' },
-  { to: '/secondaries', label: 'Secondaries', desc: 'Manage secondary objectives and scoring options' },
-  { to: '/gambits', label: 'Gambits', desc: 'Manage gambit cards' },
-  { to: '/challenger-cards', label: 'Challenger Cards', desc: 'Manage challenger mode cards' },
-  { to: '/mission-rules', label: 'Mission Rules', desc: 'Manage mission twists and rules' },
+  { to: "/factions", label: "Factions", desc: "Manage army factions and Wahapedia links" },
+  { to: "/detachments", label: "Detachments", desc: "Manage faction detachments" },
+  {
+    to: "/stratagems",
+    label: "Stratagems",
+    desc: "Manage stratagems across factions and detachments",
+  },
+  { to: "/mission-packs", label: "Mission Packs", desc: "Manage mission pack collections" },
+  { to: "/missions", label: "Missions", desc: "Manage primary missions and scoring rules" },
+  {
+    to: "/secondaries",
+    label: "Secondaries",
+    desc: "Manage secondary objectives and scoring options",
+  },
+  { to: "/gambits", label: "Gambits", desc: "Manage gambit cards" },
+  { to: "/challenger-cards", label: "Challenger Cards", desc: "Manage challenger mode cards" },
+  { to: "/mission-rules", label: "Mission Rules", desc: "Manage mission twists and rules" },
 ];
 
 export function DashboardPage() {

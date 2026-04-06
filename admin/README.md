@@ -6,8 +6,8 @@ Web interface for managing Tacticarium reference data (factions, stratagems, mis
 
 ### Admin Frontend (build-time)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable       | Default                 | Description     |
+| -------------- | ----------------------- | --------------- |
 | `VITE_API_URL` | `http://localhost:8080` | Backend API URL |
 
 Pass as a Docker build arg:
@@ -20,13 +20,13 @@ docker build --build-arg VITE_API_URL=https://api.example.com -t tacticarium-adm
 
 These are set on the **backend** service, not the admin frontend:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GITHUB_CLIENT_ID` | `""` | GitHub OAuth App client ID |
-| `GITHUB_CLIENT_SECRET` | `""` | GitHub OAuth App client secret |
-| `GITHUB_REDIRECT_URI` | `http://localhost:8080/api/auth/github/callback` | GitHub OAuth callback URL |
-| `ADMIN_GITHUB_IDS` | `""` | Comma-separated GitHub **user IDs** allowed admin access |
-| `ADMIN_FRONTEND_URL` | `http://localhost:5174` | Admin frontend URL (used for CORS and OAuth redirect) |
+| Variable               | Default                                          | Description                                              |
+| ---------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| `GITHUB_CLIENT_ID`     | `""`                                             | GitHub OAuth App client ID                               |
+| `GITHUB_CLIENT_SECRET` | `""`                                             | GitHub OAuth App client secret                           |
+| `GITHUB_REDIRECT_URI`  | `http://localhost:8080/api/auth/github/callback` | GitHub OAuth callback URL                                |
+| `ADMIN_GITHUB_IDS`     | `""`                                             | Comma-separated GitHub **user IDs** allowed admin access |
+| `ADMIN_FRONTEND_URL`   | `http://localhost:5174`                          | Admin frontend URL (used for CORS and OAuth redirect)    |
 
 ### Finding your GitHub user ID
 

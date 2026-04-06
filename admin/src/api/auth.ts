@@ -1,6 +1,6 @@
-import { api } from './client';
+import { api } from "./client";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 export interface AdminUser {
   githubId: string;
@@ -8,6 +8,6 @@ export interface AdminUser {
 }
 
 export const authApi = {
-  getMe: () => api.get<AdminUser>('/api/admin/me'),
+  getMe: () => api.get<AdminUser>("/api/admin/me"),
   getLoginUrl: () => `${API_URL}/api/auth/github`,
 };

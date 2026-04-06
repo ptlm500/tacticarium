@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { ImportResult } from '../api/admin';
+import { useState, useRef } from "react";
+import { ImportResult } from "../api/admin";
 
 interface ImportDialogProps {
   title: string;
@@ -25,15 +25,21 @@ export function ImportDialog({ title, accept, onImport, onClose, onSuccess }: Im
       setResult(res);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import failed');
+      setError(err instanceof Error ? err.message : "Import failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
 
         <div
@@ -48,22 +54,26 @@ export function ImportDialog({ title, accept, onImport, onClose, onSuccess }: Im
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
           {file ? (
-            <p className="text-sm text-amber-400">{file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
+            <p className="text-sm text-amber-400">
+              {file.name} ({(file.size / 1024).toFixed(1)} KB)
+            </p>
           ) : (
             <p className="text-sm text-gray-400">Click to select a file ({accept})</p>
           )}
         </div>
 
-        {error && (
-          <p className="mt-3 text-sm text-red-400">{error}</p>
-        )}
+        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
 
         {result && (
           <div className="mt-3 p-3 bg-green-900/30 border border-green-700 rounded text-sm">
             <p className="text-green-400 font-medium">Import successful</p>
-            {Object.entries(result).filter(([k]) => k !== 'entity').map(([k, v]) => (
-              <p key={k} className="text-green-300">{k}: {String(v)}</p>
-            ))}
+            {Object.entries(result)
+              .filter(([k]) => k !== "entity")
+              .map(([k, v]) => (
+                <p key={k} className="text-green-300">
+                  {k}: {String(v)}
+                </p>
+              ))}
           </div>
         )}
 
@@ -80,7 +90,7 @@ export function ImportDialog({ title, accept, onImport, onClose, onSuccess }: Im
               disabled={!file || loading}
               className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Importing...' : 'Import'}
+              {loading ? "Importing..." : "Import"}
             </button>
           )}
         </div>

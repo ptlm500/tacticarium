@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { adminApi, MissionPack } from '../../api/admin';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { adminApi, MissionPack } from "../../api/admin";
 
 export function MissionPackEditPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
 
-  const [form, setForm] = useState<MissionPack>({ id: '', name: '', description: '' });
+  const [form, setForm] = useState<MissionPack>({ id: "", name: "", description: "" });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (id) adminApi.missionPacks.get(id).then(setForm).catch(() => navigate('/mission-packs'));
+    if (id)
+      adminApi.missionPacks
+        .get(id)
+        .then(setForm)
+        .catch(() => navigate("/mission-packs"));
   }, [id, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,9 +29,9 @@ export function MissionPackEditPage() {
       } else {
         await adminApi.missionPacks.create(form);
       }
-      navigate('/mission-packs');
+      navigate("/mission-packs");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
+      setError(err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -35,24 +39,54 @@ export function MissionPackEditPage() {
 
   return (
     <div className="p-6 max-w-lg">
-      <h2 className="text-xl font-bold mb-4">{isEdit ? 'Edit' : 'Create'} Mission Pack</h2>
+      <h2 className="text-xl font-bold mb-4">{isEdit ? "Edit" : "Create"} Mission Pack</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm text-gray-400 mb-1">ID</label>
-          <input type="text" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} disabled={isEdit} required className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm disabled:opacity-50" />
+          <input
+            type="text"
+            value={form.id}
+            onChange={(e) => setForm({ ...form, id: e.target.value })}
+            disabled={isEdit}
+            required
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm disabled:opacity-50"
+          />
         </div>
         <div>
           <label className="block text-sm text-gray-400 mb-1">Name</label>
-          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm" />
+          <input
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          />
         </div>
         <div>
           <label className="block text-sm text-gray-400 mb-1">Description</label>
-          <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm" />
+          <textarea
+            value={form.description || ""}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          />
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <div className="flex gap-2">
-          <button type="submit" disabled={saving} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
-          <button type="button" onClick={() => navigate('/mission-packs')} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm">Cancel</button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/mission-packs")}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </div>

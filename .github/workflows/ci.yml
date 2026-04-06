@@ -60,8 +60,11 @@ jobs:
           working-directory: admin
           cache-dependency-path: admin/pnpm-lock.yaml
 
+      - name: Type check
+        run: vp check
+
       - name: Build
-        run: pnpm build
+        run: vp build
 
       - name: Build Docker Image
         run: docker build -t turn-tracker-admin .

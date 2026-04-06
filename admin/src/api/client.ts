@@ -1,22 +1,22 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 export function getToken(): string {
-  return localStorage.getItem('admin_token') || '';
+  return localStorage.getItem("admin_token") || "";
 }
 
 export function setToken(token: string) {
-  localStorage.setItem('admin_token', token);
+  localStorage.setItem("admin_token", token);
 }
 
 export function clearToken() {
-  localStorage.removeItem('admin_token');
+  localStorage.removeItem("admin_token");
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
@@ -38,16 +38,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export async function uploadFile<T>(path: string, file: File, fieldName = 'file'): Promise<T> {
+export async function uploadFile<T>(path: string, file: File, fieldName = "file"): Promise<T> {
   const token = getToken();
   const formData = new FormData();
   formData.append(fieldName, file);
 
   const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
 
@@ -70,17 +68,17 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, {
-      method: 'POST',
+      method: "POST",
       body: body ? JSON.stringify(body) : undefined,
     }),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, {
-      method: 'PUT',
+      method: "PUT",
       body: body ? JSON.stringify(body) : undefined,
     }),
   del: (path: string) =>
     fetch(`${API_URL}${path}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${getToken()}`,
       },

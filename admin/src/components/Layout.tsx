@@ -1,16 +1,16 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const navItems = [
-  { to: '/factions', label: 'Factions' },
-  { to: '/detachments', label: 'Detachments' },
-  { to: '/stratagems', label: 'Stratagems' },
-  { to: '/mission-packs', label: 'Mission Packs' },
-  { to: '/missions', label: 'Missions' },
-  { to: '/secondaries', label: 'Secondaries' },
-  { to: '/gambits', label: 'Gambits' },
-  { to: '/challenger-cards', label: 'Challenger Cards' },
-  { to: '/mission-rules', label: 'Mission Rules' },
+  { to: "/factions", label: "Factions" },
+  { to: "/detachments", label: "Detachments" },
+  { to: "/stratagems", label: "Stratagems" },
+  { to: "/mission-packs", label: "Mission Packs" },
+  { to: "/missions", label: "Missions" },
+  { to: "/secondaries", label: "Secondaries" },
+  { to: "/gambits", label: "Gambits" },
+  { to: "/challenger-cards", label: "Challenger Cards" },
+  { to: "/mission-rules", label: "Mission Rules" },
 ];
 
 export function Layout() {
@@ -30,9 +30,7 @@ export function Layout() {
               to={item.to}
               className={({ isActive }) =>
                 `block px-3 py-2 rounded text-sm ${
-                  isActive
-                    ? 'bg-amber-600/20 text-amber-400'
-                    : 'text-gray-300 hover:bg-gray-700'
+                  isActive ? "bg-amber-600/20 text-amber-400" : "text-gray-300 hover:bg-gray-700"
                 }`
               }
             >
@@ -42,10 +40,7 @@ export function Layout() {
         </nav>
         <div className="p-3 border-t border-gray-700">
           <p className="text-xs text-gray-400 truncate">{user?.githubUser}</p>
-          <button
-            onClick={logout}
-            className="mt-1 text-xs text-red-400 hover:text-red-300"
-          >
+          <button onClick={logout} className="mt-1 text-xs text-red-400 hover:text-red-300">
             Sign out
           </button>
         </div>
