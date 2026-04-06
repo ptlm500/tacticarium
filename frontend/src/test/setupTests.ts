@@ -13,7 +13,7 @@ console.error = (...args: unknown[]) => {
 
 beforeAll(async () => {
   await worker.start({ quiet: true });
-  console.log('worker started')
+  console.log("worker started");
 });
 
 afterEach(() => {

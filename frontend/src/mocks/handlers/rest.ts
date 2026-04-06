@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse } from "msw";
 import {
   mockUser,
   mockFactions,
@@ -6,9 +6,9 @@ import {
   mockMissions,
   mockRules,
   mockSecondaries,
-} from '../../test/fixtures';
+} from "../../test/fixtures";
 
-const API_URL = 'http://localhost:8080';
+const API_URL = "http://localhost:8080";
 
 export const restHandlers = [
   // Auth
@@ -60,15 +60,15 @@ export const restHandlers = [
   }),
 
   http.post(`${API_URL}/api/games`, () => {
-    return HttpResponse.json({ id: 'game-new', inviteCode: 'XYZ789' });
+    return HttpResponse.json({ id: "game-new", inviteCode: "XYZ789" });
   }),
 
   http.post(`${API_URL}/api/games/join/:code`, ({ params }) => {
     const code = params.code as string;
-    if (code === 'INVALID') {
-      return HttpResponse.json({ error: 'Invalid code' }, { status: 404 });
+    if (code === "INVALID") {
+      return HttpResponse.json({ error: "Invalid code" }, { status: 404 });
     }
-    return HttpResponse.json({ id: 'game-joined', inviteCode: code });
+    return HttpResponse.json({ id: "game-joined", inviteCode: code });
   }),
 
   http.get(`${API_URL}/api/games/:id`, () => {
