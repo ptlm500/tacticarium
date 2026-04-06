@@ -14,6 +14,12 @@ type Config struct {
 	JWTSecret           string
 	FrontendURL         string
 	Port                string
+
+	GitHubClientID     string
+	GitHubClientSecret string
+	GitHubRedirectURI  string
+	AdminGitHubIDs     string
+	AdminFrontendURL   string
 }
 
 func Load() *Config {
@@ -27,6 +33,12 @@ func Load() *Config {
 		JWTSecret:           getEnv("JWT_SECRET", "dev-secret-change-me"),
 		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:5173"),
 		Port:                getEnv("PORT", "8080"),
+
+		GitHubClientID:     getEnv("GITHUB_CLIENT_ID", ""),
+		GitHubClientSecret: getEnv("GITHUB_CLIENT_SECRET", ""),
+		GitHubRedirectURI:  getEnv("GITHUB_REDIRECT_URI", "http://localhost:8080/api/auth/github/callback"),
+		AdminGitHubIDs:     getEnv("ADMIN_GITHUB_IDS", ""),
+		AdminFrontendURL:   getEnv("ADMIN_FRONTEND_URL", "http://localhost:5174"),
 	}
 }
 
