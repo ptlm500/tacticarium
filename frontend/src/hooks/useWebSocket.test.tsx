@@ -23,7 +23,7 @@ function TestComponent({
 }
 
 describe("useWebSocket", () => {
-  let onMessage: ReturnType<typeof vi.fn>;
+  let onMessage: (msg: ServerMessage) => void;
 
   beforeEach(() => {
     onMessage = vi.fn();
