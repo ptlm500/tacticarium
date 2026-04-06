@@ -38,6 +38,9 @@ jobs:
       - name: Test
         run: vp test
 
+      - name: Build Docker Image
+        run: docker build -t turn-tracker-frontend .
+
   backend-check:
     name: Backend Check
     runs-on: ubuntu-latest
@@ -62,6 +65,9 @@ jobs:
 
       - name: Build
         run: go build -v ./...
+
+      - name: Build Docker Image
+        run: docker build -t turn-tracker-backend .
 
   backend-tests:
     name: Backend Tests
