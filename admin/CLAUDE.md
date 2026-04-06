@@ -4,6 +4,7 @@ Standalone React application for managing Tacticarium reference data (factions, 
 
 ## Tech Stack
 
+- pnpm
 - React 18 + TypeScript
 - Vite 5 (standard, not Vite+)
 - Tailwind CSS 4 (via `@tailwindcss/vite` plugin)
@@ -16,7 +17,7 @@ Standalone React application for managing Tacticarium reference data (factions, 
 make dev-admin       # Runs on port 5174
 
 # Or directly:
-cd admin && npm run dev
+cd admin && pnpm run dev
 ```
 
 Requires the Go backend running on port 8080 (`make dev-backend`).

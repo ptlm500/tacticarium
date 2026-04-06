@@ -1,10 +1,13 @@
 FROM node:20-slim AS builder
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
 ARG VITE_API_URL
-RUN npm run build
+RUN pnpm build
 
 FROM nginx:alpine-slim
 COPY --from=builder /app/dist /usr/share/nginx/html
