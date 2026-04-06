@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 test-results
+.vitest-attachments
+__screenshots__
 
 # Editor directories and files
 .vscode/*
