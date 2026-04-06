@@ -44,10 +44,10 @@ curl -s https://api.github.com/users/YOUR_USERNAME | grep '"id"'
 
 ```bash
 # Install dependencies
-pnpm install
+vp install
 
 # Start dev server (port 5174)
-pnpm run dev
+vp dev
 ```
 
 Requires the backend running on port 8080 with the GitHub OAuth env vars configured.
@@ -55,7 +55,7 @@ Requires the backend running on port 8080 with the GitHub OAuth env vars configu
 ## Production Build
 
 ```bash
-pnpm run build    # Output in dist/
+vp build    # Output in dist/
 ```
 
 Or via Docker:
