@@ -33,7 +33,7 @@ jobs:
         run: vp build
 
       - name: Install test deps
-        run: pnpm exec playwright install
+        run: npx playwright install
 
       - name: Test
         run: vp test
