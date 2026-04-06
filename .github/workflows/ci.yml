@@ -24,7 +24,7 @@ jobs:
           cache: true
           run-install: true
           working-directory: frontend
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Type check
         run: vp check
@@ -33,7 +33,7 @@ jobs:
         run: vp build
 
       - name: Install test deps
-        run: npx playwright install
+        run: pnpm exec playwright install
 
       - name: Test
         run: vp test
