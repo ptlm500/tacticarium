@@ -10,7 +10,6 @@ Standalone React application for managing Tacticarium reference data (factions, 
 - Tailwind CSS 4 (via `@tailwindcss/vite` plugin)
 - React Router v7
 
-
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
