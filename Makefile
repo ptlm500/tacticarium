@@ -1,10 +1,11 @@
-.PHONY: dev-db dev-backend dev-frontend seed help
+.PHONY: dev-db dev-backend dev-frontend dev-admin seed help
 
 help:
 	@echo "Available targets:"
 	@echo "  db-start        - Start PostgreSQL via docker-compose"
 	@echo "  dev-backend   - Run Go backend server"
 	@echo "  dev-frontend  - Run vite server"
+	@echo "  dev-admin     - Run admin frontend vite server (port 5174)"
 	@echo "  check-frontend - Run vp check"
 	@echo "  seed          - Run database migrations and seed data"
 
@@ -16,6 +17,9 @@ dev-backend:
 
 dev-frontend:
 	cd frontend && vp dev
+
+dev-admin:
+	cd admin && npm run dev
 
 check-frontend:
 	cd frontend && vp check
