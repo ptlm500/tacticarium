@@ -1,6 +1,7 @@
 import { defineConfig } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { playwright } from "vite-plus/test/browser/providers/playwright";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -1247,6 +1248,17 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
+  },
+  test: {
+    browser: {
+      enabled: true,
+      headless: true,
+      instances: [{ browser: "chromium" }],
+      provider: playwright(),
+    },
+    globals: true,
+    setupFiles: ["./src/test/setupTests.ts"],
+    include: ["./src/**/*.test.{ts,tsx}"],
   },
   plugins: [react(), tailwindcss()],
 });

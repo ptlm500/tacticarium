@@ -32,6 +32,12 @@ jobs:
       - name: Build
         run: vp build
 
+      - name: Install test deps
+        run: npx playwright install
+
+      - name: Test
+        run: vp test
+
   backend-check:
     name: Backend Check
     runs-on: ubuntu-latest
