@@ -1,9 +1,15 @@
 package game
 
 import (
+	"context"
 	"fmt"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
+
+var tracer = otel.Tracer("tacticarium/game")
 
 type Engine struct {
 	state *GameState
@@ -26,7 +32,24 @@ func (e *Engine) AddPlayer(player *PlayerState) {
 	}
 }
 
-func (e *Engine) Apply(action GameAction) ([]GameEvent, error) {
+func (e *Engine) Apply(ctx context.Context, action GameAction) ([]GameEvent, error) {
+	_, span := tracer.Start(ctx, "game.Apply")
+	span.SetAttributes(
+		attribute.String("game.action_type", string(action.Type)),
+		attribute.Int("game.player_number", action.PlayerNumber),
+		attribute.String("game.phase", string(e.state.CurrentPhase)),
+		attribute.Int("game.round", e.state.CurrentRound),
+	)
+	defer span.End()
+
+	events, err := e.applyAction(action)
+	if err != nil {
+		span.RecordError(err)
+	}
+	return events, err
+}
+
+func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 	switch action.Type {
 	case ActionSelectFaction:
 		return e.applySelectFaction(action)

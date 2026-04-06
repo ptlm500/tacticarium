@@ -607,7 +607,7 @@ func intFromMapAny(m map[string]any, key string) int {
 	return 0
 }
 
-func scoringOptionsFromMapAny(m map[string]any, key string) []ScoringOption {
+func scoringOptionsFromMapAny(m map[string]any, key string) []SecondaryScoringOption {
 	raw, ok := m[key]
 	if !ok {
 		return nil
@@ -616,13 +616,13 @@ func scoringOptionsFromMapAny(m map[string]any, key string) []ScoringOption {
 	if !ok {
 		return nil
 	}
-	opts := make([]ScoringOption, 0, len(items))
+	opts := make([]SecondaryScoringOption, 0, len(items))
 	for _, item := range items {
 		om, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
-		opts = append(opts, ScoringOption{
+		opts = append(opts, SecondaryScoringOption{
 			Label: strFromMapAny(om, "label"),
 			VP:    intFromMapAny(om, "vp"),
 			Mode:  strFromMapAny(om, "mode"),

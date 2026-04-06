@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"log"
+	"log/slog"
 
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib" // Registers "pgx" driver for standard database/sql
 	"github.com/pressly/goose/v3"
@@ -16,7 +17,14 @@ import (
 var migrationsFS embed.FS
 
 func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, databaseURL)
+	cfg, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing database config: %w", err)
+	}
+
+	cfg.ConnConfig.Tracer = otelpgx.NewTracer()
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
@@ -44,13 +52,13 @@ func RunMigrations(databaseURL string) error {
 		return fmt.Errorf("failed to set goose dialect: %w", err)
 	}
 
-	log.Println("Running database migrations...")
+	slog.Info("Running database migrations...")
 
 	// Run the migrations. "migrations" matches the folder name in your embed.FS
 	if err := goose.Up(db, "migrations"); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	log.Println("Database migrations completed successfully")
+	slog.Info("Database migrations completed successfully")
 	return nil
 }

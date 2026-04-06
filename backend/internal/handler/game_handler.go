@@ -3,10 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/peter/tacticarium/backend/internal/auth"
@@ -18,11 +19,8 @@ import (
 )
 
 type GameHandler struct {
-	db  *pgxpool.Pool
-	hub *ws.Hub
-	cfg interface {
-		GetJWTSecret() string
-	}
+	db        *pgxpool.Pool
+	hub       *ws.Hub
 	jwtSecret string
 }
 
@@ -34,116 +32,109 @@ func NewGameHandler(db *pgxpool.Pool, hub *ws.Hub, jwtSecret string) *GameHandle
 	}
 }
 
-func (h *GameHandler) CreateGame(w http.ResponseWriter, r *http.Request) {
-	user := auth.GetUser(r.Context())
+func (h *GameHandler) CreateGame(ctx context.Context, input *struct{}) (*CreateGameOutput, error) {
+	user := auth.GetUser(ctx)
 	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
 	code := invite.GenerateCode(6)
 
 	var gameID string
-	err := h.db.QueryRow(r.Context(),
+	err := h.db.QueryRow(ctx,
 		`INSERT INTO games (invite_code) VALUES ($1) RETURNING id`, code,
 	).Scan(&gameID)
 	if err != nil {
-		log.Printf("Create game error: %v", err)
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		slog.ErrorContext(ctx, "Create game error", "error", err)
+		return nil, huma.Error500InternalServerError("database error")
 	}
 
-	// Add creator as player 1
-	_, err = h.db.Exec(r.Context(),
+	_, err = h.db.Exec(ctx,
 		`INSERT INTO game_players (game_id, user_id, player_number) VALUES ($1, $2, 1)`,
 		gameID, user.UserID)
 	if err != nil {
-		log.Printf("Add player error: %v", err)
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		slog.ErrorContext(ctx, "Add player error", "error", err)
+		return nil, huma.Error500InternalServerError("database error")
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{
-		"id":         gameID,
-		"inviteCode": code,
-	})
+	out := &CreateGameOutput{}
+	out.Body.ID = gameID
+	out.Body.InviteCode = code
+	return out, nil
 }
 
-func (h *GameHandler) JoinGame(w http.ResponseWriter, r *http.Request) {
-	user := auth.GetUser(r.Context())
+func (h *GameHandler) JoinGame(ctx context.Context, input *JoinGameInput) (*JoinGameOutput, error) {
+	user := auth.GetUser(ctx)
 	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
-	code := chi.URLParam(r, "code")
+	code := input.Code
 
 	var gameID, status string
-	err := h.db.QueryRow(r.Context(),
+	err := h.db.QueryRow(ctx,
 		`SELECT id, status FROM games WHERE invite_code = $1`, code,
 	).Scan(&gameID, &status)
 	if err != nil {
-		http.Error(w, "game not found", http.StatusNotFound)
-		return
+		return nil, huma.Error404NotFound("game not found")
 	}
 
 	if status != "setup" {
-		http.Error(w, "game already started", http.StatusBadRequest)
-		return
+		return nil, huma.Error400BadRequest("game already started")
 	}
 
 	// Check if already in game
 	var count int
-	h.db.QueryRow(r.Context(),
+	h.db.QueryRow(ctx,
 		`SELECT COUNT(*) FROM game_players WHERE game_id = $1 AND user_id = $2`,
 		gameID, user.UserID,
 	).Scan(&count)
 
 	if count > 0 {
-		writeJSON(w, http.StatusOK, map[string]string{"id": gameID, "inviteCode": code})
-		return
+		out := &JoinGameOutput{}
+		out.Body.ID = gameID
+		out.Body.InviteCode = code
+		return out, nil
 	}
 
 	// Check player count
-	h.db.QueryRow(r.Context(),
+	h.db.QueryRow(ctx,
 		`SELECT COUNT(*) FROM game_players WHERE game_id = $1`, gameID,
 	).Scan(&count)
 
 	if count >= 2 {
-		http.Error(w, "game is full", http.StatusBadRequest)
-		return
+		return nil, huma.Error400BadRequest("game is full")
 	}
 
-	_, err = h.db.Exec(r.Context(),
+	_, err = h.db.Exec(ctx,
 		`INSERT INTO game_players (game_id, user_id, player_number) VALUES ($1, $2, $3)`,
 		gameID, user.UserID, count+1)
 	if err != nil {
-		log.Printf("Join game error: %v", err)
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		slog.ErrorContext(ctx, "Join game error", "error", err)
+		return nil, huma.Error500InternalServerError("database error")
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"id": gameID, "inviteCode": code})
+	out := &JoinGameOutput{}
+	out.Body.ID = gameID
+	out.Body.InviteCode = code
+	return out, nil
 }
 
-func (h *GameHandler) GetGame(w http.ResponseWriter, r *http.Request) {
-	gameID := chi.URLParam(r, "gameId")
-	state, err := h.loadGameState(r.Context(), gameID)
+func (h *GameHandler) GetGame(ctx context.Context, input *GameIDParam) (*GameStateOutput, error) {
+	state, err := h.loadGameState(ctx, input.GameID)
 	if err != nil {
-		http.Error(w, "game not found", http.StatusNotFound)
-		return
+		return nil, huma.Error404NotFound("game not found")
 	}
-	writeJSON(w, http.StatusOK, state)
+	return &GameStateOutput{Body: state}, nil
 }
 
-func (h *GameHandler) ListGames(w http.ResponseWriter, r *http.Request) {
-	user := auth.GetUser(r.Context())
+func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameListOutput, error) {
+	user := auth.GetUser(ctx)
 	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
-	rows, err := h.db.Query(r.Context(),
+	rows, err := h.db.Query(ctx,
 		`SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
 		 JOIN game_players gp ON g.id = gp.game_id
@@ -151,8 +142,7 @@ func (h *GameHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 		 ORDER BY g.created_at DESC
 		 LIMIT 50`, user.UserID)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
@@ -163,8 +153,7 @@ func (h *GameHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Fetch players for this game
-		pRows, err := h.db.Query(r.Context(),
+		pRows, err := h.db.Query(ctx,
 			`SELECT gp.user_id, u.discord_username, COALESCE(f.name, ''), gp.player_number,
 			        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint
 			 FROM game_players gp
@@ -184,17 +173,16 @@ func (h *GameHandler) ListGames(w http.ResponseWriter, r *http.Request) {
 		games = append(games, g)
 	}
 
-	writeJSON(w, http.StatusOK, games)
+	return &GameListOutput{Body: games}, nil
 }
 
-func (h *GameHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
-	user := auth.GetUser(r.Context())
+func (h *GameHandler) GetHistory(ctx context.Context, input *struct{}) (*GameListOutput, error) {
+	user := auth.GetUser(ctx)
 	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
-	rows, err := h.db.Query(r.Context(),
+	rows, err := h.db.Query(ctx,
 		`SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
 		 JOIN game_players gp ON g.id = gp.game_id
@@ -202,8 +190,7 @@ func (h *GameHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 		 ORDER BY g.completed_at DESC
 		 LIMIT 50`, user.UserID)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
@@ -214,7 +201,7 @@ func (h *GameHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		pRows, err := h.db.Query(r.Context(),
+		pRows, err := h.db.Query(ctx,
 			`SELECT gp.user_id, u.discord_username, COALESCE(f.name, ''), gp.player_number,
 			        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint
 			 FROM game_players gp
@@ -234,54 +221,41 @@ func (h *GameHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 		games = append(games, g)
 	}
 
-	writeJSON(w, http.StatusOK, games)
+	return &GameListOutput{Body: games}, nil
 }
 
-func (h *GameHandler) GetGameEvents(w http.ResponseWriter, r *http.Request) {
-	gameID := chi.URLParam(r, "gameId")
-
-	rows, err := h.db.Query(r.Context(),
+func (h *GameHandler) GetGameEvents(ctx context.Context, input *GameIDParam) (*GameEventsOutput, error) {
+	rows, err := h.db.Query(ctx,
 		`SELECT id, player_number, event_type, event_data, round, phase, created_at
-		 FROM game_events WHERE game_id = $1 ORDER BY id`, gameID)
+		 FROM game_events WHERE game_id = $1 ORDER BY id`, input.GameID)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
-	var events []map[string]any
+	var events []GameEvent
 	for rows.Next() {
-		var id int64
-		var playerNum *int
-		var eventType string
+		var ev GameEvent
 		var eventData json.RawMessage
-		var round *int
-		var phase *string
-		var createdAt time.Time
 
-		if err := rows.Scan(&id, &playerNum, &eventType, &eventData, &round, &phase, &createdAt); err != nil {
+		if err := rows.Scan(&ev.ID, &ev.PlayerNumber, &ev.EventType, &eventData, &ev.Round, &ev.Phase, &ev.CreatedAt); err != nil {
 			continue
 		}
 
-		events = append(events, map[string]any{
-			"id":           id,
-			"playerNumber": playerNum,
-			"eventType":    eventType,
-			"eventData":    json.RawMessage(eventData),
-			"round":        round,
-			"phase":        phase,
-			"createdAt":    createdAt,
-		})
+		var data any
+		json.Unmarshal(eventData, &data)
+		ev.EventData = data
+
+		events = append(events, ev)
 	}
 
-	writeJSON(w, http.StatusOK, events)
+	return &GameEventsOutput{Body: events}, nil
 }
 
-// WebSocket upgrade handler
+// HandleWebSocket stays as a raw chi handler (WebSocket upgrade).
 func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	gameID := chi.URLParam(r, "gameId")
 
-	// Authenticate via query param
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		http.Error(w, "missing token", http.StatusUnauthorized)
@@ -294,7 +268,6 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify player is in this game
 	var playerNumber int
 	err = h.db.QueryRow(r.Context(),
 		`SELECT gp.player_number FROM game_players gp
@@ -307,7 +280,6 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load or create game engine
 	state, err := h.loadGameState(r.Context(), gameID)
 	if err != nil {
 		http.Error(w, "game not found", http.StatusNotFound)
@@ -317,12 +289,11 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	engine := game.NewEngine(state)
 	room := h.hub.GetOrCreateRoom(gameID, engine)
 
-	// Upgrade to WebSocket
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		OriginPatterns: []string{"*"},
 	})
 	if err != nil {
-		log.Printf("WebSocket accept error: %v", err)
+		slog.ErrorContext(r.Context(), "WebSocket accept error", "error", err)
 		return
 	}
 
@@ -381,7 +352,6 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 		state.WinnerID = *winnerID
 	}
 
-	// Load players
 	rows, err := h.db.Query(ctx,
 		`SELECT gp.user_id, u.discord_username, gp.player_number,
 		        COALESCE(gp.faction_id, ''), COALESCE(f.name, ''),
@@ -411,17 +381,15 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 			&p.Ready, &p.SecondaryMode,
 			&tacticalDeckJSON, &activeSecJSON, &achievedSecJSON, &discardedSecJSON,
 			&p.IsChallenger, &p.ChallengerCardID, &p.AdaptOrDieUses); err != nil {
-			log.Printf("Scan player error: %v", err)
+			slog.Error("Scan player error", "error", err)
 			continue
 		}
 
-		// Unmarshal JSONB fields
 		json.Unmarshal(tacticalDeckJSON, &p.TacticalDeck)
 		json.Unmarshal(activeSecJSON, &p.ActiveSecondaries)
 		json.Unmarshal(achievedSecJSON, &p.AchievedSecondaries)
 		json.Unmarshal(discardedSecJSON, &p.DiscardedSecondaries)
 
-		// Ensure non-nil slices for JSON serialization
 		if p.TacticalDeck == nil {
 			p.TacticalDeck = []game.ActiveSecondary{}
 		}
@@ -443,7 +411,7 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	return &state, nil
 }
 
-// PersistGameState saves the current game state back to the database
+// PersistGameState saves the current game state back to the database.
 func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameEvent) {
 	ctx := context.Background()
 
@@ -459,10 +427,9 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 		state.MissionID, state.MissionName, state.TwistID, state.TwistName,
 		state.CompletedAt, state.WinnerID, state.GameID)
 	if err != nil {
-		log.Printf("Persist game state error: %v", err)
+		slog.Error("Persist game state error", "error", err)
 	}
 
-	// Update players
 	for _, p := range state.Players {
 		if p == nil {
 			continue
@@ -486,11 +453,10 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 			p.IsChallenger, p.ChallengerCardID, p.AdaptOrDieUses,
 			state.GameID, p.PlayerNumber)
 		if err != nil {
-			log.Printf("Persist player state error: %v", err)
+			slog.Error("Persist player state error", "error", err)
 		}
 	}
 
-	// Persist events
 	for _, e := range events {
 		eventData, _ := json.Marshal(e.Data)
 		_, err := h.db.Exec(ctx,
@@ -498,7 +464,7 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 			 VALUES ($1, $2, $3, $4, $5, $6)`,
 			state.GameID, e.PlayerNumber, e.Type, eventData, e.Round, e.Phase)
 		if err != nil {
-			log.Printf("Persist event error: %v", err)
+			slog.Error("Persist event error", "error", err)
 		}
 	}
 }

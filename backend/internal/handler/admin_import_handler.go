@@ -2,13 +2,16 @@ package handler
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/peter/tacticarium/backend/internal/seed"
 )
+
+// Import handlers stay as raw chi handlers because they use multipart file uploads
+// which are simpler to handle with http.Request directly.
 
 func (h *AdminHandler) ImportFactions(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("file")
@@ -27,7 +30,7 @@ func (h *AdminHandler) ImportFactions(w http.ResponseWriter, r *http.Request) {
 
 	count, err := seed.SeedFactions(r.Context(), h.db, tmpFile)
 	if err != nil {
-		log.Printf("Import factions error: %v", err)
+		slog.ErrorContext(r.Context(), "Import factions error", "error", err)
 		http.Error(w, "import failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -55,7 +58,7 @@ func (h *AdminHandler) ImportStratagems(w http.ResponseWriter, r *http.Request) 
 
 	detachments, stratagems, err := seed.SeedStratagems(r.Context(), h.db, tmpFile)
 	if err != nil {
-		log.Printf("Import stratagems error: %v", err)
+		slog.ErrorContext(r.Context(), "Import stratagems error", "error", err)
 		http.Error(w, "import failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -84,18 +87,18 @@ func (h *AdminHandler) ImportMissions(w http.ResponseWriter, r *http.Request) {
 
 	stats, err := seed.SeedMissions(r.Context(), h.db, tmpFile)
 	if err != nil {
-		log.Printf("Import missions error: %v", err)
+		slog.ErrorContext(r.Context(), "Import missions error", "error", err)
 		http.Error(w, "import failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"missions":       stats.Missions,
-		"missionRules":   stats.MissionRules,
-		"secondaries":    stats.Secondaries,
+		"missions":        stats.Missions,
+		"missionRules":    stats.MissionRules,
+		"secondaries":     stats.Secondaries,
 		"challengerCards": stats.ChallengerCards,
-		"gambits":        stats.Gambits,
-		"entity":         "missions",
+		"gambits":         stats.Gambits,
+		"entity":          "missions",
 	})
 }
 

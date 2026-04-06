@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"net/http"
+	"context"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/peter/tacticarium/backend/internal/models"
 )
@@ -16,11 +16,10 @@ func NewFactionHandler(db *pgxpool.Pool) *FactionHandler {
 	return &FactionHandler{db: db}
 }
 
-func (h *FactionHandler) ListFactions(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.db.Query(r.Context(), `SELECT id, name, COALESCE(wahapedia_link, '') FROM factions ORDER BY name`)
+func (h *FactionHandler) ListFactions(ctx context.Context, input *struct{}) (*FactionListOutput, error) {
+	rows, err := h.db.Query(ctx, `SELECT id, name, COALESCE(wahapedia_link, '') FROM factions ORDER BY name`)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
@@ -28,23 +27,19 @@ func (h *FactionHandler) ListFactions(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var f models.Faction
 		if err := rows.Scan(&f.ID, &f.Name, &f.WahapediaLink); err != nil {
-			http.Error(w, "scan error", http.StatusInternalServerError)
-			return
+			return nil, huma.Error500InternalServerError("scan error")
 		}
 		factions = append(factions, f)
 	}
 
-	writeJSON(w, http.StatusOK, factions)
+	return &FactionListOutput{Body: factions}, nil
 }
 
-func (h *FactionHandler) ListDetachments(w http.ResponseWriter, r *http.Request) {
-	factionID := chi.URLParam(r, "factionId")
-
-	rows, err := h.db.Query(r.Context(),
-		`SELECT id, faction_id, name FROM detachments WHERE faction_id = $1 ORDER BY name`, factionID)
+func (h *FactionHandler) ListDetachments(ctx context.Context, input *FactionIDParam) (*DetachmentListOutput, error) {
+	rows, err := h.db.Query(ctx,
+		`SELECT id, faction_id, name FROM detachments WHERE faction_id = $1 ORDER BY name`, input.FactionID)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
@@ -52,24 +47,20 @@ func (h *FactionHandler) ListDetachments(w http.ResponseWriter, r *http.Request)
 	for rows.Next() {
 		var d models.Detachment
 		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name); err != nil {
-			http.Error(w, "scan error", http.StatusInternalServerError)
-			return
+			return nil, huma.Error500InternalServerError("scan error")
 		}
 		detachments = append(detachments, d)
 	}
 
-	writeJSON(w, http.StatusOK, detachments)
+	return &DetachmentListOutput{Body: detachments}, nil
 }
 
-func (h *FactionHandler) ListStratagems(w http.ResponseWriter, r *http.Request) {
-	factionID := chi.URLParam(r, "factionId")
-
-	rows, err := h.db.Query(r.Context(),
+func (h *FactionHandler) ListStratagems(ctx context.Context, input *FactionIDParam) (*StratagemListOutput, error) {
+	rows, err := h.db.Query(ctx,
 		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description
-		 FROM stratagems WHERE faction_id = $1 OR faction_id IS NULL ORDER BY name`, factionID)
+		 FROM stratagems WHERE faction_id = $1 OR faction_id IS NULL ORDER BY name`, input.FactionID)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
@@ -77,24 +68,20 @@ func (h *FactionHandler) ListStratagems(w http.ResponseWriter, r *http.Request) 
 	for rows.Next() {
 		var s models.Stratagem
 		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
-			http.Error(w, "scan error", http.StatusInternalServerError)
-			return
+			return nil, huma.Error500InternalServerError("scan error")
 		}
 		stratagems = append(stratagems, s)
 	}
 
-	writeJSON(w, http.StatusOK, stratagems)
+	return &StratagemListOutput{Body: stratagems}, nil
 }
 
-func (h *FactionHandler) ListDetachmentStratagems(w http.ResponseWriter, r *http.Request) {
-	detachmentID := chi.URLParam(r, "detachmentId")
-
-	rows, err := h.db.Query(r.Context(),
+func (h *FactionHandler) ListDetachmentStratagems(ctx context.Context, input *DetachmentIDParam) (*StratagemListOutput, error) {
+	rows, err := h.db.Query(ctx,
 		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description
-		 FROM stratagems WHERE detachment_id = $1 ORDER BY name`, detachmentID)
+		 FROM stratagems WHERE detachment_id = $1 ORDER BY name`, input.DetachmentID)
 	if err != nil {
-		http.Error(w, "database error", http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
@@ -102,11 +89,10 @@ func (h *FactionHandler) ListDetachmentStratagems(w http.ResponseWriter, r *http
 	for rows.Next() {
 		var s models.Stratagem
 		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
-			http.Error(w, "scan error", http.StatusInternalServerError)
-			return
+			return nil, huma.Error500InternalServerError("scan error")
 		}
 		stratagems = append(stratagems, s)
 	}
 
-	writeJSON(w, http.StatusOK, stratagems)
+	return &StratagemListOutput{Body: stratagems}, nil
 }

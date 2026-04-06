@@ -12,10 +12,13 @@ A real-time, mobile-first turn tracker for Warhammer 40K 10th Edition. Two playe
 | State | Zustand | Lightweight state management |
 | Routing | React Router v6 | Client-side routing |
 | Backend | Go 1.22 | API server |
-| Router | chi v5 | HTTP routing + middleware |
+| API Framework | huma v2 (on chi v5) | Typed handlers, auto OpenAPI, RFC 9457 errors |
+| Router | chi v5 | HTTP routing + middleware (underlying router for huma) |
 | WebSocket | nhooyr.io/websocket | Real-time bidirectional comms |
 | Database | PostgreSQL 16 | Persistent storage |
 | DB Driver | pgx v5 + pgxpool | Connection pooling |
+| Observability | OpenTelemetry (OTLP) | Distributed tracing (HTTP, DB, game engine) |
+| Logging | slog (JSON) | Structured logging with trace ID correlation |
 | Auth | Discord OAuth2 → JWT | Player authentication |
 | Admin Auth | GitHub OAuth2 → JWT | Admin authentication |
 | Deploy | Railway | 4-service deployment |
@@ -35,7 +38,7 @@ tacticarium/
 │   ├── Dockerfile                 # Multi-stage: Go build → alpine
 │   ├── go.mod
 │   ├── cmd/
-│   │   ├── server/main.go         # HTTP + WS server entrypoint
+│   │   ├── server/main.go         # HTTP + WS server entrypoint (slog + OTEL init)
 │   │   └── seed/main.go           # Data seeding CLI
 │   └── internal/
 │       ├── config/config.go       # Environment configuration
@@ -43,28 +46,34 @@ tacticarium/
 │       │   ├── discord.go         # Discord OAuth flow
 │       │   ├── github.go          # GitHub OAuth flow (admin)
 │       │   ├── jwt.go             # JWT generation + validation (with role claim)
-│       │   ├── middleware.go      # Player auth middleware (header or cookie)
-│       │   └── admin_middleware.go # Admin auth middleware (checks role=admin)
+│       │   ├── middleware.go      # Player auth chi middleware (WS route)
+│       │   ├── admin_middleware.go # Admin auth chi middleware (import routes)
+│       │   └── huma_middleware.go  # Huma middleware for player + admin auth
 │       ├── db/
-│       │   ├── db.go              # pgxpool + embedded migrations
+│       │   ├── db.go              # pgxpool + embedded migrations + OTEL tracing (otelpgx)
 │       │   └── migrations/        # SQL schema files
-│       ├── models/models.go       # Shared data types
+│       ├── models/models.go       # Shared data types (used as huma Body types)
 │       ├── handler/
-│       │   ├── auth_handler.go    # Discord login, /me, logout
-│       │   ├── admin_auth_handler.go # GitHub login, admin /me
-│       │   ├── admin_handler.go   # Admin CRUD for all reference data
-│       │   ├── admin_import_handler.go # Bulk CSV/JSON import
-│       │   ├── faction_handler.go # Factions, detachments, stratagems
-│       │   ├── mission_handler.go # Mission packs, missions, secondaries
-│       │   └── game_handler.go    # Game CRUD, WS upgrade, persistence
+│       │   ├── types.go           # Huma input/output structs for all endpoints
+│       │   ├── helpers.go         # writeJSON for raw chi handlers
+│       │   ├── auth_handler.go    # Discord login (raw chi), /me (huma), logout (raw chi)
+│       │   ├── admin_auth_handler.go # GitHub login (raw chi), admin /me (huma)
+│       │   ├── admin_handler.go   # Admin CRUD (huma) for all reference data
+│       │   ├── admin_import_handler.go # Bulk CSV/JSON import (raw chi)
+│       │   ├── faction_handler.go # Factions, detachments, stratagems (huma)
+│       │   ├── mission_handler.go # Mission packs, missions, secondaries (huma)
+│       │   └── game_handler.go    # Game CRUD (huma), WS upgrade (raw chi), persistence
 │       ├── game/
-│       │   ├── engine.go          # Core state machine (Apply)
+│       │   ├── engine.go          # Core state machine (Apply with context + OTEL spans)
+│       │   ├── engine_missions.go # Mission system logic (tactical deck, secondaries)
 │       │   ├── state.go           # GameState, PlayerState types
 │       │   ├── actions.go         # Action + Event type definitions
 │       │   └── rules.go           # 10th edition constants + phase logic
+│       ├── telemetry/telemetry.go # OTEL TracerProvider init (OTLP exporter)
+│       ├── logging/logging.go     # slog JSON handler with trace ID injection
 │       ├── ws/
 │       │   ├── hub.go             # Global room manager
-│       │   ├── room.go            # Per-game room (goroutine)
+│       │   ├── room.go            # Per-game room (goroutine, OTEL spans)
 │       │   ├── client.go          # Per-connection read/write pumps
 │       │   └── protocol.go        # Message constructors
 │       ├── seed/                  # CSV/JSON import logic (reused by admin)
@@ -121,7 +130,7 @@ tacticarium/
 
 ### 1. Server-Authoritative Game Engine
 
-All game state mutations flow through `engine.Apply(action) → ([]events, error)`. The engine validates every action against the current state and rejects invalid ones. Clients receive the full authoritative state after each action — there is no client-side game logic.
+All game state mutations flow through `engine.Apply(ctx, action) → ([]events, error)`. The engine validates every action against the current state and rejects invalid ones. Clients receive the full authoritative state after each action — there is no client-side game logic. Each `Apply` call creates an OTEL span with action type, player number, phase, and round attributes.
 
 **Why**: Prevents cheating and state desync between players. The server is the single source of truth.
 
@@ -172,15 +181,59 @@ Games are joined via 6-character alphanumeric codes (excluding ambiguous chars l
 
 **Why**: Simple, privacy-preserving. Works across any communication channel (Discord, text, in-person).
 
+### 9. Huma Framework (Typed HTTP Handlers + OpenAPI)
+
+REST endpoints use the [huma](https://huma.rocks/) framework (v2) via the `humachi` adapter, which wraps the existing chi router. Handlers have typed input/output signatures:
+
+```go
+func (h *Handler) GetFaction(ctx context.Context, input *IDParam) (*FactionOutput, error)
+```
+
+Huma provides: automatic JSON request/response encoding, auto-generated OpenAPI 3.1 spec (`/openapi.json`), RFC 9457 problem details error responses (`application/problem+json`), and input validation from struct tags.
+
+**Exceptions that remain as raw chi handlers:**
+- OAuth redirect/callback endpoints (need HTTP redirects and cookie setting)
+- Logout endpoint (needs to clear cookies via `Set-Cookie` header)
+- WebSocket upgrade endpoint (non-HTTP lifecycle)
+- Bulk import endpoints (multipart file upload)
+
+Auth middleware exists in two forms: huma middleware (`auth.HumaMiddleware`, `auth.HumaAdminMiddleware`) applied per-operation for huma endpoints, and chi middleware (`auth.Middleware`, `auth.AdminMiddleware`) used in chi route groups for raw handlers.
+
+**Why**: Eliminates manual JSON marshaling boilerplate, provides automatic OpenAPI spec for TypeScript type generation, and standardises error responses.
+
+### 10. OpenTelemetry Observability
+
+The backend has full distributed tracing via OpenTelemetry (OTLP):
+
+- **HTTP layer**: `otelhttp.NewHandler()` wraps the chi router, creating spans for every HTTP request
+- **Database layer**: `otelpgx` tracer attached to the pgxpool config, creating spans for every SQL query
+- **Game engine**: `engine.Apply()` creates spans with game context attributes (action type, player, phase, round)
+- **WebSocket**: `room.processAction()` creates spans for each action processed through a game room
+
+Structured logging uses `slog` with a JSON handler. A custom `traceHandler` wrapper injects `trace_id` and `span_id` from the OTEL span context into every log record, correlating logs with traces.
+
+The OTLP exporter is configured via standard environment variables (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SDK_DISABLED`). If tracing setup fails, the server continues without it (graceful degradation).
+
+**Why**: End-to-end request tracing from HTTP through database queries and game engine logic. Trace-correlated structured logs replace unstructured `log.Printf` calls.
+
 ---
 
 ## REST API Endpoints
+
+All huma-handled endpoints return RFC 9457 problem details on error:
+
+```json
+{"status": 404, "title": "Not Found", "detail": "not found"}
+```
+
+An auto-generated OpenAPI 3.1 spec is served at `GET /openapi.json`.
 
 ### Public
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/health` | Health check → `{"status":"ok"}` |
+| `GET` | `/openapi.json` | Auto-generated OpenAPI 3.1 spec |
 | `GET` | `/api/auth/discord` | Redirect to Discord OAuth (players) |
 | `GET` | `/api/auth/discord/callback` | Discord OAuth callback |
 | `GET` | `/api/auth/github` | Redirect to GitHub OAuth (admin) |
@@ -207,6 +260,8 @@ Games are joined via 6-character alphanumeric codes (excluding ambiguous chars l
 | `GET` | `/api/mission-packs/{packId}/missions` | Missions in a pack |
 | `GET` | `/api/mission-packs/{packId}/secondaries` | Secondary objectives |
 | `GET` | `/api/mission-packs/{packId}/gambits` | Gambit cards |
+| `GET` | `/api/mission-packs/{packId}/mission-rules` | Mission rules (twists) |
+| `GET` | `/api/mission-packs/{packId}/challenger-cards` | Challenger cards |
 
 **Games:**
 
@@ -466,6 +521,7 @@ LoginPage → DashboardPage → EntityListPage → EntityEditPage
 - `GITHUB_REDIRECT_URI` — e.g. `https://api.myapp.railway.app/api/auth/github/callback`
 - `ADMIN_GITHUB_IDS` — Comma-separated GitHub user IDs allowed admin access
 - `ADMIN_FRONTEND_URL` — e.g. `https://admin.myapp.railway.app` (for CORS + redirect)
+- `OTEL_EXPORTER_OTLP_ENDPOINT` — OTLP collector endpoint (default: `http://localhost:4318`). Set `OTEL_SDK_DISABLED=true` to disable tracing.
 
 **Frontend (build-time):**
 - `VITE_API_URL` — Backend URL, e.g. `https://api.myapp.railway.app`
@@ -518,7 +574,7 @@ The admin interface is a standalone React application (`admin/`) for managing al
 5. Generates JWT with `role: "admin"` claim → redirects to admin frontend with token
 6. Admin frontend stores token in `localStorage` as `admin_token`
 
-Admin JWTs are validated by `AdminMiddleware`, which checks for the `role: "admin"` claim. This is separate from the player `Middleware` — player tokens cannot access admin routes and vice versa.
+Admin JWTs are validated by `HumaAdminMiddleware` (for huma endpoints) or `AdminMiddleware` (for raw chi routes like imports), which check for the `role: "admin"` claim. This is separate from the player middleware — player tokens cannot access admin routes and vice versa.
 
 ### Managed Entities
 

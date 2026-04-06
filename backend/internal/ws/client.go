@@ -3,7 +3,7 @@ package ws
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -45,7 +45,7 @@ func (c *Client) ReadPump(ctx context.Context) {
 		_, data, err := c.conn.Read(ctx)
 		if err != nil {
 			if websocket.CloseStatus(err) != -1 {
-				log.Printf("WebSocket closed for user %s: %v", c.userID, err)
+				slog.Info("WebSocket closed", "user_id", c.userID, "error", err)
 			}
 			return
 		}
@@ -98,7 +98,7 @@ func (c *Client) WritePump(ctx context.Context) {
 			}
 			data, err := json.Marshal(msg)
 			if err != nil {
-				log.Printf("Error marshaling message: %v", err)
+				slog.Error("Error marshaling message", "error", err)
 				continue
 			}
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
