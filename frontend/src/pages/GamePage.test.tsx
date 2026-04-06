@@ -1,11 +1,10 @@
-import { screen } from "@testing-library/react";
+import { screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { GamePage } from "./GamePage";
 import { useGameStore } from "../stores/gameStore";
 import { makeGameState, makePlayerState, mockUser, mockStratagems } from "../test/fixtures";
-import { gameWs } from "../mocks/handlers/ws";
-import { http, HttpResponse } from "msw";
+import { ws, http, HttpResponse } from "msw";
 import { worker } from "../mocks/browser";
 import { Route, Routes } from "react-router-dom";
 
@@ -16,9 +15,12 @@ function renderGame(gameStateOverrides?: Parameters<typeof makeGameState>[0]) {
   useGameStore.getState().setGameState(gs);
   localStorage.setItem("token", "test-token");
 
-  gameWs.addEventListener("connection", ({ client }) => {
-    client.send(JSON.stringify({ type: "state_update", data: gs }));
-  });
+  const testLink = ws.link("ws://localhost:8080/ws/game/*");
+  worker.use(
+    testLink.addEventListener("connection", ({ client }) => {
+      client.send(JSON.stringify({ type: "state_update", data: gs }));
+    }),
+  );
 
   return renderWithProviders(
     <Routes>
@@ -35,9 +37,11 @@ describe("GamePage", () => {
   });
 
   it("shows Victory when game is completed and player won", async () => {
-    renderGame({
-      status: "completed",
-      winnerId: "user-1",
+    await act(async () => {
+      renderGame({
+        status: "completed",
+        winnerId: "user-1",
+      });
     });
 
     await vi.waitFor(() => {
@@ -46,9 +50,11 @@ describe("GamePage", () => {
   });
 
   it("shows Defeat when game is completed and player lost", async () => {
-    renderGame({
-      status: "completed",
-      winnerId: "user-2",
+    await act(async () => {
+      renderGame({
+        status: "completed",
+        winnerId: "user-2",
+      });
     });
 
     await vi.waitFor(() => {
@@ -57,9 +63,11 @@ describe("GamePage", () => {
   });
 
   it("shows Draw when game is completed with no winner", async () => {
-    renderGame({
-      status: "completed",
-      winnerId: undefined,
+    await act(async () => {
+      renderGame({
+        status: "completed",
+        winnerId: undefined,
+      });
     });
 
     await vi.waitFor(() => {
@@ -68,10 +76,12 @@ describe("GamePage", () => {
   });
 
   it("shows turn banner indicating player's turn", async () => {
-    renderGame({
-      activePlayer: 1,
-      currentRound: 2,
-      currentPhase: "shooting",
+    await act(async () => {
+      renderGame({
+        activePlayer: 1,
+        currentRound: 2,
+        currentPhase: "shooting",
+      });
     });
 
     await vi.waitFor(() => {
@@ -82,9 +92,11 @@ describe("GamePage", () => {
   });
 
   it("shows opponent's turn in banner", async () => {
-    renderGame({
-      activePlayer: 2,
-      currentPhase: "movement",
+    await act(async () => {
+      renderGame({
+        activePlayer: 2,
+        currentPhase: "movement",
+      });
     });
 
     await vi.waitFor(() => {
@@ -93,7 +105,9 @@ describe("GamePage", () => {
   });
 
   it("shows Advance Phase button only on player's turn", async () => {
-    renderGame({ activePlayer: 1 });
+    await act(async () => {
+      renderGame({ activePlayer: 1 });
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText("Advance Phase")).toBeTruthy();
@@ -101,7 +115,9 @@ describe("GamePage", () => {
   });
 
   it("hides Advance Phase button on opponent's turn", async () => {
-    renderGame({ activePlayer: 2 });
+    await act(async () => {
+      renderGame({ activePlayer: 2 });
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText("Concede")).toBeTruthy();
@@ -117,9 +133,11 @@ describe("GamePage", () => {
       }),
     );
 
-    renderGame({
-      activePlayer: 1,
-      currentPhase: "shooting",
+    await act(async () => {
+      renderGame({
+        activePlayer: 1,
+        currentPhase: "shooting",
+      });
     });
 
     // Expand stratagems panel
@@ -142,7 +160,9 @@ describe("GamePage", () => {
   });
 
   it("updates UI when WebSocket sends state_update", async () => {
-    renderGame({ currentRound: 1, currentPhase: "command" });
+    await act(async () => {
+      renderGame({ currentRound: 1, currentPhase: "command" });
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText(/Battle Round 1/)).toBeTruthy();
@@ -176,23 +196,25 @@ describe("GamePage", () => {
       }),
     );
 
-    renderGame({
-      activePlayer: 1,
-      currentPhase: "fight",
-      currentRound: 3,
-      currentTurn: 1,
-      players: [
-        makePlayerState({
-          secondaryMode: "tactical",
-          activeSecondaries: [],
-          tacticalDeck: [],
-        }),
-        makePlayerState({
-          userId: "user-2",
-          username: "Opponent",
-          playerNumber: 2,
-        }),
-      ],
+    await act(async () => {
+      renderGame({
+        activePlayer: 1,
+        currentPhase: "fight",
+        currentRound: 3,
+        currentTurn: 1,
+        players: [
+          makePlayerState({
+            secondaryMode: "tactical",
+            activeSecondaries: [],
+            tacticalDeck: [],
+          }),
+          makePlayerState({
+            userId: "user-2",
+            username: "Opponent",
+            playerNumber: 2,
+          }),
+        ],
+      });
     });
 
     const user = userEvent.setup();

@@ -1,8 +1,9 @@
-import { render } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import { useGameConnection } from "./useGameState";
 import { useGameStore } from "../stores/gameStore";
 import { makeGameState, mockEvent } from "../test/fixtures";
-import { gameWs } from "../mocks/handlers/ws";
+import { ws } from "msw";
+import { worker } from "../mocks/browser";
 
 function TestComponent({ gameId, token }: { gameId: string; token: string }) {
   const { connected } = useGameConnection(gameId, token);
@@ -17,15 +18,16 @@ describe("useGameConnection", () => {
   it("routes state_update messages to the store", async () => {
     const gs = makeGameState();
 
-    const connectionPromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.send(JSON.stringify({ type: "state_update", data: gs }));
-        resolve();
-      });
-    });
+      }),
+    );
 
-    render(<TestComponent gameId="game-1" token="tok" />);
-    await connectionPromise;
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" />);
+    });
 
     await vi.waitFor(() => {
       expect(useGameStore.getState().gameState).toEqual(gs);
@@ -33,15 +35,16 @@ describe("useGameConnection", () => {
   });
 
   it("routes event messages to the store", async () => {
-    const connectionPromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.send(JSON.stringify({ type: "event", data: mockEvent }));
-        resolve();
-      });
-    });
+      }),
+    );
 
-    render(<TestComponent gameId="game-1" token="tok" />);
-    await connectionPromise;
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" />);
+    });
 
     await vi.waitFor(() => {
       expect(useGameStore.getState().events).toHaveLength(1);
@@ -50,15 +53,16 @@ describe("useGameConnection", () => {
   });
 
   it("routes error messages to the store and auto-clears", async () => {
-    const connectionPromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.send(JSON.stringify({ type: "error", data: { message: "Bad move" } }));
-        resolve();
-      });
-    });
+      }),
+    );
 
-    render(<TestComponent gameId="game-1" token="tok" />);
-    await connectionPromise;
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" />);
+    });
 
     await vi.waitFor(() => {
       expect(useGameStore.getState().error).toBe("Bad move");
@@ -66,20 +70,21 @@ describe("useGameConnection", () => {
   });
 
   it("routes player_connected/disconnected messages", async () => {
-    const connectionPromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.send(
           JSON.stringify({
             type: "player_connected",
             data: { playerNumber: 2, username: "Opponent" },
           }),
         );
-        resolve();
-      });
-    });
+      }),
+    );
 
-    render(<TestComponent gameId="game-1" token="tok" />);
-    await connectionPromise;
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" />);
+    });
 
     await vi.waitFor(() => {
       expect(useGameStore.getState().opponentConnected).toBe(true);

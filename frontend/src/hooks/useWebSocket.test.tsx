@@ -1,6 +1,8 @@
+import { render, screen, act } from "@testing-library/react";
 import { useWebSocket } from "./useWebSocket";
 import { ServerMessage } from "../types/ws";
-import { gameWs } from "../mocks/handlers/ws";
+import { ws } from "msw";
+import { worker } from "../mocks/browser";
 
 function TestComponent({
   gameId,
@@ -28,16 +30,16 @@ describe("useWebSocket", () => {
   });
 
   it("connects to WebSocket server", async () => {
-    const serverMessagePromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.send(JSON.stringify({ type: "pong", data: null }));
-        resolve();
-      });
+      }),
+    );
+
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
     });
-
-    render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
-
-    await serverMessagePromise;
 
     await vi.waitFor(() => {
       expect(screen.getByTestId("connected").textContent).toBe("true");
@@ -50,16 +52,16 @@ describe("useWebSocket", () => {
       data: { gameId: "game-1" },
     };
 
-    const connectionPromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.send(JSON.stringify(stateMsg));
-        resolve();
-      });
+      }),
+    );
+
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
     });
-
-    render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
-
-    await connectionPromise;
 
     await vi.waitFor(() => {
       expect(onMessage).toHaveBeenCalledWith(stateMsg);
@@ -69,19 +71,19 @@ describe("useWebSocket", () => {
   it("sends action messages over WebSocket", async () => {
     const sentMessages: string[] = [];
 
-    const connectionPromise = new Promise<void>((resolve) => {
-      gameWs.addEventListener("connection", ({ client }) => {
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
         client.addEventListener("message", (event) => {
           sentMessages.push(typeof event.data === "string" ? event.data : "");
         });
         client.send(JSON.stringify({ type: "pong", data: null }));
-        resolve();
-      });
+      }),
+    );
+
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
     });
-
-    render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
-
-    await connectionPromise;
 
     await vi.waitFor(() => {
       expect(screen.getByTestId("connected").textContent).toBe("true");

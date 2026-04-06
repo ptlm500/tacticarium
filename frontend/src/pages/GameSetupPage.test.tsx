@@ -1,9 +1,10 @@
-import { screen } from "@testing-library/react";
+import { screen, act } from "@testing-library/react";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { GameSetupPage } from "./GameSetupPage";
 import { useGameStore } from "../stores/gameStore";
 import { makeGameState, makePlayerState, mockUser } from "../test/fixtures";
-import { gameWs } from "../mocks/handlers/ws";
+import { ws } from "msw";
+import { worker } from "../mocks/browser";
 import { Route, Routes } from "react-router-dom";
 
 function renderSetup() {
@@ -28,9 +29,12 @@ function renderSetup() {
   useGameStore.getState().setGameState(gs);
   localStorage.setItem("token", "test-token");
 
-  gameWs.addEventListener("connection", ({ client }) => {
-    client.send(JSON.stringify({ type: "state_update", data: gs }));
-  });
+  const testLink = ws.link("ws://localhost:8080/ws/game/*");
+  worker.use(
+    testLink.addEventListener("connection", ({ client }) => {
+      client.send(JSON.stringify({ type: "state_update", data: gs }));
+    }),
+  );
 
   return renderWithProviders(
     <Routes>
@@ -47,7 +51,9 @@ describe("GameSetupPage", () => {
   });
 
   it("renders the setup page header", async () => {
-    renderSetup();
+    await act(async () => {
+      renderSetup();
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText("Game Setup")).toBeTruthy();
@@ -55,7 +61,9 @@ describe("GameSetupPage", () => {
   });
 
   it("shows the invite code", async () => {
-    renderSetup();
+    await act(async () => {
+      renderSetup();
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText(/Invite: ABC123/)).toBeTruthy();
@@ -63,7 +71,9 @@ describe("GameSetupPage", () => {
   });
 
   it("renders faction picker from API", async () => {
-    renderSetup();
+    await act(async () => {
+      renderSetup();
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText("Your Faction")).toBeTruthy();
@@ -78,7 +88,9 @@ describe("GameSetupPage", () => {
   });
 
   it("shows Ready Up button disabled when setup is incomplete", async () => {
-    renderSetup();
+    await act(async () => {
+      renderSetup();
+    });
 
     await vi.waitFor(() => {
       const readyBtn = screen.getByText("Ready Up");
@@ -108,16 +120,21 @@ describe("GameSetupPage", () => {
     useGameStore.getState().setGameState(gs);
     localStorage.setItem("token", "test-token");
 
-    gameWs.addEventListener("connection", ({ client }) => {
-      client.send(JSON.stringify({ type: "state_update", data: gs }));
-    });
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/game/:id/setup" element={<GameSetupPage />} />
-      </Routes>,
-      { user: mockUser, route: "/game/game-1/setup" },
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
     );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText("Detachment")).toBeTruthy();
@@ -150,16 +167,21 @@ describe("GameSetupPage", () => {
     useGameStore.getState().setGameState(gs);
     localStorage.setItem("token", "test-token");
 
-    gameWs.addEventListener("connection", ({ client }) => {
-      client.send(JSON.stringify({ type: "state_update", data: gs }));
-    });
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/game/:id/setup" element={<GameSetupPage />} />
-      </Routes>,
-      { user: mockUser, route: "/game/game-1/setup" },
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
     );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
 
     await vi.waitFor(() => {
       expect(screen.getByText("Primary Mission")).toBeTruthy();
