@@ -41,6 +41,34 @@ jobs:
       - name: Build Docker Image
         run: docker build -t turn-tracker-frontend .
 
+  admin-check:
+    name: Admin Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 'lts'
+          cache: true
+          run-install: true
+          working-directory: admin
+          cache-dependency-path: admin/pnpm-lock.yaml
+
+      - name: Type check
+        run: vp check
+
+      - name: Build
+        run: vp build
+
+      - name: Build Docker Image
+        run: docker build -t turn-tracker-admin .
+
   backend-check:
     name: Backend Check
     runs-on: ubuntu-latest

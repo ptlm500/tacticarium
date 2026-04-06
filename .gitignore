@@ -1,9 +1,11 @@
 # Dependencies
 frontend/node_modules/
+admin/node_modules/
 node_modules/
 
 # Build output
 frontend/dist/
+admin/dist/
 backend/server
 backend/seed
 

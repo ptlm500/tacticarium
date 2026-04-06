@@ -75,10 +75,12 @@ func MustSetupTestEnv() *TestEnv {
 	hub := ws.NewHub()
 
 	cfg := &config.Config{
-		DatabaseURL: connStr,
-		JWTSecret:   TestJWTSecret,
-		FrontendURL: "http://localhost:3000",
-		Port:        "0",
+		DatabaseURL:      connStr,
+		JWTSecret:        TestJWTSecret,
+		FrontendURL:      "http://localhost:3000",
+		AdminFrontendURL: "http://localhost:5174",
+		AdminGitHubIDs:   "12345",
+		Port:             "0",
 	}
 
 	r := server.NewRouter(pool, hub, cfg)
@@ -136,6 +138,16 @@ func GenerateToken(t *testing.T, userID, username string) string {
 	token, err := auth.GenerateToken(TestJWTSecret, userID, username)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
+	}
+	return token
+}
+
+// GenerateAdminToken creates a valid admin JWT for testing.
+func GenerateAdminToken(t *testing.T, githubID, username string) string {
+	t.Helper()
+	token, err := auth.GenerateTokenWithRole(TestJWTSecret, githubID, username, "admin")
+	if err != nil {
+		t.Fatalf("Failed to generate admin token: %v", err)
 	}
 	return token
 }
