@@ -39,7 +39,8 @@ jobs:
         run: vp test
 
       - name: Build Docker Image
-        run: docker build -t turn-tracker-frontend .
+        run: docker build -t turn-tracker-frontend -f frontend/Dockerfile .
+        working-directory: ${{ github.workspace }}
 
   admin-check:
     name: Admin Check
@@ -67,7 +68,8 @@ jobs:
         run: vp build
 
       - name: Build Docker Image
-        run: docker build -t turn-tracker-admin .
+        run: docker build -t turn-tracker-admin -f admin/Dockerfile .
+        working-directory: ${{ github.workspace }}
 
   generated-types-check:
     name: Generated Types Up-to-Date
