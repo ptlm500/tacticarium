@@ -34,16 +34,17 @@ export function SecondaryEditPage() {
         .catch(() => navigate("/secondaries"));
   }, [id, navigate]);
 
+  const options = form.scoringOptions ?? [];
+
   const updateOption = (index: number, field: keyof ScoringOption, value: string | number) => {
-    const options = [...form.scoringOptions];
-    options[index] = { ...options[index], [field]: value };
-    setForm({ ...form, scoringOptions: options });
+    const updated = [...options];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, scoringOptions: updated });
   };
 
-  const addOption = () =>
-    setForm({ ...form, scoringOptions: [...form.scoringOptions, { ...emptyOption }] });
+  const addOption = () => setForm({ ...form, scoringOptions: [...options, { ...emptyOption }] });
   const removeOption = (index: number) =>
-    setForm({ ...form, scoringOptions: form.scoringOptions.filter((_, i) => i !== index) });
+    setForm({ ...form, scoringOptions: options.filter((_, i) => i !== index) });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +158,7 @@ export function SecondaryEditPage() {
               + Add Option
             </button>
           </div>
-          {form.scoringOptions.map((opt, i) => (
+          {options.map((opt, i) => (
             <div key={i} className="mb-2 p-3 bg-gray-800 rounded border border-gray-700">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-gray-500">Option {i + 1}</span>
@@ -203,9 +204,7 @@ export function SecondaryEditPage() {
               </div>
             </div>
           ))}
-          {form.scoringOptions.length === 0 && (
-            <p className="text-xs text-gray-500">No scoring options.</p>
-          )}
+          {options.length === 0 && <p className="text-xs text-gray-500">No scoring options.</p>}
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}

@@ -1,95 +1,20 @@
+import type { components } from "../types/api.generated";
 import { api, uploadFile } from "./client";
 
-// Types matching backend models
-export interface Faction {
-  id: string;
-  name: string;
-  wahapediaLink?: string;
-}
+type Schemas = components["schemas"];
 
-export interface Detachment {
-  id: string;
-  factionId: string;
-  name: string;
-}
-
-export interface Stratagem {
-  id: string;
-  factionId: string;
-  detachmentId?: string;
-  name: string;
-  type: string;
-  cpCost: number;
-  legend?: string;
-  turn: string;
-  phase: string;
-  description: string;
-}
-
-export interface MissionPack {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-export interface ScoringAction {
-  label: string;
-  vp: number;
-  minRound?: number;
-  description?: string;
-  scoringTiming?: string;
-}
-
-export interface Mission {
-  id: string;
-  missionPackId: string;
-  name: string;
-  lore?: string;
-  description: string;
-  scoringRules: ScoringAction[];
-  scoringTiming: string;
-}
-
-export interface ScoringOption {
-  label: string;
-  vp: number;
-  mode?: string;
-}
-
-export interface Secondary {
-  id: string;
-  missionPackId: string;
-  name: string;
-  lore?: string;
-  description: string;
-  maxVp: number;
-  isFixed: boolean;
-  scoringOptions: ScoringOption[];
-}
-
-export interface Gambit {
-  id: string;
-  missionPackId: string;
-  name: string;
-  description: string;
-  vpValue: number;
-}
-
-export interface ChallengerCard {
-  id: string;
-  missionPackId: string;
-  name: string;
-  lore?: string;
-  description: string;
-}
-
-export interface MissionRule {
-  id: string;
-  missionPackId: string;
-  name: string;
-  lore?: string;
-  description: string;
-}
+// Types derived from OpenAPI schema, with id guaranteed present when read from API
+export type Faction = Schemas["Faction"] & { id: string };
+export type Detachment = Schemas["Detachment"] & { id: string };
+export type Stratagem = Schemas["Stratagem"] & { id: string };
+export type MissionPack = Schemas["MissionPack"] & { id: string };
+export type ScoringAction = Schemas["ScoringAction"];
+export type Mission = Schemas["Mission"] & { id: string };
+export type ScoringOption = Schemas["ScoringOption"];
+export type Secondary = Schemas["Secondary"] & { id: string };
+export type Gambit = Schemas["Gambit"] & { id: string };
+export type ChallengerCard = Schemas["ChallengerCard"] & { id: string };
+export type MissionRule = Schemas["MissionRule"] & { id: string };
 
 export interface ImportResult {
   entity: string;
