@@ -24,7 +24,7 @@ func (h *MissionHandler) ListMissionPacks(ctx context.Context, input *struct{}) 
 	}
 	defer rows.Close()
 
-	var packs []models.MissionPack
+	packs := make([]models.MissionPack, 0)
 	for rows.Next() {
 		var p models.MissionPack
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description); err != nil {
@@ -139,7 +139,7 @@ func (h *MissionHandler) ListGambits(ctx context.Context, input *PackIDParam) (*
 	}
 	defer rows.Close()
 
-	var gambits []models.Gambit
+	gambits := make([]models.Gambit, 0)
 	for rows.Next() {
 		var g models.Gambit
 		if err := rows.Scan(&g.ID, &g.MissionPackID, &g.Name, &g.Description, &g.VPValue); err != nil {

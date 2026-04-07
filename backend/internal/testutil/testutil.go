@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/peter/tacticarium/backend/internal/auth"
 	"github.com/peter/tacticarium/backend/internal/config"
 	"github.com/peter/tacticarium/backend/internal/db"
@@ -347,6 +349,34 @@ func ReadJSON(t *testing.T, resp *http.Response, out interface{}) {
 	if err := json.Unmarshal(data, out); err != nil {
 		t.Fatalf("Failed to unmarshal response body: %v\nBody: %s", err, string(data))
 	}
+}
+
+// ProblemDetails represents an RFC 9457 problem details response from huma.
+type ProblemDetails struct {
+	Status int    `json:"status"`
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
+}
+
+// AssertProblemDetails reads the response body and asserts it is a valid
+// RFC 9457 problem details JSON object with the expected status code.
+// Returns the parsed ProblemDetails for further assertions.
+func AssertProblemDetails(t *testing.T, resp *http.Response, expectedStatus int) ProblemDetails {
+	t.Helper()
+	defer resp.Body.Close()
+
+	assert.Equal(t, expectedStatus, resp.StatusCode)
+
+	data, err := io.ReadAll(resp.Body)
+	require.NoError(t, err, "failed to read response body")
+
+	var pd ProblemDetails
+	require.NoError(t, json.Unmarshal(data, &pd), "response is not valid JSON: %s", string(data))
+
+	assert.Equal(t, expectedStatus, pd.Status, "problem details status should match HTTP status")
+	assert.NotEmpty(t, pd.Title, "problem details should have a title")
+
+	return pd
 }
 
 // DialWS connects to the WebSocket endpoint for a game.

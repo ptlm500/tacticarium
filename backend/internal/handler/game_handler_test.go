@@ -38,8 +38,7 @@ func TestCreateGame_Unauthorized(t *testing.T) {
 	env := testutil.SharedEnv
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/games", nil, nil)
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusUnauthorized)
 }
 
 func TestJoinGame(t *testing.T) {
@@ -93,8 +92,8 @@ func TestJoinGame_GameFull(t *testing.T) {
 	token3 := testutil.GenerateToken(t, user3ID, "player3")
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/join/"+inviteCode, nil, testutil.AuthHeader(token3))
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	resp.Body.Close()
+	pd := testutil.AssertProblemDetails(t, resp, http.StatusBadRequest)
+	assert.Contains(t, pd.Detail, "full")
 }
 
 func TestJoinGame_InvalidCode(t *testing.T) {
@@ -105,8 +104,7 @@ func TestJoinGame_InvalidCode(t *testing.T) {
 	token := testutil.GenerateToken(t, userID, "player1")
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/join/XXXXXX", nil, testutil.AuthHeader(token))
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
 }
 
 func TestJoinGame_GameAlreadyStarted(t *testing.T) {
@@ -122,8 +120,8 @@ func TestJoinGame_GameAlreadyStarted(t *testing.T) {
 	token2 := testutil.GenerateToken(t, user2ID, "player2")
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/join/"+inviteCode, nil, testutil.AuthHeader(token2))
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	resp.Body.Close()
+	pd := testutil.AssertProblemDetails(t, resp, http.StatusBadRequest)
+	assert.Contains(t, pd.Detail, "started")
 }
 
 func TestGetGame(t *testing.T) {
@@ -157,8 +155,7 @@ func TestGetGame_NotFound(t *testing.T) {
 	token := testutil.GenerateToken(t, userID, "player1")
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/games/00000000-0000-0000-0000-000000000000", nil, testutil.AuthHeader(token))
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
 }
 
 func TestListGames(t *testing.T) {
