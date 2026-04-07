@@ -23,7 +23,7 @@ func (h *FactionHandler) ListFactions(ctx context.Context, input *struct{}) (*Fa
 	}
 	defer rows.Close()
 
-	var factions []models.Faction
+	factions := make([]models.Faction, 0)
 	for rows.Next() {
 		var f models.Faction
 		if err := rows.Scan(&f.ID, &f.Name, &f.WahapediaLink); err != nil {
@@ -43,7 +43,7 @@ func (h *FactionHandler) ListDetachments(ctx context.Context, input *FactionIDPa
 	}
 	defer rows.Close()
 
-	var detachments []models.Detachment
+	detachments := make([]models.Detachment, 0)
 	for rows.Next() {
 		var d models.Detachment
 		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name); err != nil {
@@ -64,7 +64,7 @@ func (h *FactionHandler) ListStratagems(ctx context.Context, input *FactionIDPar
 	}
 	defer rows.Close()
 
-	var stratagems []models.Stratagem
+	stratagems := make([]models.Stratagem, 0)
 	for rows.Next() {
 		var s models.Stratagem
 		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
@@ -85,7 +85,7 @@ func (h *FactionHandler) ListDetachmentStratagems(ctx context.Context, input *De
 	}
 	defer rows.Close()
 
-	var stratagems []models.Stratagem
+	stratagems := make([]models.Stratagem, 0)
 	for rows.Next() {
 		var s models.Stratagem
 		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {

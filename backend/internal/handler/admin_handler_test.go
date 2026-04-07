@@ -44,8 +44,7 @@ func TestAdminEndpoints_NoToken(t *testing.T) {
 
 	for _, ep := range endpoints {
 		resp := testutil.DoRequest(t, env, ep.method, ep.path, nil, nil)
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode, "%s %s should require auth", ep.method, ep.path)
-		resp.Body.Close()
+		testutil.AssertProblemDetails(t, resp, http.StatusUnauthorized)
 	}
 }
 
@@ -57,8 +56,7 @@ func TestAdminEndpoints_PlayerTokenForbidden(t *testing.T) {
 	playerToken := testutil.GenerateToken(t, userID, "player1")
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/admin/factions", nil, testutil.AuthHeader(playerToken))
-	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusForbidden)
 }
 
 // --- Factions CRUD ---
@@ -104,8 +102,7 @@ func TestAdminFactions_CRUD(t *testing.T) {
 
 	// Get not found
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/factions/NOPE", nil, testutil.AuthHeader(token))
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/factions/SM", nil, testutil.AuthHeader(token))
@@ -114,8 +111,7 @@ func TestAdminFactions_CRUD(t *testing.T) {
 
 	// Delete not found
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/factions/SM", nil, testutil.AuthHeader(token))
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
 }
 
 func TestAdminFactions_CreateValidation(t *testing.T) {
@@ -126,8 +122,7 @@ func TestAdminFactions_CreateValidation(t *testing.T) {
 	resp := testutil.DoRequest(t, env, "POST", "/api/admin/factions", map[string]interface{}{
 		"id": "", "name": "",
 	}, testutil.AuthHeader(token))
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusBadRequest)
 }
 
 // --- Detachments CRUD ---
@@ -517,7 +512,6 @@ func TestAdminUpdate_NotFound(t *testing.T) {
 
 	for _, tc := range cases {
 		resp := testutil.DoRequest(t, env, "PUT", tc.path, tc.body, testutil.AuthHeader(token))
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode, "PUT %s should be 404", tc.path)
-		resp.Body.Close()
+		testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
 	}
 }

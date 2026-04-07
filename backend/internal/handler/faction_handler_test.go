@@ -129,7 +129,6 @@ func TestFactionEndpoints_Unauthorized(t *testing.T) {
 
 	for _, ep := range endpoints {
 		resp := testutil.DoRequest(t, env, "GET", ep, nil, nil)
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode, "endpoint %s should require auth", ep)
-		resp.Body.Close()
+		testutil.AssertProblemDetails(t, resp, http.StatusUnauthorized)
 	}
 }

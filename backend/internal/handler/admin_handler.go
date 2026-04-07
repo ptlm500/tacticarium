@@ -27,7 +27,7 @@ func (h *AdminHandler) ListFactions(ctx context.Context, input *struct{}) (*Fact
 	}
 	defer rows.Close()
 
-	var factions []models.Faction
+	factions := make([]models.Faction, 0)
 	for rows.Next() {
 		var f models.Faction
 		if err := rows.Scan(&f.ID, &f.Name, &f.WahapediaLink); err != nil {
@@ -105,7 +105,7 @@ func (h *AdminHandler) ListDetachments(ctx context.Context, input *AdminDetachme
 	}
 	defer rows.Close()
 
-	var detachments []models.Detachment
+	detachments := make([]models.Detachment, 0)
 	for rows.Next() {
 		var d models.Detachment
 		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name); err != nil {
@@ -199,7 +199,7 @@ func (h *AdminHandler) ListStratagems(ctx context.Context, input *AdminStratagem
 	}
 	defer rows.Close()
 
-	var stratagems []models.Stratagem
+	stratagems := make([]models.Stratagem, 0)
 	for rows.Next() {
 		var s models.Stratagem
 		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
@@ -271,7 +271,7 @@ func (h *AdminHandler) ListMissionPacks(ctx context.Context, input *struct{}) (*
 	}
 	defer rows.Close()
 
-	var packs []models.MissionPack
+	packs := make([]models.MissionPack, 0)
 	for rows.Next() {
 		var p models.MissionPack
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description); err != nil {
@@ -339,7 +339,7 @@ func (h *AdminHandler) ListMissions(ctx context.Context, input *AdminPackFilterI
 	}
 	defer rows.Close()
 
-	var missions []models.Mission
+	missions := make([]models.Mission, 0)
 	for rows.Next() {
 		var m models.Mission
 		var scoringRulesJSON string
@@ -442,7 +442,7 @@ func (h *AdminHandler) ListSecondaries(ctx context.Context, input *AdminPackFilt
 	}
 	defer rows.Close()
 
-	var secondaries []models.Secondary
+	secondaries := make([]models.Secondary, 0)
 	for rows.Next() {
 		var s models.Secondary
 		var scoringJSON string
@@ -539,7 +539,7 @@ func (h *AdminHandler) ListGambits(ctx context.Context, input *AdminPackFilterIn
 	}
 	defer rows.Close()
 
-	var gambits []models.Gambit
+	gambits := make([]models.Gambit, 0)
 	for rows.Next() {
 		var g models.Gambit
 		if err := rows.Scan(&g.ID, &g.MissionPackID, &g.Name, &g.Description, &g.VPValue); err != nil {
@@ -618,7 +618,7 @@ func (h *AdminHandler) ListChallengerCards(ctx context.Context, input *AdminPack
 	}
 	defer rows.Close()
 
-	var cards []models.ChallengerCard
+	cards := make([]models.ChallengerCard, 0)
 	for rows.Next() {
 		var c models.ChallengerCard
 		if err := rows.Scan(&c.ID, &c.MissionPackID, &c.Name, &c.Lore, &c.Description); err != nil {
@@ -697,7 +697,7 @@ func (h *AdminHandler) ListMissionRules(ctx context.Context, input *AdminPackFil
 	}
 	defer rows.Close()
 
-	var rules []models.MissionRule
+	rules := make([]models.MissionRule, 0)
 	for rows.Next() {
 		var mr models.MissionRule
 		if err := rows.Scan(&mr.ID, &mr.MissionPackID, &mr.Name, &mr.Lore, &mr.Description); err != nil {

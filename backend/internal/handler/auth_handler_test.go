@@ -31,8 +31,7 @@ func TestHandleMe_NoToken(t *testing.T) {
 	env := testutil.SharedEnv
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/auth/me", nil, nil)
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusUnauthorized)
 }
 
 func TestHandleMe_InvalidToken(t *testing.T) {
@@ -40,8 +39,7 @@ func TestHandleMe_InvalidToken(t *testing.T) {
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/auth/me", nil,
 		testutil.AuthHeader("not-a-valid-token"))
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusUnauthorized)
 }
 
 func TestHandleMe_UserNotInDB(t *testing.T) {
@@ -51,8 +49,7 @@ func TestHandleMe_UserNotInDB(t *testing.T) {
 	token := testutil.GenerateToken(t, "00000000-0000-0000-0000-000000000000", "ghost")
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/auth/me", nil, testutil.AuthHeader(token))
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	resp.Body.Close()
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
 }
 
 func TestHandleLogout(t *testing.T) {

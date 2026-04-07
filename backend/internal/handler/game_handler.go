@@ -233,7 +233,7 @@ func (h *GameHandler) GetGameEvents(ctx context.Context, input *GameIDParam) (*G
 	}
 	defer rows.Close()
 
-	var events []GameEvent
+	events := make([]GameEvent, 0)
 	for rows.Next() {
 		var ev GameEvent
 		var eventData json.RawMessage
