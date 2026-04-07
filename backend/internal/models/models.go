@@ -12,19 +12,19 @@ type User struct {
 }
 
 type Faction struct {
-	ID            string `json:"id"`
+	ID            string `json:"id" required:"false"`
 	Name          string `json:"name"`
 	WahapediaLink string `json:"wahapediaLink,omitempty"`
 }
 
 type Detachment struct {
-	ID        string `json:"id"`
+	ID        string `json:"id" required:"false"`
 	FactionID string `json:"factionId"`
 	Name      string `json:"name"`
 }
 
 type Stratagem struct {
-	ID           string `json:"id"`
+	ID           string `json:"id" required:"false"`
 	FactionID    string `json:"factionId"`
 	DetachmentID string `json:"detachmentId,omitempty"`
 	Name         string `json:"name"`
@@ -37,7 +37,7 @@ type Stratagem struct {
 }
 
 type MissionPack struct {
-	ID          string `json:"id"`
+	ID          string `json:"id" required:"false"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 }
@@ -51,7 +51,7 @@ type ScoringAction struct {
 }
 
 type Mission struct {
-	ID            string          `json:"id"`
+	ID            string          `json:"id" required:"false"`
 	MissionPackID string          `json:"missionPackId"`
 	Name          string          `json:"name"`
 	Lore          string          `json:"lore,omitempty"`
@@ -61,7 +61,7 @@ type Mission struct {
 }
 
 type MissionRule struct {
-	ID            string `json:"id"`
+	ID            string `json:"id" required:"false"`
 	MissionPackID string `json:"missionPackId"`
 	Name          string `json:"name"`
 	Lore          string `json:"lore,omitempty"`
@@ -75,7 +75,7 @@ type ScoringOption struct {
 }
 
 type Secondary struct {
-	ID             string          `json:"id"`
+	ID             string          `json:"id" required:"false"`
 	MissionPackID  string          `json:"missionPackId"`
 	Name           string          `json:"name"`
 	Lore           string          `json:"lore,omitempty"`
@@ -86,7 +86,7 @@ type Secondary struct {
 }
 
 type ChallengerCard struct {
-	ID            string `json:"id"`
+	ID            string `json:"id" required:"false"`
 	MissionPackID string `json:"missionPackId"`
 	Name          string `json:"name"`
 	Lore          string `json:"lore,omitempty"`
@@ -94,7 +94,7 @@ type ChallengerCard struct {
 }
 
 type Gambit struct {
-	ID            string `json:"id"`
+	ID            string `json:"id" required:"false"`
 	MissionPackID string `json:"missionPackId"`
 	Name          string `json:"name"`
 	Description   string `json:"description"`

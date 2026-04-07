@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/peter/tacticarium/backend/internal/auth"
 	"github.com/peter/tacticarium/backend/internal/config"
@@ -34,6 +34,7 @@ func NewAuthHandler(db *pgxpool.Pool, cfg *config.Config) *AuthHandler {
 	}
 }
 
+// HandleDiscordRedirect stays as a raw chi handler (performs HTTP redirect + sets cookies).
 func (h *AuthHandler) HandleDiscordRedirect(w http.ResponseWriter, r *http.Request) {
 	state := generateState()
 	http.SetCookie(w, &http.Cookie{
@@ -47,15 +48,14 @@ func (h *AuthHandler) HandleDiscordRedirect(w http.ResponseWriter, r *http.Reque
 	http.Redirect(w, r, h.discord.AuthURL(state), http.StatusTemporaryRedirect)
 }
 
+// HandleDiscordCallback stays as a raw chi handler (performs HTTP redirect + sets cookies).
 func (h *AuthHandler) HandleDiscordCallback(w http.ResponseWriter, r *http.Request) {
-	// Verify state
 	stateCookie, err := r.Cookie("oauth_state")
 	if err != nil || stateCookie.Value != r.URL.Query().Get("state") {
 		http.Error(w, "invalid state", http.StatusBadRequest)
 		return
 	}
 
-	// Clear state cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:   "oauth_state",
 		Value:  "",
@@ -69,23 +69,20 @@ func (h *AuthHandler) HandleDiscordCallback(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Exchange code for token
 	tokenResp, err := h.discord.ExchangeCode(code)
 	if err != nil {
-		log.Printf("Discord token exchange error: %v", err)
+		slog.ErrorContext(r.Context(), "Discord token exchange error", "error", err)
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
 		return
 	}
 
-	// Fetch user info
 	discordUser, err := auth.FetchDiscordUser(tokenResp.AccessToken)
 	if err != nil {
-		log.Printf("Discord fetch user error: %v", err)
+		slog.ErrorContext(r.Context(), "Discord fetch user error", "error", err)
 		http.Error(w, "failed to fetch user info", http.StatusInternalServerError)
 		return
 	}
 
-	// Upsert user in DB
 	displayName := discordUser.GlobalName
 	if displayName == "" {
 		displayName = discordUser.Username
@@ -101,49 +98,46 @@ func (h *AuthHandler) HandleDiscordCallback(w http.ResponseWriter, r *http.Reque
 		discordUser.ID, displayName, discordUser.Avatar,
 	).Scan(&userID)
 	if err != nil {
-		log.Printf("User upsert error: %v", err)
+		slog.ErrorContext(r.Context(), "User upsert error", "error", err)
 		http.Error(w, "database error", http.StatusInternalServerError)
 		return
 	}
 
-	// Generate JWT
 	token, err := auth.GenerateToken(h.cfg.JWTSecret, userID, displayName)
 	if err != nil {
-		log.Printf("JWT generation error: %v", err)
+		slog.ErrorContext(r.Context(), "JWT generation error", "error", err)
 		http.Error(w, "token generation failed", http.StatusInternalServerError)
 		return
 	}
 
-	// Redirect to frontend with token
 	redirectURL := fmt.Sprintf("%s/auth/callback?token=%s", h.cfg.FrontendURL, url.QueryEscape(token))
 	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
 
-func (h *AuthHandler) HandleMe(w http.ResponseWriter, r *http.Request) {
-	user := auth.GetUser(r.Context())
+func (h *AuthHandler) HandleMe(ctx context.Context, input *struct{}) (*MeOutput, error) {
+	user := auth.GetUser(ctx)
 	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
 	var avatar *string
 	var createdAt time.Time
-	err := h.db.QueryRow(context.Background(),
+	err := h.db.QueryRow(ctx,
 		`SELECT discord_avatar, created_at FROM users WHERE id = $1`, user.UserID,
 	).Scan(&avatar, &createdAt)
 	if err != nil {
-		http.Error(w, "user not found", http.StatusNotFound)
-		return
+		return nil, huma.Error404NotFound("user not found")
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"id":        user.UserID,
-		"username":  user.Username,
-		"avatar":    avatar,
-		"createdAt": createdAt,
-	})
+	out := &MeOutput{}
+	out.Body.ID = user.UserID
+	out.Body.Username = user.Username
+	out.Body.Avatar = avatar
+	out.Body.CreatedAt = createdAt
+	return out, nil
 }
 
+// HandleLogout stays as a raw chi handler (needs to set cookies).
 func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
@@ -159,10 +153,4 @@ func generateState() string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	return hex.EncodeToString(b)
-}
-
-func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
 }

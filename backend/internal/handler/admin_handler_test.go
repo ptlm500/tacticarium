@@ -506,11 +506,11 @@ func TestAdminUpdate_NotFound(t *testing.T) {
 	}{
 		{"/api/admin/factions/NOPE", map[string]interface{}{"name": "x"}},
 		{"/api/admin/detachments/NOPE", map[string]interface{}{"factionId": "x", "name": "x"}},
-		{"/api/admin/stratagems/NOPE", map[string]interface{}{"name": "x", "type": "x", "turn": "x", "phase": "x", "description": "x"}},
+		{"/api/admin/stratagems/NOPE", map[string]interface{}{"factionId": "x", "name": "x", "type": "x", "cpCost": 0, "turn": "x", "phase": "x", "description": "x"}},
 		{"/api/admin/mission-packs/NOPE", map[string]interface{}{"name": "x"}},
-		{"/api/admin/missions/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x", "scoringRules": []interface{}{}}},
-		{"/api/admin/secondaries/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x", "scoringOptions": []interface{}{}}},
-		{"/api/admin/gambits/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x"}},
+		{"/api/admin/missions/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x", "scoringRules": []interface{}{}, "scoringTiming": "x"}},
+		{"/api/admin/secondaries/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x", "maxVp": 0, "isFixed": false, "scoringOptions": []interface{}{}}},
+		{"/api/admin/gambits/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x", "vpValue": 0}},
 		{"/api/admin/challenger-cards/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x"}},
 		{"/api/admin/mission-rules/NOPE", map[string]interface{}{"missionPackId": "ca2025", "name": "x", "description": "x"}},
 	}

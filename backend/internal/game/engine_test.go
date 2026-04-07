@@ -1,6 +1,7 @@
 package game
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
@@ -60,7 +61,7 @@ func makeDeck(count int) []ActiveSecondary {
 func TestSelectPrimaryMission(t *testing.T) {
 	e := NewEngine(newTestState())
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectPrimaryMission,
 		PlayerNumber: 1,
 		Data:         map[string]any{"missionId": "m1", "missionName": "Take and Hold"},
@@ -78,7 +79,7 @@ func TestSelectPrimaryMission(t *testing.T) {
 
 func TestSelectPrimaryMission_RequiresSetup(t *testing.T) {
 	e := NewEngine(newActiveTestState())
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectPrimaryMission,
 		PlayerNumber: 1,
 		Data:         map[string]any{"missionId": "m1", "missionName": "M"},
@@ -90,7 +91,7 @@ func TestSelectPrimaryMission_RequiresSetup(t *testing.T) {
 
 func TestSelectPrimaryMission_RequiresMissionId(t *testing.T) {
 	e := NewEngine(newTestState())
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectPrimaryMission,
 		PlayerNumber: 1,
 		Data:         map[string]any{"missionName": "M"},
@@ -106,7 +107,7 @@ func TestSelectPrimaryMission_ResetsReadiness(t *testing.T) {
 	state.Players[1].Ready = true
 	e := NewEngine(state)
 
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectPrimaryMission,
 		PlayerNumber: 1,
 		Data:         map[string]any{"missionId": "m1", "missionName": "M"},
@@ -118,7 +119,7 @@ func TestSelectPrimaryMission_ResetsReadiness(t *testing.T) {
 
 func TestSelectTwist(t *testing.T) {
 	e := NewEngine(newTestState())
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectTwist,
 		PlayerNumber: 1,
 		Data:         map[string]any{"twistId": "t1", "twistName": "Adapt or Die"},
@@ -136,7 +137,7 @@ func TestSelectTwist(t *testing.T) {
 
 func TestSelectTwist_RequiresSetup(t *testing.T) {
 	e := NewEngine(newActiveTestState())
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectTwist,
 		PlayerNumber: 1,
 		Data:         map[string]any{"twistId": "t1", "twistName": "T"},
@@ -150,7 +151,7 @@ func TestSelectSecondaryMode(t *testing.T) {
 	for _, mode := range []string{"fixed", "tactical"} {
 		t.Run(mode, func(t *testing.T) {
 			e := NewEngine(newTestState())
-			events, err := e.Apply(GameAction{
+			events, err := e.Apply(context.Background(), GameAction{
 				Type:         ActionSelectSecondaryMode,
 				PlayerNumber: 1,
 				Data:         map[string]any{"mode": mode},
@@ -170,7 +171,7 @@ func TestSelectSecondaryMode(t *testing.T) {
 
 func TestSelectSecondaryMode_InvalidMode(t *testing.T) {
 	e := NewEngine(newTestState())
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectSecondaryMode,
 		PlayerNumber: 1,
 		Data:         map[string]any{"mode": "invalid"},
@@ -186,7 +187,7 @@ func TestSelectSecondaryMode_ClearsPreviousSelections(t *testing.T) {
 	state.Players[0].TacticalDeck = []ActiveSecondary{makeActiveSecondary("s2", "S2")}
 	e := NewEngine(state)
 
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectSecondaryMode,
 		PlayerNumber: 1,
 		Data:         map[string]any{"mode": "tactical"},
@@ -204,7 +205,7 @@ func TestSetFixedSecondaries(t *testing.T) {
 	state.Players[0].SecondaryMode = "fixed"
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSetFixedSecondaries,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -229,7 +230,7 @@ func TestSetFixedSecondaries_RequiresFixedMode(t *testing.T) {
 	state := newTestState()
 	state.Players[0].SecondaryMode = "tactical"
 	e := NewEngine(state)
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSetFixedSecondaries,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -245,7 +246,7 @@ func TestSetFixedSecondaries_RequiresExactly2(t *testing.T) {
 	state := newTestState()
 	state.Players[0].SecondaryMode = "fixed"
 	e := NewEngine(state)
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSetFixedSecondaries,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -262,7 +263,7 @@ func TestInitTacticalDeck(t *testing.T) {
 	state.Players[0].SecondaryMode = "tactical"
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionInitTacticalDeck,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -285,7 +286,7 @@ func TestInitTacticalDeck_RequiresTacticalMode(t *testing.T) {
 	state := newTestState()
 	state.Players[0].SecondaryMode = "fixed"
 	e := NewEngine(state)
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionInitTacticalDeck,
 		PlayerNumber: 1,
 		Data:         map[string]any{"deck": []any{makeSecondary("s1", "S1")}},
@@ -299,7 +300,7 @@ func TestInitTacticalDeck_EmptyDeckError(t *testing.T) {
 	state := newTestState()
 	state.Players[0].SecondaryMode = "tactical"
 	e := NewEngine(state)
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionInitTacticalDeck,
 		PlayerNumber: 1,
 		Data:         map[string]any{"deck": []any{}},
@@ -318,7 +319,7 @@ func TestDrawSecondary(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 1,
 	})
@@ -345,7 +346,7 @@ func TestDrawSecondary_AlreadyHas2(t *testing.T) {
 	}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 1,
 	})
@@ -361,7 +362,7 @@ func TestDrawSecondary_DrawsOnlyNeeded(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("existing", "E")}
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 1,
 	})
@@ -383,7 +384,7 @@ func TestDrawSecondary_EmptyDeck(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 1,
 	})
@@ -400,7 +401,7 @@ func TestDrawSecondary_RequiresTacticalMode(t *testing.T) {
 	state.Players[0].SecondaryMode = "fixed"
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 1,
 	})
@@ -417,7 +418,7 @@ func TestAchieveSecondary(t *testing.T) {
 	}
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
@@ -444,7 +445,7 @@ func TestAchieveSecondary_NotFound(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "nonexistent", "vpScored": 5},
@@ -460,7 +461,7 @@ func TestAchieveSecondary_VPCapped(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
@@ -481,7 +482,7 @@ func TestDiscardSecondary(t *testing.T) {
 	}
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
@@ -511,7 +512,7 @@ func TestDiscardSecondary_FreeNoCPGain(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "free": true},
@@ -529,7 +530,7 @@ func TestDiscardSecondary_Round5NoCPGain(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
@@ -545,7 +546,7 @@ func TestDiscardSecondary_RequiresTactical(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
@@ -566,7 +567,7 @@ func TestNewOrders(t *testing.T) {
 	state.Players[0].TacticalDeck = makeDeck(3)
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionNewOrders,
 		PlayerNumber: 1,
 		Data:         map[string]any{"discardSecondaryId": "s1"},
@@ -598,7 +599,7 @@ func TestNewOrders_InsufficientCP(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionNewOrders,
 		PlayerNumber: 1,
 		Data:         map[string]any{"discardSecondaryId": "s1"},
@@ -619,7 +620,7 @@ func TestNewOrders_EmptyDeck(t *testing.T) {
 	state.Players[0].TacticalDeck = []ActiveSecondary{}
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionNewOrders,
 		PlayerNumber: 1,
 		Data:         map[string]any{"discardSecondaryId": "s1"},
@@ -644,7 +645,7 @@ func TestDrawChallengerCard(t *testing.T) {
 	state.Players[1].VPPrimary = 10 // player 2 leading by 10
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawChallengerCard,
 		PlayerNumber: 1,
 		Data:         map[string]any{"challengerCardId": "cc1", "challengerCardName": "Challenge A"},
@@ -669,7 +670,7 @@ func TestDrawChallengerCard_NotTrailingEnough(t *testing.T) {
 	state.Players[1].VPPrimary = 10 // only trailing by 5, need 6
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawChallengerCard,
 		PlayerNumber: 1,
 		Data:         map[string]any{"challengerCardId": "cc1", "challengerCardName": "C"},
@@ -685,7 +686,7 @@ func TestDrawChallengerCard_ExactlyAtThreshold(t *testing.T) {
 	state.Players[1].VPPrimary = 6 // exactly 6 VP difference
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawChallengerCard,
 		PlayerNumber: 1,
 		Data:         map[string]any{"challengerCardId": "cc1", "challengerCardName": "C"},
@@ -701,7 +702,7 @@ func TestScoreChallenger(t *testing.T) {
 	state.Players[0].ChallengerCardID = "cc1"
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionScoreChallenger,
 		PlayerNumber: 1,
 		Data:         map[string]any{},
@@ -725,7 +726,7 @@ func TestScoreChallenger_NoActiveCard(t *testing.T) {
 	state.Players[0].IsChallenger = false
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionScoreChallenger,
 		PlayerNumber: 1,
 		Data:         map[string]any{},
@@ -741,7 +742,7 @@ func TestScoreChallenger_CustomVP(t *testing.T) {
 	state.Players[0].ChallengerCardID = "cc1"
 	e := NewEngine(state)
 
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionScoreChallenger,
 		PlayerNumber: 1,
 		Data:         map[string]any{"vpScored": 5},
@@ -763,7 +764,7 @@ func TestAdaptOrDie_Fixed(t *testing.T) {
 	}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdaptOrDie,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -793,7 +794,7 @@ func TestAdaptOrDie_Fixed_OnlyOnce(t *testing.T) {
 	}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdaptOrDie,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -816,7 +817,7 @@ func TestAdaptOrDie_Tactical(t *testing.T) {
 	state.Players[0].TacticalDeck = makeDeck(3)
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdaptOrDie,
 		PlayerNumber: 1,
 		Data:         map[string]any{"shuffleBackSecondaryId": "s1"},
@@ -849,7 +850,7 @@ func TestAdaptOrDie_Tactical_TwiceAllowed(t *testing.T) {
 	state.Players[0].TacticalDeck = makeDeck(3)
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdaptOrDie,
 		PlayerNumber: 1,
 		Data:         map[string]any{"shuffleBackSecondaryId": "s1"},
@@ -871,7 +872,7 @@ func TestAdaptOrDie_Tactical_ThirdUseDenied(t *testing.T) {
 	state.Players[0].TacticalDeck = makeDeck(3)
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdaptOrDie,
 		PlayerNumber: 1,
 		Data:         map[string]any{"shuffleBackSecondaryId": "s1"},
@@ -888,7 +889,7 @@ func TestAdaptOrDie_WrongTwist(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdaptOrDie,
 		PlayerNumber: 1,
 		Data: map[string]any{
@@ -907,7 +908,7 @@ func TestAdvancePhase(t *testing.T) {
 	state := newActiveTestState()
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdvancePhase,
 		PlayerNumber: 1,
 	})
@@ -927,7 +928,7 @@ func TestAdvancePhase_TurnEnd_FirstPlayer(t *testing.T) {
 	state.CurrentPhase = PhaseFight // last phase
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdvancePhase,
 		PlayerNumber: 1,
 	})
@@ -970,7 +971,7 @@ func TestAdvancePhase_RoundEnd_CPGain(t *testing.T) {
 	state.Players[1].CP = 0
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdvancePhase,
 		PlayerNumber: 2,
 	})
@@ -1016,7 +1017,7 @@ func TestAdvancePhase_GameEnd(t *testing.T) {
 	state.Players[1].VPPrimary = 20
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdvancePhase,
 		PlayerNumber: 2,
 	})
@@ -1044,7 +1045,7 @@ func TestAdvancePhase_OnlyActivePlayer(t *testing.T) {
 	state := newActiveTestState()
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdvancePhase,
 		PlayerNumber: 2, // not the active player
 	})
@@ -1058,7 +1059,7 @@ func TestAdjustCP(t *testing.T) {
 	state.Players[0].CP = 5
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdjustCP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"delta": -2},
@@ -1076,7 +1077,7 @@ func TestAdjustCP_CannotGoNegative(t *testing.T) {
 	state.Players[0].CP = 1
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdjustCP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"delta": -5},
@@ -1102,7 +1103,7 @@ func TestScoreVP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.category, func(t *testing.T) {
-			_, err := e.Apply(GameAction{
+			_, err := e.Apply(context.Background(), GameAction{
 				Type:         ActionScoreVP,
 				PlayerNumber: 1,
 				Data:         map[string]any{"category": tt.category, "delta": tt.delta},
@@ -1121,7 +1122,7 @@ func TestScoreVP_InvalidCategory(t *testing.T) {
 	state := newActiveTestState()
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionScoreVP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"category": "invalid", "delta": 5},
@@ -1135,7 +1136,7 @@ func TestConcede(t *testing.T) {
 	state := newActiveTestState()
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionConcede,
 		PlayerNumber: 1,
 	})
@@ -1164,7 +1165,7 @@ func TestDeclareGambit(t *testing.T) {
 	state.CurrentRound = 3
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDeclareGambit,
 		PlayerNumber: 1,
 		Data:         map[string]any{"gambitId": "g1"},
@@ -1182,7 +1183,7 @@ func TestDeclareGambit_TooEarly(t *testing.T) {
 	state.CurrentRound = 2
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDeclareGambit,
 		PlayerNumber: 1,
 		Data:         map[string]any{"gambitId": "g1"},
@@ -1199,7 +1200,7 @@ func TestSetReady_StartGame(t *testing.T) {
 	e := NewEngine(state)
 
 	// Player 1 readies up
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionSetReady,
 		PlayerNumber: 1,
 		Data:         map[string]any{"ready": true},
@@ -1209,7 +1210,7 @@ func TestSetReady_StartGame(t *testing.T) {
 	}
 
 	// Player 2 readies up
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSetReady,
 		PlayerNumber: 2,
 		Data:         map[string]any{"ready": true},
@@ -1259,7 +1260,7 @@ func TestUseStratagem(t *testing.T) {
 	state.Players[0].CP = 3
 	e := NewEngine(state)
 
-	events, err := e.Apply(GameAction{
+	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionUseStratagem,
 		PlayerNumber: 1,
 		Data:         map[string]any{"stratagemId": "str1", "stratagemName": "Insane Bravery", "cpCost": 2},
@@ -1280,7 +1281,7 @@ func TestUseStratagem_InsufficientCP(t *testing.T) {
 	state.Players[0].CP = 0
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionUseStratagem,
 		PlayerNumber: 1,
 		Data:         map[string]any{"stratagemId": "str1", "stratagemName": "S", "cpCost": 1},
@@ -1298,7 +1299,7 @@ func TestFullBattleRound_TwoPlayerTurns(t *testing.T) {
 
 	// Advance player 1 through all 5 phases
 	for _, expectedNext := range []Phase{PhaseMovement, PhaseShooting, PhaseCharge, PhaseFight} {
-		_, err := e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+		_, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1311,7 +1312,7 @@ func TestFullBattleRound_TwoPlayerTurns(t *testing.T) {
 	}
 
 	// Player 1 advances past Fight → switches to player 2's turn
-	_, err := e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+	_, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1330,7 +1331,7 @@ func TestFullBattleRound_TwoPlayerTurns(t *testing.T) {
 
 	// Advance player 2 through all 5 phases
 	for range 4 {
-		_, err := e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+		_, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1340,7 +1341,7 @@ func TestFullBattleRound_TwoPlayerTurns(t *testing.T) {
 	}
 
 	// Player 2 advances past Fight → round ends, round 2 begins
-	_, err = e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+	_, err = e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1364,7 +1365,7 @@ func TestFullGame_10PlayerTurns(t *testing.T) {
 		activePlayer := state.ActivePlayer
 		// Advance through all 5 phases
 		for range 5 {
-			_, err := e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: activePlayer})
+			_, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: activePlayer})
 			if err != nil {
 				t.Fatalf("round %d turn %d: %v", state.CurrentRound, state.CurrentTurn, err)
 			}
@@ -1389,11 +1390,11 @@ func TestCPGain_BothPlayersAtRoundStart(t *testing.T) {
 	// Play through round 1 (both players)
 	// Player 1: 5 phases
 	for range 5 {
-		e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 	}
 	// Player 2: 5 phases → triggers round 2
 	for range 5 {
-		e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
 	}
 
 	// After round 2 starts, both players should have gained 1 more CP
@@ -1416,7 +1417,7 @@ func TestCPGain_NoCPMidRound(t *testing.T) {
 
 	// Player 1 finishes turn (5 phases) → switches to player 2
 	for range 5 {
-		e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 	}
 
 	// No CP should be gained when switching to player 2 mid-round
@@ -1433,8 +1434,8 @@ func TestSetReady_FirstTurnPlayerDefaultsTo1(t *testing.T) {
 	state.FirstTurnPlayer = 0 // not set
 	e := NewEngine(state)
 
-	e.Apply(GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
-	e.Apply(GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
+	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
+	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
 
 	if state.FirstTurnPlayer != 1 {
 		t.Fatalf("expected FirstTurnPlayer=1, got %d", state.FirstTurnPlayer)
@@ -1449,8 +1450,8 @@ func TestSetReady_PresetFirstTurnPlayer(t *testing.T) {
 	state.FirstTurnPlayer = 2 // explicitly set to player 2
 	e := NewEngine(state)
 
-	e.Apply(GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
-	e.Apply(GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
+	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
+	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
 
 	if state.FirstTurnPlayer != 2 {
 		t.Fatalf("expected FirstTurnPlayer=2, got %d", state.FirstTurnPlayer)
@@ -1465,8 +1466,8 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	e := NewEngine(state)
 
 	// Start game via set_ready (grants 1 CP each)
-	e.Apply(GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
-	e.Apply(GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
+	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
+	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
 
 	if state.Players[0].CP != 1 || state.Players[1].CP != 1 {
 		t.Fatalf("expected 1 CP each after game start, got %d and %d", state.Players[0].CP, state.Players[1].CP)
@@ -1476,11 +1477,11 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	for round := 0; round < 3; round++ {
 		// Player 1 turn
 		for range 5 {
-			e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer})
+			e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer})
 		}
 		// Player 2 turn
 		for range 5 {
-			e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer})
+			e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer})
 		}
 	}
 
@@ -1512,7 +1513,7 @@ func TestDiscardSecondary_CPCappedAt1PerRound(t *testing.T) {
 	e := NewEngine(state)
 
 	// First discard: should gain 1 CP
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
@@ -1525,7 +1526,7 @@ func TestDiscardSecondary_CPCappedAt1PerRound(t *testing.T) {
 	}
 
 	// Second discard: should NOT gain CP (cap reached)
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s2"},
@@ -1549,7 +1550,7 @@ func TestDiscardSecondary_CPCapResetsNextRound(t *testing.T) {
 	e := NewEngine(state)
 
 	// Discard in round 2 should not gain CP (cap already reached)
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
@@ -1561,10 +1562,10 @@ func TestDiscardSecondary_CPCapResetsNextRound(t *testing.T) {
 	// Play through rest of round 2 to trigger round 3
 	// Player 1 finishes their turn (already past some phases, set to fight)
 	state.CurrentPhase = PhaseFight
-	e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+	e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 	// Player 2's full turn
 	for range 5 {
-		e.Apply(GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
 	}
 
 	// Now in round 3 — CPGainedThisRound should be reset
@@ -1589,7 +1590,7 @@ func TestDiscardSecondary_FreeDiscardDoesNotCountTowardCap(t *testing.T) {
 	e := NewEngine(state)
 
 	// Free discard: no CP, should not affect cap
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "free": true},
@@ -1599,7 +1600,7 @@ func TestDiscardSecondary_FreeDiscardDoesNotCountTowardCap(t *testing.T) {
 	}
 
 	// Normal discard after free: should still gain CP
-	e.Apply(GameAction{
+	e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s2"},
@@ -1616,7 +1617,7 @@ func TestAdjustCP_PositiveSubjectToCap(t *testing.T) {
 	e := NewEngine(state)
 
 	// Positive adjust should be blocked by cap
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdjustCP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"delta": 1},
@@ -1636,7 +1637,7 @@ func TestAdjustCP_NegativeNotAffectedByCap(t *testing.T) {
 	e := NewEngine(state)
 
 	// Negative adjust (spending) should always work
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdjustCP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"delta": -2},
@@ -1656,7 +1657,7 @@ func TestAdjustCP_PositiveCountsTowardCap(t *testing.T) {
 	e := NewEngine(state)
 
 	// First positive adjust succeeds
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAdjustCP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"delta": 1},
@@ -1669,7 +1670,7 @@ func TestAdjustCP_PositiveCountsTowardCap(t *testing.T) {
 	}
 
 	// Second positive adjust blocked
-	_, err = e.Apply(GameAction{
+	_, err = e.Apply(context.Background(), GameAction{
 		Type:         ActionAdjustCP,
 		PlayerNumber: 1,
 		Data:         map[string]any{"delta": 1},
@@ -1726,7 +1727,7 @@ func TestDrawSecondary_RequiresCommandPhase(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 1,
 	})
@@ -1743,7 +1744,7 @@ func TestDrawSecondary_RequiresActivePlayer(t *testing.T) {
 	state.Players[1].ActiveSecondaries = []ActiveSecondary{}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawSecondary,
 		PlayerNumber: 2,
 	})
@@ -1761,7 +1762,7 @@ func TestNewOrders_RequiresCommandPhase(t *testing.T) {
 	state.Players[0].TacticalDeck = makeDeck(3)
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionNewOrders,
 		PlayerNumber: 1,
 		Data:         map[string]any{"discardSecondaryId": "s1"},
@@ -1778,7 +1779,7 @@ func TestDrawChallengerCard_RequiresCommandPhase(t *testing.T) {
 	state.Players[1].VPPrimary = 10
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDrawChallengerCard,
 		PlayerNumber: 1,
 		Data:         map[string]any{"challengerCardId": "cc1", "challengerCardName": "Test"},
@@ -1790,7 +1791,7 @@ func TestDrawChallengerCard_RequiresCommandPhase(t *testing.T) {
 
 // --- Scoring Options Validation ---
 
-func makeActiveSecondaryWithOptions(id, name string, opts []ScoringOption) ActiveSecondary {
+func makeActiveSecondaryWithOptions(id, name string, opts []SecondaryScoringOption) ActiveSecondary {
 	return ActiveSecondary{
 		ID:             id,
 		Name:           name,
@@ -1804,14 +1805,14 @@ func TestAchieveSecondary_ValidScoringOption(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].SecondaryMode = "tactical"
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{
-		makeActiveSecondaryWithOptions("s1", "Behind Enemy Lines", []ScoringOption{
+		makeActiveSecondaryWithOptions("s1", "Behind Enemy Lines", []SecondaryScoringOption{
 			{Label: "1 unit in enemy zone", VP: 3},
 			{Label: "2+ units in enemy zone", VP: 4},
 		}),
 	}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 4},
@@ -1828,14 +1829,14 @@ func TestAchieveSecondary_InvalidScoringOption(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].SecondaryMode = "tactical"
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{
-		makeActiveSecondaryWithOptions("s1", "Behind Enemy Lines", []ScoringOption{
+		makeActiveSecondaryWithOptions("s1", "Behind Enemy Lines", []SecondaryScoringOption{
 			{Label: "1 unit in enemy zone", VP: 3},
 			{Label: "2+ units in enemy zone", VP: 4},
 		}),
 	}
 	e := NewEngine(state)
 
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
@@ -1849,7 +1850,7 @@ func TestAchieveSecondary_ModeFiltering(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].SecondaryMode = "tactical"
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{
-		makeActiveSecondaryWithOptions("s1", "Assassination", []ScoringOption{
+		makeActiveSecondaryWithOptions("s1", "Assassination", []SecondaryScoringOption{
 			{Label: "W4+ char", VP: 4, Mode: "fixed"},
 			{Label: "W<4 char", VP: 3, Mode: "fixed"},
 			{Label: "1+ chars destroyed", VP: 5, Mode: "tactical"},
@@ -1858,7 +1859,7 @@ func TestAchieveSecondary_ModeFiltering(t *testing.T) {
 	e := NewEngine(state)
 
 	// VP=5 should work (tactical option)
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
@@ -1872,7 +1873,7 @@ func TestAchieveSecondary_ModeFiltering_RejectsWrongMode(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].SecondaryMode = "tactical"
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{
-		makeActiveSecondaryWithOptions("s1", "Assassination", []ScoringOption{
+		makeActiveSecondaryWithOptions("s1", "Assassination", []SecondaryScoringOption{
 			{Label: "W4+ char", VP: 4, Mode: "fixed"},
 			{Label: "W<4 char", VP: 3, Mode: "fixed"},
 			{Label: "1+ chars destroyed", VP: 5, Mode: "tactical"},
@@ -1881,7 +1882,7 @@ func TestAchieveSecondary_ModeFiltering_RejectsWrongMode(t *testing.T) {
 	e := NewEngine(state)
 
 	// VP=4 should be rejected (fixed-only option, player is in tactical mode)
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 4},
@@ -1900,7 +1901,7 @@ func TestAchieveSecondary_NoOptionsSkipsValidation(t *testing.T) {
 	e := NewEngine(state)
 
 	// With no scoring options, any VP should be accepted
-	_, err := e.Apply(GameAction{
+	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 7},

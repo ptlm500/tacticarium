@@ -1,11 +1,17 @@
 package ws
 
 import (
-	"log"
+	"context"
+	"log/slog"
 	"sync"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/peter/tacticarium/backend/internal/game"
 )
+
+var tracer = otel.Tracer("tacticarium/ws")
 
 type Room struct {
 	gameID     string
@@ -65,34 +71,48 @@ func (r *Room) Run() {
 			r.broadcast(PlayerDisconnectedMsg(client.playerNumber))
 
 		case action := <-r.actions:
-			events, err := r.engine.Apply(*action)
-			if err != nil {
-				// Find the client that sent this action and send error
-				r.mu.RLock()
-				for client := range r.clients {
-					if client.playerNumber == action.PlayerNumber {
-						client.Send(ErrorMsg(err.Error(), "ACTION_REJECTED"))
-						break
-					}
-				}
-				r.mu.RUnlock()
-				continue
-			}
+			r.processAction(action)
+		}
+	}
+}
 
-			// Broadcast events
-			for _, event := range events {
-				r.broadcast(EventMsg(event))
-			}
+func (r *Room) processAction(action *game.GameAction) {
+	ctx, span := tracer.Start(context.Background(), "ws.processAction",
+	)
+	span.SetAttributes(
+		attribute.String("game.id", r.gameID),
+		attribute.Int("game.player_number", action.PlayerNumber),
+		attribute.String("game.action_type", string(action.Type)),
+	)
+	defer span.End()
 
-			// Broadcast updated state
-			state := r.engine.State()
-			r.broadcast(StateUpdateMsg(state))
-
-			// Persist
-			if r.OnStateChange != nil {
-				r.OnStateChange(state, events)
+	events, err := r.engine.Apply(ctx, *action)
+	if err != nil {
+		span.RecordError(err)
+		// Find the client that sent this action and send error
+		r.mu.RLock()
+		for client := range r.clients {
+			if client.playerNumber == action.PlayerNumber {
+				client.Send(ErrorMsg(err.Error(), "ACTION_REJECTED"))
+				break
 			}
 		}
+		r.mu.RUnlock()
+		return
+	}
+
+	// Broadcast events
+	for _, event := range events {
+		r.broadcast(EventMsg(event))
+	}
+
+	// Broadcast updated state
+	state := r.engine.State()
+	r.broadcast(StateUpdateMsg(state))
+
+	// Persist
+	if r.OnStateChange != nil {
+		r.OnStateChange(state, events)
 	}
 }
 
@@ -135,4 +155,4 @@ func (r *Room) Register(client *Client) {
 	r.register <- client
 }
 
-var _ = log.Printf // Ensure log is used
+var _ = slog.Info // Ensure slog is used

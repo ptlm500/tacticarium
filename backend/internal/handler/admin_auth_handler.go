@@ -1,21 +1,23 @@
 package handler
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/peter/tacticarium/backend/internal/auth"
 	"github.com/peter/tacticarium/backend/internal/config"
 )
 
 type AdminAuthHandler struct {
-	cfg            *config.Config
-	github         *auth.GitHubConfig
-	allowedGitHub  map[string]bool
+	cfg           *config.Config
+	github        *auth.GitHubConfig
+	allowedGitHub map[string]bool
 }
 
 func NewAdminAuthHandler(cfg *config.Config) *AdminAuthHandler {
@@ -38,6 +40,7 @@ func NewAdminAuthHandler(cfg *config.Config) *AdminAuthHandler {
 	}
 }
 
+// HandleGitHubRedirect stays as a raw chi handler (performs HTTP redirect + sets cookies).
 func (h *AdminAuthHandler) HandleGitHubRedirect(w http.ResponseWriter, r *http.Request) {
 	state := generateState()
 	http.SetCookie(w, &http.Cookie{
@@ -51,6 +54,7 @@ func (h *AdminAuthHandler) HandleGitHubRedirect(w http.ResponseWriter, r *http.R
 	http.Redirect(w, r, h.github.AuthURL(state), http.StatusTemporaryRedirect)
 }
 
+// HandleGitHubCallback stays as a raw chi handler (performs HTTP redirect + sets cookies).
 func (h *AdminAuthHandler) HandleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 	stateCookie, err := r.Cookie("github_oauth_state")
 	if err != nil || stateCookie.Value != r.URL.Query().Get("state") {
@@ -73,28 +77,28 @@ func (h *AdminAuthHandler) HandleGitHubCallback(w http.ResponseWriter, r *http.R
 
 	tokenResp, err := h.github.ExchangeCode(code)
 	if err != nil {
-		log.Printf("GitHub token exchange error: %v", err)
+		slog.ErrorContext(r.Context(), "GitHub token exchange error", "error", err)
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
 		return
 	}
 
 	ghUser, err := auth.FetchGitHubUser(tokenResp.AccessToken)
 	if err != nil {
-		log.Printf("GitHub fetch user error: %v", err)
+		slog.ErrorContext(r.Context(), "GitHub fetch user error", "error", err)
 		http.Error(w, "failed to fetch user info", http.StatusInternalServerError)
 		return
 	}
 
 	ghIDStr := strconv.Itoa(ghUser.ID)
 	if !h.allowedGitHub[ghIDStr] {
-		log.Printf("Unauthorized admin login attempt from GitHub user %s (ID: %s)", ghUser.Login, ghIDStr)
+		slog.WarnContext(r.Context(), "Unauthorized admin login attempt", "github_user", ghUser.Login, "github_id", ghIDStr)
 		http.Error(w, "forbidden: not an authorized admin", http.StatusForbidden)
 		return
 	}
 
 	token, err := auth.GenerateTokenWithRole(h.cfg.JWTSecret, ghIDStr, ghUser.Login, "admin")
 	if err != nil {
-		log.Printf("JWT generation error: %v", err)
+		slog.ErrorContext(r.Context(), "JWT generation error", "error", err)
 		http.Error(w, "token generation failed", http.StatusInternalServerError)
 		return
 	}
@@ -103,15 +107,14 @@ func (h *AdminAuthHandler) HandleGitHubCallback(w http.ResponseWriter, r *http.R
 	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 }
 
-func (h *AdminAuthHandler) HandleAdminMe(w http.ResponseWriter, r *http.Request) {
-	admin := auth.GetAdmin(r.Context())
+func (h *AdminAuthHandler) HandleAdminMe(ctx context.Context, input *struct{}) (*AdminMeOutput, error) {
+	admin := auth.GetAdmin(ctx)
 	if admin == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"githubId":   admin.GitHubID,
-		"githubUser": admin.GitHubUser,
-	})
+	out := &AdminMeOutput{}
+	out.Body.GitHubID = admin.GitHubID
+	out.Body.GitHubUser = admin.GitHubUser
+	return out, nil
 }

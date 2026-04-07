@@ -34,8 +34,8 @@ type SecondaryObjective struct {
 	VPScored    int    `json:"vpScored"`
 }
 
-// ScoringOption represents one scoring criterion for a secondary mission.
-type ScoringOption struct {
+// SecondaryScoringOption represents one scoring criterion for a secondary mission.
+type SecondaryScoringOption struct {
 	Label string `json:"label"`
 	VP    int    `json:"vp"`
 	Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
@@ -43,12 +43,12 @@ type ScoringOption struct {
 
 // ActiveSecondary represents a secondary mission card in the deck/active/achieved/discarded piles.
 type ActiveSecondary struct {
-	ID             string          `json:"id"`
-	Name           string          `json:"name"`
-	Description    string          `json:"description"`
-	IsFixed        bool            `json:"isFixed"`
-	MaxVP          int             `json:"maxVp"`
-	ScoringOptions []ScoringOption `json:"scoringOptions"`
+	ID             string                  `json:"id"`
+	Name           string                  `json:"name"`
+	Description    string                  `json:"description"`
+	IsFixed        bool                    `json:"isFixed"`
+	MaxVP          int                     `json:"maxVp"`
+	ScoringOptions []SecondaryScoringOption `json:"scoringOptions"`
 }
 
 type PlayerState struct {
