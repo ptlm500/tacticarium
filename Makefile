@@ -1,4 +1,4 @@
-.PHONY: dev-db dev-backend dev-frontend dev-admin seed help
+.PHONY: dev-db dev-backend dev-frontend dev-admin seed generate-types help
 
 help:
 	@echo "Available targets:"
@@ -8,6 +8,7 @@ help:
 	@echo "  dev-admin     - Run admin frontend vite server (port 5174)"
 	@echo "  check-frontend - Run vp check"
 	@echo "  seed          - Run database migrations and seed data"
+	@echo "  generate-types - Generate TypeScript types from OpenAPI spec (requires running backend)"
 
 db-start:
 	docker-compose up -d
@@ -26,3 +27,8 @@ check-frontend:
 
 seed:
 	cd backend && go run ./cmd/seed --migrate --all
+
+generate-types:
+	cd backend && go run ./cmd/openapi > openapi.json
+	cd frontend && vp run generate-types
+	cd admin && vp run generate-types

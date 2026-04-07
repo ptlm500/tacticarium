@@ -18,34 +18,34 @@ import (
 	"github.com/peter/tacticarium/backend/internal/ws"
 )
 
-func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler {
-	authHandler := handler.NewAuthHandler(pool, cfg)
-	adminAuthHandler := handler.NewAdminAuthHandler(cfg)
-	adminHandler := handler.NewAdminHandler(pool)
-	factionHandler := handler.NewFactionHandler(pool)
-	missionHandler := handler.NewMissionHandler(pool)
-	gameHandler := handler.NewGameHandler(pool, hub, cfg.JWTSecret)
+// Handlers groups all handler instances needed by the router.
+type Handlers struct {
+	Auth      *handler.AuthHandler
+	AdminAuth *handler.AdminAuthHandler
+	Admin     *handler.AdminHandler
+	Faction   *handler.FactionHandler
+	Mission   *handler.MissionHandler
+	Game      *handler.GameHandler
+}
 
-	hub.OnStateChange = gameHandler.PersistGameState
-
-	r := chi.NewRouter()
-
-	r.Use(chimw.Recoverer)
-	r.Use(chimw.RealIP)
-
-	allowedOrigins := []string{cfg.FrontendURL}
-	if cfg.AdminFrontendURL != "" {
-		allowedOrigins = append(allowedOrigins, cfg.AdminFrontendURL)
+// NewHandlers constructs all handler instances. Pass nil for pool/hub when
+// only the OpenAPI spec is needed (handlers won't be invoked).
+func NewHandlers(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) *Handlers {
+	return &Handlers{
+		Auth:      handler.NewAuthHandler(pool, cfg),
+		AdminAuth: handler.NewAdminAuthHandler(cfg),
+		Admin:     handler.NewAdminHandler(pool),
+		Faction:   handler.NewFactionHandler(pool),
+		Mission:   handler.NewMissionHandler(pool),
+		Game:      handler.NewGameHandler(pool, hub, cfg.JWTSecret),
 	}
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+}
 
-	// --- Huma API setup ---
+// NewAPI registers all huma operations on the given chi router and returns
+// the huma.API. This is used both by NewRouter (for serving) and by the
+// openapi command (for spec extraction without a running server or database).
+func NewAPI(r chi.Router, h *Handlers, jwtSecret string) huma.API {
+
 	humaConfig := huma.DefaultConfig("Tacticarium API", "1.0.0")
 	humaConfig.Info.Description = "API for the Tacticarium turn tracker"
 	api := humachi.New(r, humaConfig)
@@ -69,8 +69,8 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 	playerSecurity := []map[string][]string{{"bearerAuth": {}}}
 	adminSecurity := []map[string][]string{{"adminBearerAuth": {}}}
 
-	playerMiddleware := auth.HumaMiddleware(cfg.JWTSecret)
-	adminMiddleware := auth.HumaAdminMiddleware(cfg.JWTSecret)
+	playerMiddleware := auth.HumaMiddleware(jwtSecret)
+	adminMiddleware := auth.HumaAdminMiddleware(jwtSecret)
 
 	// --- Health check ---
 	huma.Register(api, huma.Operation{
@@ -85,12 +85,6 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		return out, nil
 	})
 
-	// --- Auth routes (raw chi - OAuth redirects) ---
-	r.Get("/api/auth/discord", authHandler.HandleDiscordRedirect)
-	r.Get("/api/auth/discord/callback", authHandler.HandleDiscordCallback)
-	r.Get("/api/auth/github", adminAuthHandler.HandleGitHubRedirect)
-	r.Get("/api/auth/github/callback", adminAuthHandler.HandleGitHubCallback)
-
 	// --- Player auth (huma, protected) ---
 	huma.Register(api, huma.Operation{
 		OperationID: "get-me",
@@ -100,13 +94,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Auth"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, authHandler.HandleMe)
-
-	// Logout stays as raw chi (needs to set cookies)
-	r.Group(func(r chi.Router) {
-		r.Use(auth.Middleware(cfg.JWTSecret))
-		r.Post("/api/auth/logout", authHandler.HandleLogout)
-	})
+	}, h.Auth.HandleMe)
 
 	// --- Player faction endpoints ---
 	huma.Register(api, huma.Operation{
@@ -117,7 +105,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Factions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, factionHandler.ListFactions)
+	}, h.Faction.ListFactions)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-detachments",
@@ -127,7 +115,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Factions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, factionHandler.ListDetachments)
+	}, h.Faction.ListDetachments)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-faction-stratagems",
@@ -137,7 +125,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Factions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, factionHandler.ListStratagems)
+	}, h.Faction.ListStratagems)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-detachment-stratagems",
@@ -147,7 +135,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Factions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, factionHandler.ListDetachmentStratagems)
+	}, h.Faction.ListDetachmentStratagems)
 
 	// --- Player mission endpoints ---
 	huma.Register(api, huma.Operation{
@@ -158,7 +146,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Missions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, missionHandler.ListMissionPacks)
+	}, h.Mission.ListMissionPacks)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-missions",
@@ -168,7 +156,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Missions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, missionHandler.ListMissions)
+	}, h.Mission.ListMissions)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-secondaries",
@@ -178,7 +166,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Missions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, missionHandler.ListSecondaries)
+	}, h.Mission.ListSecondaries)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-gambits",
@@ -188,7 +176,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Missions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, missionHandler.ListGambits)
+	}, h.Mission.ListGambits)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-mission-rules",
@@ -198,7 +186,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Missions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, missionHandler.ListMissionRules)
+	}, h.Mission.ListMissionRules)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-challenger-cards",
@@ -208,7 +196,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Missions"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, missionHandler.ListChallengerCards)
+	}, h.Mission.ListChallengerCards)
 
 	// --- Game endpoints ---
 	huma.Register(api, huma.Operation{
@@ -220,7 +208,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Security:      playerSecurity,
 		Middlewares:   huma.Middlewares{playerMiddleware},
 		DefaultStatus: 201,
-	}, gameHandler.CreateGame)
+	}, h.Game.CreateGame)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "list-games",
@@ -230,7 +218,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Games"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, gameHandler.ListGames)
+	}, h.Game.ListGames)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "join-game",
@@ -240,7 +228,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Games"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, gameHandler.JoinGame)
+	}, h.Game.JoinGame)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "get-game",
@@ -250,7 +238,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Games"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, gameHandler.GetGame)
+	}, h.Game.GetGame)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "get-game-events",
@@ -260,7 +248,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Games"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, gameHandler.GetGameEvents)
+	}, h.Game.GetGameEvents)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "get-history",
@@ -270,7 +258,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Games"},
 		Security:    playerSecurity,
 		Middlewares: huma.Middlewares{playerMiddleware},
-	}, gameHandler.GetHistory)
+	}, h.Game.GetHistory)
 
 	// --- Admin auth (huma) ---
 	huma.Register(api, huma.Operation{
@@ -281,21 +269,61 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 		Tags:        []string{"Admin Auth"},
 		Security:    adminSecurity,
 		Middlewares: huma.Middlewares{adminMiddleware},
-	}, adminAuthHandler.HandleAdminMe)
+	}, h.AdminAuth.HandleAdminMe)
 
 	// --- Admin CRUD ---
-	registerAdminCRUD(api, adminMiddleware, adminSecurity, adminHandler)
+	registerAdminCRUD(api, adminMiddleware, adminSecurity, h.Admin)
+
+	return api
+}
+
+func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler {
+	h := NewHandlers(pool, hub, cfg)
+
+	hub.OnStateChange = h.Game.PersistGameState
+
+	r := chi.NewRouter()
+
+	r.Use(chimw.Recoverer)
+	r.Use(chimw.RealIP)
+
+	allowedOrigins := []string{cfg.FrontendURL}
+	if cfg.AdminFrontendURL != "" {
+		allowedOrigins = append(allowedOrigins, cfg.AdminFrontendURL)
+	}
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	// Register all huma operations on this router
+	_ = NewAPI(r, h, cfg.JWTSecret)
+
+	// --- Auth routes (raw chi - OAuth redirects) ---
+	r.Get("/api/auth/discord", h.Auth.HandleDiscordRedirect)
+	r.Get("/api/auth/discord/callback", h.Auth.HandleDiscordCallback)
+	r.Get("/api/auth/github", h.AdminAuth.HandleGitHubRedirect)
+	r.Get("/api/auth/github/callback", h.AdminAuth.HandleGitHubCallback)
+
+	// Logout stays as raw chi (needs to set cookies)
+	r.Group(func(r chi.Router) {
+		r.Use(auth.Middleware(cfg.JWTSecret))
+		r.Post("/api/auth/logout", h.Auth.HandleLogout)
+	})
 
 	// --- Admin imports (raw chi - multipart file upload) ---
 	r.Group(func(r chi.Router) {
 		r.Use(auth.AdminMiddleware(cfg.JWTSecret))
-		r.Post("/api/admin/import/factions", adminHandler.ImportFactions)
-		r.Post("/api/admin/import/stratagems", adminHandler.ImportStratagems)
-		r.Post("/api/admin/import/missions", adminHandler.ImportMissions)
+		r.Post("/api/admin/import/factions", h.Admin.ImportFactions)
+		r.Post("/api/admin/import/stratagems", h.Admin.ImportStratagems)
+		r.Post("/api/admin/import/missions", h.Admin.ImportMissions)
 	})
 
 	// --- WebSocket (raw chi - auth via query param) ---
-	r.Get("/ws/game/{gameId}", gameHandler.HandleWebSocket)
+	r.Get("/ws/game/{gameId}", h.Game.HandleWebSocket)
 
 	// Wrap with OTEL HTTP instrumentation
 	return otelhttp.NewHandler(r, "tacticarium")
