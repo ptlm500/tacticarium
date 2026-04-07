@@ -59,7 +59,7 @@ export function GameHistoryPage() {
                     </span>
                   </div>
                   <div className="space-y-1 text-sm">
-                    {game.players.map((p) => (
+                    {(game.players ?? []).map((p) => (
                       <div
                         key={p.userId}
                         className={`flex justify-between ${

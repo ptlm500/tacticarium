@@ -39,16 +39,17 @@ export function MissionEditPage() {
         .catch(() => navigate("/missions"));
   }, [id, navigate]);
 
+  const rules = form.scoringRules ?? [];
+
   const updateRule = (index: number, field: keyof ScoringAction, value: string | number) => {
-    const rules = [...form.scoringRules];
-    rules[index] = { ...rules[index], [field]: value };
-    setForm({ ...form, scoringRules: rules });
+    const updated = [...rules];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, scoringRules: updated });
   };
 
-  const addRule = () =>
-    setForm({ ...form, scoringRules: [...form.scoringRules, { ...emptyRule }] });
+  const addRule = () => setForm({ ...form, scoringRules: [...rules, { ...emptyRule }] });
   const removeRule = (index: number) =>
-    setForm({ ...form, scoringRules: form.scoringRules.filter((_, i) => i !== index) });
+    setForm({ ...form, scoringRules: rules.filter((_, i) => i !== index) });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +58,7 @@ export function MissionEditPage() {
     try {
       const data = {
         ...form,
-        scoringRules: form.scoringRules.map((r) => ({
+        scoringRules: rules.map((r) => ({
           ...r,
           minRound: r.minRound || 0,
         })),
@@ -158,7 +159,7 @@ export function MissionEditPage() {
               + Add Rule
             </button>
           </div>
-          {form.scoringRules.map((rule, i) => (
+          {rules.map((rule, i) => (
             <div key={i} className="mb-3 p-3 bg-gray-800 rounded border border-gray-700">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-gray-500">Rule {i + 1}</span>
@@ -226,7 +227,7 @@ export function MissionEditPage() {
               </div>
             </div>
           ))}
-          {form.scoringRules.length === 0 && (
+          {rules.length === 0 && (
             <p className="text-xs text-gray-500">
               No scoring rules. Click "+ Add Rule" to add one.
             </p>

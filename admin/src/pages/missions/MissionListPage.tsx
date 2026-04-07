@@ -67,7 +67,7 @@ export function MissionListPage() {
           {
             key: "scoringRules",
             label: "Rules",
-            render: (m) => <span>{m.scoringRules.length} rules</span>,
+            render: (m) => <span>{(m.scoringRules ?? []).length} rules</span>,
           },
         ]}
         data={data}

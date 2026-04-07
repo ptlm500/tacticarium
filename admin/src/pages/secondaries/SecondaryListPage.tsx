@@ -58,7 +58,7 @@ export function SecondaryListPage() {
           {
             key: "scoringOptions",
             label: "Options",
-            render: (s) => <span>{s.scoringOptions.length}</span>,
+            render: (s) => <span>{(s.scoringOptions ?? []).length}</span>,
           },
         ]}
         data={data}

@@ -39,7 +39,8 @@ jobs:
         run: vp test
 
       - name: Build Docker Image
-        run: docker build -t turn-tracker-frontend .
+        run: docker build -t turn-tracker-frontend -f frontend/Dockerfile .
+        working-directory: ${{ github.workspace }}
 
   admin-check:
     name: Admin Check
@@ -67,7 +68,41 @@ jobs:
         run: vp build
 
       - name: Build Docker Image
-        run: docker build -t turn-tracker-admin .
+        run: docker build -t turn-tracker-admin -f admin/Dockerfile .
+        working-directory: ${{ github.workspace }}
+
+  generated-types-check:
+    name: Generated Types Up-to-Date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Node.js
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: 'lts'
+          cache: true
+          run-install: true
+          working-directory: frontend
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Regenerate types
+        run: make generate-types
+
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --exit-code shared/; then
+            echo "::error::Generated types are out of date. Run 'make generate-types' and commit the result."
+            git diff shared/
+            exit 1
+          fi
 
   backend-check:
     name: Backend Check

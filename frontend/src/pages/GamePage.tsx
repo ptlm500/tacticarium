@@ -106,7 +106,7 @@ export function GamePage() {
           items.push({
             kind: "primary",
             missionName: currentMission.name,
-            scoringRules: currentMission.scoringRules.filter(
+            scoringRules: (currentMission.scoringRules ?? []).filter(
               (r) => !r.scoringTiming || r.scoringTiming === "end_of_command_phase",
             ),
             currentRound: round,
@@ -117,7 +117,7 @@ export function GamePage() {
           items.push({
             kind: "primary",
             missionName: currentMission.name,
-            scoringRules: currentMission.scoringRules.filter(
+            scoringRules: (currentMission.scoringRules ?? []).filter(
               (r) => !r.scoringTiming || r.scoringTiming === "end_of_command_phase",
             ),
             currentRound: round,
@@ -138,7 +138,7 @@ export function GamePage() {
 
       // Per-action end_of_turn scoring (e.g., Terraform bonus)
       if (isFightPhase) {
-        const endOfTurnActions = currentMission.scoringRules.filter(
+        const endOfTurnActions = (currentMission.scoringRules ?? []).filter(
           (r) => r.scoringTiming === "end_of_turn",
         );
         if (endOfTurnActions.length > 0) {
@@ -343,13 +343,15 @@ export function GamePage() {
             />
           </div>
           {/* Mission Quick Scoring */}
-          {currentMission && currentMission.scoringRules.length > 0 && (
-            <MissionScoring
-              scoringRules={currentMission.scoringRules}
-              currentRound={gameState.currentRound}
-              onScore={(vp) => handleScoreVP("primary", vp)}
-            />
-          )}
+          {currentMission &&
+            currentMission.scoringRules &&
+            currentMission.scoringRules.length > 0 && (
+              <MissionScoring
+                scoringRules={currentMission.scoringRules ?? []}
+                currentRound={gameState.currentRound}
+                onScore={(vp) => handleScoreVP("primary", vp)}
+              />
+            )}
         </section>
 
         {/* Opponent State */}

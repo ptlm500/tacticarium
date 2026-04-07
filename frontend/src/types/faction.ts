@@ -1,24 +1,12 @@
-export interface Faction {
-  id: string;
-  name: string;
-  wahapediaLink?: string;
-}
+import type { components } from "../../../shared/api.generated";
 
-export interface Detachment {
-  id: string;
-  factionId: string;
-  name: string;
-}
+type Schemas = components["schemas"];
 
-export interface Stratagem {
-  id: string;
-  factionId: string;
-  detachmentId?: string;
-  name: string;
-  type: string;
-  cpCost: number;
-  legend?: string;
-  turn: string;
-  phase: string;
-  description: string;
-}
+/** A faction with a guaranteed id (present when read from the API). */
+export type Faction = Schemas["Faction"] & { id: string };
+
+/** A detachment with a guaranteed id. */
+export type Detachment = Schemas["Detachment"] & { id: string };
+
+/** A stratagem with a guaranteed id. */
+export type Stratagem = Schemas["Stratagem"] & { id: string };
