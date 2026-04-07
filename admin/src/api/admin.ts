@@ -1,4 +1,4 @@
-import type { components } from "../types/api.generated";
+import type { components } from "../../../shared/api.generated";
 import { api, uploadFile } from "./client";
 
 type Schemas = components["schemas"];

@@ -8,8 +8,7 @@
     "build": "vp build",
     "lint": "vp lint .",
     "preview": "vp preview",
-    "test": "vp test",
-    "generate-types": "vp exec openapi-typescript ../backend/openapi.json -o src/types/api.generated.ts"
+    "test": "vp test"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
