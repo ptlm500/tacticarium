@@ -132,7 +132,7 @@ export function LobbyPage() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-400 mt-1">
-                    {game.players.map((p) => p.username).join(" vs ")}
+                    {(game.players ?? []).map((p) => p.username).join(" vs ")}
                   </div>
                 </button>
               ))}

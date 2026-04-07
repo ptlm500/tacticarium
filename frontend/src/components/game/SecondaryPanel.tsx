@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ActiveSecondary, ScoringOption } from "../../types/game";
 
-function filterOptions(options: ScoringOption[] | undefined, mode: string): ScoringOption[] {
+function filterOptions(options: ScoringOption[] | null | undefined, mode: string): ScoringOption[] {
   if (!options || options.length === 0) return [];
   return options.filter((o) => !o.mode || o.mode === mode);
 }

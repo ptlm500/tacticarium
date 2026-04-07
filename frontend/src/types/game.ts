@@ -1,3 +1,9 @@
+import type { components } from "./api.generated";
+
+type Schemas = components["schemas"];
+
+// --- Narrower union types (not expressed in OpenAPI spec) ---
+
 export type Phase = "setup" | "command" | "movement" | "shooting" | "charge" | "fight";
 export type GameStatus = "setup" | "active" | "completed" | "abandoned";
 
@@ -12,57 +18,17 @@ export const PHASE_LABELS: Record<Phase, string> = {
   fight: "Fight",
 };
 
-export interface SecondaryObjective {
-  id: string;
-  secondaryId?: string;
-  customName?: string;
-  customMaxVp?: number;
-  vpScored: number;
-}
+// --- Types derived from OpenAPI schema ---
 
-export interface ScoringOption {
-  label: string;
-  vp: number;
-  mode?: string; // "fixed", "tactical", or undefined (both)
-}
+export type SecondaryObjective = Schemas["SecondaryObjective"];
 
-export interface ActiveSecondary {
-  id: string;
-  name: string;
-  description: string;
-  isFixed: boolean;
-  maxVp: number;
-  scoringOptions: ScoringOption[];
-}
+export type ScoringOption = Schemas["ScoringOption"];
 
-export interface PlayerState {
-  userId: string;
-  username: string;
-  playerNumber: number;
-  factionId: string;
-  factionName: string;
-  detachmentId: string;
-  detachmentName: string;
-  cp: number;
-  vpPrimary: number;
-  vpSecondary: number;
-  vpGambit: number;
-  vpPaint: number;
-  ready: boolean;
-  gambitId?: string;
-  gambitDeclaredRound?: number;
-  secondaries: SecondaryObjective[];
-  secondaryMode: string;
-  tacticalDeck: ActiveSecondary[];
-  activeSecondaries: ActiveSecondary[];
-  achievedSecondaries: ActiveSecondary[];
-  discardedSecondaries: ActiveSecondary[];
-  cpGainedThisRound: number;
-  isChallenger: boolean;
-  challengerCardId?: string;
-  adaptOrDieUses: number;
-}
+export type ActiveSecondary = Schemas["ActiveSecondary"];
 
+export type PlayerState = Schemas["PlayerState"];
+
+/** Game state with narrower Phase/GameStatus types and a 2-player tuple. */
 export interface GameState {
   gameId: string;
   inviteCode: string;
@@ -83,6 +49,11 @@ export interface GameState {
   winnerId?: string;
 }
 
+/**
+ * Game event as received via WebSocket. Note: the HTTP endpoint
+ * (/api/games/:id/events) returns a different shape with `eventData`
+ * and a numeric `id` — see components["schemas"]["GameEvent"].
+ */
 export interface GameEvent {
   eventType: string;
   playerNumber?: number;
@@ -92,19 +63,7 @@ export interface GameEvent {
   createdAt?: string;
 }
 
-export interface GameSummary {
-  id: string;
-  inviteCode: string;
+/** Game summary for list views, derived from OpenAPI schema. */
+export type GameSummary = Omit<Schemas["GameSummary"], "status"> & {
   status: GameStatus;
-  missionName?: string;
-  createdAt: string;
-  completedAt?: string;
-  players: {
-    userId: string;
-    username: string;
-    factionName?: string;
-    playerNumber: number;
-    totalVp: number;
-  }[];
-  winnerId?: string;
-}
+};
