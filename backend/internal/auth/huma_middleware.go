@@ -36,6 +36,7 @@ func HumaMiddleware(jwtSecret string) func(ctx huma.Context, next func(huma.Cont
 			UserID:   claims.UserID,
 			Username: claims.Username,
 		})
+		setUserSpanAttrs(ctx.Context(), claims.UserID, claims.Username)
 		next(ctx)
 	}
 }
@@ -74,6 +75,7 @@ func HumaAdminMiddleware(jwtSecret string) func(ctx huma.Context, next func(huma
 			GitHubID:   claims.UserID,
 			GitHubUser: claims.Username,
 		})
+		setUserSpanAttrs(ctx.Context(), claims.UserID, claims.Username)
 		next(ctx)
 	}
 }

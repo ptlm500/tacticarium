@@ -49,6 +49,7 @@ func AdminMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				GitHubID:   claims.UserID,
 				GitHubUser: claims.Username,
 			})
+			setUserSpanAttrs(ctx, claims.UserID, claims.Username)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
