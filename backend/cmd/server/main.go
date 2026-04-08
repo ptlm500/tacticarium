@@ -15,17 +15,18 @@ import (
 )
 
 func main() {
-	logging.Init()
-
 	cfg := config.Load()
 	ctx := context.Background()
 
-	// OpenTelemetry
-	shutdown, err := telemetry.Init(ctx, "tacticarium", "1.0.0")
+	// OpenTelemetry (traces, metrics, logs)
+	lp, shutdown, err := telemetry.Init(ctx, "tacticarium", "1.0.0")
 	if err != nil {
-		slog.Warn("Failed to init telemetry, continuing without tracing", "error", err)
+		// Set up logging without OTEL export so we can still log to stdout
+		logging.Init(nil)
+		slog.Warn("Failed to init telemetry, continuing without observability", "error", err)
 	} else {
 		defer shutdown(ctx)
+		logging.Init(lp)
 	}
 
 	// Database

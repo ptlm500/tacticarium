@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"strings"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type contextKey string
@@ -48,6 +51,7 @@ func Middleware(jwtSecret string) func(http.Handler) http.Handler {
 				UserID:   claims.UserID,
 				Username: claims.Username,
 			})
+			setUserSpanAttrs(ctx, claims.UserID, claims.Username)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -58,4 +62,13 @@ func GetUser(ctx context.Context) *UserContext {
 		return user
 	}
 	return nil
+}
+
+// setUserSpanAttrs adds user identity attributes to the current span.
+func setUserSpanAttrs(ctx context.Context, userID, username string) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.String("user.id", userID),
+		attribute.String("user.name", username),
+	)
 }

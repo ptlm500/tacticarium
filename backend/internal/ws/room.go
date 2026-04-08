@@ -84,6 +84,19 @@ func (r *Room) processAction(action *game.GameAction) {
 		attribute.Int("game.player_number", action.PlayerNumber),
 		attribute.String("game.action_type", string(action.Type)),
 	)
+
+	// Enrich span with user identity from the client that sent the action
+	r.mu.RLock()
+	for client := range r.clients {
+		if client.playerNumber == action.PlayerNumber {
+			span.SetAttributes(
+				attribute.String("user.id", client.userID),
+				attribute.String("user.name", client.username),
+			)
+			break
+		}
+	}
+	r.mu.RUnlock()
 	defer span.End()
 
 	events, err := r.engine.Apply(ctx, *action)
