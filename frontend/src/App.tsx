@@ -6,6 +6,7 @@ import { LobbyPage } from "./pages/LobbyPage";
 import { GameSetupPage } from "./pages/GameSetupPage";
 import { GamePage } from "./pages/GamePage";
 import { GameHistoryPage } from "./pages/GameHistoryPage";
+import { GameDetailPage } from "./pages/GameDetailPage";
 import { JoinRedirect } from "./pages/JoinRedirect";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
 
@@ -66,6 +67,14 @@ function App() {
               element={
                 <AuthGuard>
                   <GameHistoryPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/history/:id"
+              element={
+                <AuthGuard>
+                  <GameDetailPage />
                 </AuthGuard>
               }
             />

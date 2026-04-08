@@ -1,96 +1,14 @@
 import { useEffect, useState } from "react";
 import { GameState, PlayerState } from "../../types/game";
 import { gamesApi } from "../../api/games";
-
-/** Event shape returned by the REST /api/games/:id/events endpoint. */
-interface RestGameEvent {
-  id: number;
-  playerNumber: number | null;
-  eventType: string;
-  eventData: Record<string, unknown> | null;
-  round: number | null;
-  phase: string | null;
-  createdAt: string;
-}
+import { type RestGameEvent, buildPlayerStats, getEndReason, getRoundsPlayed } from "./vpUtils";
+import { VPBreakdownTable } from "./VPBreakdownTable";
 
 interface Props {
   gameState: GameState;
   myPlayer: PlayerState;
   opponent: PlayerState | null;
   currentUserId: string;
-}
-
-interface RoundVP {
-  primary: number;
-  secondary: number;
-  gambit: number;
-}
-
-interface PlayerSummaryStats {
-  totalVP: number;
-  vpByRound: Record<number, RoundVP>;
-  stratagemsUsed: number;
-  paint: number;
-}
-
-function buildPlayerStats(
-  events: RestGameEvent[],
-  playerNumber: number,
-  paint: number,
-): PlayerSummaryStats {
-  const vpByRound: Record<number, RoundVP> = {};
-  let stratagemsUsed = 0;
-
-  for (const e of events) {
-    if (e.playerNumber !== playerNumber) continue;
-    const round = e.round ?? 0;
-
-    if (
-      e.eventType === "vp_primary_score" ||
-      e.eventType === "vp_secondary_score" ||
-      e.eventType === "vp_gambit_score" ||
-      e.eventType === "secondary_achieved" ||
-      e.eventType === "challenger_scored"
-    ) {
-      if (!vpByRound[round]) vpByRound[round] = { primary: 0, secondary: 0, gambit: 0 };
-
-      const delta = (e.eventData?.delta as number) ?? 0;
-      const vpScored = (e.eventData?.vpScored as number) ?? 0;
-      const amount = delta || vpScored;
-
-      if (e.eventType === "vp_primary_score") {
-        vpByRound[round].primary += amount;
-      } else if (e.eventType === "vp_secondary_score" || e.eventType === "secondary_achieved") {
-        vpByRound[round].secondary += amount;
-      } else if (e.eventType === "vp_gambit_score" || e.eventType === "challenger_scored") {
-        vpByRound[round].gambit += amount;
-      }
-    }
-
-    if (e.eventType === "stratagem_used") {
-      stratagemsUsed++;
-    }
-  }
-
-  let totalVP = paint;
-  for (const rv of Object.values(vpByRound)) {
-    totalVP += rv.primary + rv.secondary + rv.gambit;
-  }
-
-  return { totalVP, vpByRound, stratagemsUsed, paint };
-}
-
-function getEndReason(events: RestGameEvent[]): string | null {
-  const endEvent = events.find((e) => e.eventType === "game_end");
-  return (endEvent?.eventData?.reason as string) ?? null;
-}
-
-function getRoundsPlayed(events: RestGameEvent[]): number {
-  let max = 0;
-  for (const e of events) {
-    if (e.round != null && e.round > max) max = e.round;
-  }
-  return max;
 }
 
 export function GameSummary({ gameState, myPlayer, opponent, currentUserId }: Props) {
@@ -161,84 +79,14 @@ export function GameSummary({ gameState, myPlayer, opponent, currentUserId }: Pr
         </div>
 
         {/* VP Breakdown Table */}
-        <div className="px-6 py-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="text-left py-2 text-gray-400 font-medium">Round</th>
-                <th className="text-center py-2 text-gray-400 font-medium" colSpan={3}>
-                  {myPlayer.username}
-                </th>
-                {opponentStats && (
-                  <th className="text-center py-2 text-gray-400 font-medium" colSpan={3}>
-                    {opponent!.username}
-                  </th>
-                )}
-              </tr>
-              <tr className="border-b border-gray-600 text-xs text-gray-500">
-                <th></th>
-                <th className="py-1">Pri</th>
-                <th className="py-1">Sec</th>
-                <th className="py-1">Gam</th>
-                {opponentStats && (
-                  <>
-                    <th className="py-1">Pri</th>
-                    <th className="py-1">Sec</th>
-                    <th className="py-1">Gam</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {rounds.map((r) => {
-                const my = myStats.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
-                const opp = opponentStats?.vpByRound[r] ?? {
-                  primary: 0,
-                  secondary: 0,
-                  gambit: 0,
-                };
-                return (
-                  <tr key={r} className="border-b border-gray-700/50">
-                    <td className="py-2 text-gray-400">R{r}</td>
-                    <td className="py-2 text-center">{my.primary || "-"}</td>
-                    <td className="py-2 text-center">{my.secondary || "-"}</td>
-                    <td className="py-2 text-center">{my.gambit || "-"}</td>
-                    {opponentStats && (
-                      <>
-                        <td className="py-2 text-center">{opp.primary || "-"}</td>
-                        <td className="py-2 text-center">{opp.secondary || "-"}</td>
-                        <td className="py-2 text-center">{opp.gambit || "-"}</td>
-                      </>
-                    )}
-                  </tr>
-                );
-              })}
-              {/* Paint row */}
-              <tr className="border-b border-gray-700/50">
-                <td className="py-2 text-gray-400">Paint</td>
-                <td className="py-2 text-center" colSpan={3}>
-                  {myStats.paint}
-                </td>
-                {opponentStats && (
-                  <td className="py-2 text-center" colSpan={3}>
-                    {opponentStats.paint}
-                  </td>
-                )}
-              </tr>
-              {/* Total row */}
-              <tr className="font-bold text-base">
-                <td className="py-2 text-gray-300">Total</td>
-                <td className="py-2 text-center" colSpan={3}>
-                  {myStats.totalVP} VP
-                </td>
-                {opponentStats && (
-                  <td className="py-2 text-center" colSpan={3}>
-                    {opponentStats.totalVP} VP
-                  </td>
-                )}
-              </tr>
-            </tbody>
-          </table>
+        <div className="px-6 py-4">
+          <VPBreakdownTable
+            myStats={myStats}
+            opponentStats={opponentStats}
+            myUsername={myPlayer.username}
+            opponentUsername={opponent?.username ?? null}
+            rounds={rounds}
+          />
         </div>
 
         {/* Stats */}

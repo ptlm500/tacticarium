@@ -643,6 +643,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get user's game stats */
+        get: operations["get-stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -757,6 +774,13 @@ export interface components {
             id?: string;
             name: string;
             wahapediaLink?: string;
+        };
+        FactionStat: {
+            factionName: string;
+            /** Format: int64 */
+            gamesPlayed: number;
+            /** Format: int64 */
+            wins: number;
         };
         Gambit: {
             /**
@@ -1012,6 +1036,25 @@ export interface components {
             phase: string;
             turn: string;
             type: string;
+        };
+        UserStats: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/UserStats.json
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            abandoned: number;
+            /** Format: double */
+            averageVp: number;
+            /** Format: int64 */
+            draws: number;
+            factionStats: components["schemas"]["FactionStat"][] | null;
+            /** Format: int64 */
+            losses: number;
+            /** Format: int64 */
+            wins: number;
         };
     };
     responses: never;
@@ -3010,7 +3053,12 @@ export interface operations {
     };
     "get-history": {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter by player's faction name */
+                myFaction?: string;
+                /** @description Filter by opponent's faction name */
+                opponentFaction?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3024,6 +3072,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GameSummary"][] | null;
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserStats"];
                 };
             };
             /** @description Error */

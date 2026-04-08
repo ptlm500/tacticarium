@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -176,19 +177,42 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 	return &GameListOutput{Body: games}, nil
 }
 
-func (h *GameHandler) GetHistory(ctx context.Context, input *struct{}) (*GameListOutput, error) {
+func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*GameListOutput, error) {
 	user := auth.GetUser(ctx)
 	if user == nil {
 		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 
-	rows, err := h.db.Query(ctx,
-		`SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
+	query := `SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
 		 JOIN game_players gp ON g.id = gp.game_id
-		 WHERE gp.user_id = $1 AND g.status = 'completed'
-		 ORDER BY g.completed_at DESC
-		 LIMIT 50`, user.UserID)
+		 WHERE gp.user_id = $1 AND g.status IN ('completed', 'abandoned')`
+	args := []any{user.UserID}
+	paramN := 2
+
+	if input.MyFaction != "" {
+		query += fmt.Sprintf(` AND EXISTS (
+			SELECT 1 FROM game_players mp
+			JOIN factions mf ON mp.faction_id = mf.id
+			WHERE mp.game_id = g.id AND mp.user_id = $1 AND mf.name = $%d
+		)`, paramN)
+		args = append(args, input.MyFaction)
+		paramN++
+	}
+
+	if input.OpponentFaction != "" {
+		query += fmt.Sprintf(` AND EXISTS (
+			SELECT 1 FROM game_players op
+			JOIN factions of2 ON op.faction_id = of2.id
+			WHERE op.game_id = g.id AND op.user_id != $1 AND of2.name = $%d
+		)`, paramN)
+		args = append(args, input.OpponentFaction)
+		paramN++
+	}
+
+	query += ` ORDER BY g.completed_at DESC LIMIT 50`
+
+	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
@@ -222,6 +246,83 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *struct{}) (*GameLis
 	}
 
 	return &GameListOutput{Body: games}, nil
+}
+
+func (h *GameHandler) GetStats(ctx context.Context, input *struct{}) (*StatsOutput, error) {
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+
+	stats := UserStats{
+		FactionStats: make([]FactionStat, 0),
+	}
+
+	// Win/loss/draw/abandoned counts + average VP
+	rows, err := h.db.Query(ctx,
+		`SELECT g.status, g.winner_id,
+		        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint AS total_vp
+		 FROM games g
+		 JOIN game_players gp ON g.id = gp.game_id AND gp.user_id = $1
+		 WHERE g.status IN ('completed', 'abandoned')`, user.UserID)
+	if err != nil {
+		return nil, huma.Error500InternalServerError("database error")
+	}
+	defer rows.Close()
+
+	var totalVP int
+	var gameCount int
+	for rows.Next() {
+		var status string
+		var winnerID *string
+		var vp int
+		if err := rows.Scan(&status, &winnerID, &vp); err != nil {
+			continue
+		}
+		gameCount++
+		totalVP += vp
+
+		if status == "abandoned" {
+			stats.Abandoned++
+		} else if winnerID == nil {
+			stats.Draws++
+		} else if *winnerID == user.UserID {
+			stats.Wins++
+		} else {
+			stats.Losses++
+		}
+	}
+
+	if gameCount > 0 {
+		stats.AverageVP = float64(totalVP) / float64(gameCount)
+	}
+
+	// Faction stats
+	fRows, err := h.db.Query(ctx,
+		`SELECT COALESCE(f.name, 'Unknown') AS faction_name,
+		        COUNT(*) AS games_played,
+		        COUNT(*) FILTER (WHERE g.winner_id = $1) AS wins
+		 FROM game_players gp
+		 JOIN games g ON gp.game_id = g.id
+		 LEFT JOIN factions f ON gp.faction_id = f.id
+		 WHERE gp.user_id = $1 AND g.status IN ('completed', 'abandoned')
+		   AND gp.faction_id IS NOT NULL
+		 GROUP BY f.name
+		 ORDER BY games_played DESC`, user.UserID)
+	if err != nil {
+		return nil, huma.Error500InternalServerError("database error")
+	}
+	defer fRows.Close()
+
+	for fRows.Next() {
+		var fs FactionStat
+		if err := fRows.Scan(&fs.FactionName, &fs.GamesPlayed, &fs.Wins); err != nil {
+			continue
+		}
+		stats.FactionStats = append(stats.FactionStats, fs)
+	}
+
+	return &StatsOutput{Body: stats}, nil
 }
 
 func (h *GameHandler) GetGameEvents(ctx context.Context, input *GameIDParam) (*GameEventsOutput, error) {

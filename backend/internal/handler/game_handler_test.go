@@ -236,3 +236,214 @@ func TestGetGameEvents(t *testing.T) {
 	assert.Equal(t, "test_event", events[0]["eventType"])
 	assert.Equal(t, "test_event_2", events[1]["eventType"])
 }
+
+// --- Stats Tests ---
+
+func TestGetStats_Empty(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	userID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	token := testutil.GenerateToken(t, userID, "player1")
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/users/me/stats", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var stats map[string]interface{}
+	testutil.ReadJSON(t, resp, &stats)
+	assert.Equal(t, float64(0), stats["wins"])
+	assert.Equal(t, float64(0), stats["losses"])
+	assert.Equal(t, float64(0), stats["draws"])
+	assert.Equal(t, float64(0), stats["abandoned"])
+	assert.Equal(t, float64(0), stats["averageVp"])
+	assert.Empty(t, stats["factionStats"])
+}
+
+func TestGetStats_WithGames(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanAllTables(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	testutil.SeedFaction(t, env.Pool, "faction-sm", "Space Marines")
+	testutil.SeedFaction(t, env.Pool, "faction-ork", "Orks")
+
+	// Game 1: user1 wins with Space Marines (VP: 10+5+3+2 = 20)
+	g1, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g1, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g1, user1ID, "faction-sm")
+	testutil.SetPlayerFaction(t, env.Pool, g1, user2ID, "faction-ork")
+	testutil.SetPlayerVP(t, env.Pool, g1, user1ID, 10, 5, 3, 2)
+	testutil.SetPlayerVP(t, env.Pool, g1, user2ID, 5, 3, 0, 1)
+	testutil.CompleteTestGame(t, env.Pool, g1, &user1ID)
+
+	// Game 2: user1 loses with Orks (VP: 3+2+0+1 = 6)
+	g2, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g2, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g2, user1ID, "faction-ork")
+	testutil.SetPlayerFaction(t, env.Pool, g2, user2ID, "faction-sm")
+	testutil.SetPlayerVP(t, env.Pool, g2, user1ID, 3, 2, 0, 1)
+	testutil.SetPlayerVP(t, env.Pool, g2, user2ID, 10, 5, 3, 2)
+	testutil.CompleteTestGame(t, env.Pool, g2, &user2ID)
+
+	// Game 3: draw (VP: 8+4+0+0 = 12)
+	g3, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g3, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g3, user1ID, "faction-sm")
+	testutil.SetPlayerFaction(t, env.Pool, g3, user2ID, "faction-sm")
+	testutil.SetPlayerVP(t, env.Pool, g3, user1ID, 8, 4, 0, 0)
+	testutil.SetPlayerVP(t, env.Pool, g3, user2ID, 8, 4, 0, 0)
+	testutil.CompleteTestGame(t, env.Pool, g3, nil)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/users/me/stats", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var stats map[string]interface{}
+	testutil.ReadJSON(t, resp, &stats)
+	assert.Equal(t, float64(1), stats["wins"])
+	assert.Equal(t, float64(1), stats["losses"])
+	assert.Equal(t, float64(1), stats["draws"])
+	assert.Equal(t, float64(0), stats["abandoned"])
+
+	// Average VP: (20 + 6 + 12) / 3 ≈ 12.67
+	avgVP := stats["averageVp"].(float64)
+	assert.InDelta(t, 12.67, avgVP, 0.01)
+
+	// Faction stats: Space Marines (2 games, 1 win), Orks (1 game, 0 wins)
+	factionStats := stats["factionStats"].([]interface{})
+	assert.Len(t, factionStats, 2)
+	// Sorted by games_played DESC, so Space Marines first
+	sm := factionStats[0].(map[string]interface{})
+	assert.Equal(t, "Space Marines", sm["factionName"])
+	assert.Equal(t, float64(2), sm["gamesPlayed"])
+	assert.Equal(t, float64(1), sm["wins"])
+
+	ork := factionStats[1].(map[string]interface{})
+	assert.Equal(t, "Orks", ork["factionName"])
+	assert.Equal(t, float64(1), ork["gamesPlayed"])
+	assert.Equal(t, float64(0), ork["wins"])
+}
+
+func TestGetStats_Abandoned(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+
+	g1, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g1, user2ID)
+	testutil.SetPlayerVP(t, env.Pool, g1, user1ID, 5, 0, 0, 0)
+	testutil.AbandonTestGame(t, env.Pool, g1)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/users/me/stats", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var stats map[string]interface{}
+	testutil.ReadJSON(t, resp, &stats)
+	assert.Equal(t, float64(0), stats["wins"])
+	assert.Equal(t, float64(0), stats["losses"])
+	assert.Equal(t, float64(0), stats["draws"])
+	assert.Equal(t, float64(1), stats["abandoned"])
+	assert.Equal(t, float64(5), stats["averageVp"])
+}
+
+// --- History Filter Tests ---
+
+func TestGetHistory_NoFilter(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+
+	g1, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g1, user2ID)
+	testutil.CompleteTestGame(t, env.Pool, g1, &user1ID)
+
+	g2, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g2, user2ID)
+	testutil.AbandonTestGame(t, env.Pool, g2)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/users/me/history", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var games []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games)
+	assert.Len(t, games, 2)
+}
+
+func TestGetHistory_FilterByMyFaction(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanAllTables(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	testutil.SeedFaction(t, env.Pool, "faction-sm", "Space Marines")
+	testutil.SeedFaction(t, env.Pool, "faction-ork", "Orks")
+
+	// Game 1: user1 as Space Marines
+	g1, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g1, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g1, user1ID, "faction-sm")
+	testutil.SetPlayerFaction(t, env.Pool, g1, user2ID, "faction-ork")
+	testutil.CompleteTestGame(t, env.Pool, g1, &user1ID)
+
+	// Game 2: user1 as Orks
+	g2, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g2, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g2, user1ID, "faction-ork")
+	testutil.SetPlayerFaction(t, env.Pool, g2, user2ID, "faction-sm")
+	testutil.CompleteTestGame(t, env.Pool, g2, &user2ID)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/users/me/history?myFaction=Space+Marines", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var games []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games)
+	assert.Len(t, games, 1)
+	assert.Equal(t, g1, games[0]["id"])
+}
+
+func TestGetHistory_FilterByOpponentFaction(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanAllTables(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	testutil.SeedFaction(t, env.Pool, "faction-sm", "Space Marines")
+	testutil.SeedFaction(t, env.Pool, "faction-ork", "Orks")
+
+	// Game 1: opponent as Orks
+	g1, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g1, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g1, user1ID, "faction-sm")
+	testutil.SetPlayerFaction(t, env.Pool, g1, user2ID, "faction-ork")
+	testutil.CompleteTestGame(t, env.Pool, g1, &user1ID)
+
+	// Game 2: opponent as Space Marines
+	g2, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, g2, user2ID)
+	testutil.SetPlayerFaction(t, env.Pool, g2, user1ID, "faction-ork")
+	testutil.SetPlayerFaction(t, env.Pool, g2, user2ID, "faction-sm")
+	testutil.CompleteTestGame(t, env.Pool, g2, &user2ID)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+
+	// Filter for games where opponent played Orks
+	resp := testutil.DoRequest(t, env, "GET", "/api/users/me/history?opponentFaction=Orks", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var games []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games)
+	assert.Len(t, games, 1)
+	assert.Equal(t, g1, games[0]["id"])
+}

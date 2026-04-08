@@ -261,6 +261,28 @@
         ],
         "type": "object"
       },
+      "FactionStat": {
+        "additionalProperties": false,
+        "properties": {
+          "factionName": {
+            "type": "string"
+          },
+          "gamesPlayed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "wins": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "factionName",
+          "gamesPlayed",
+          "wins"
+        ],
+        "type": "object"
+      },
       "Gambit": {
         "additionalProperties": false,
         "properties": {
@@ -1057,6 +1079,58 @@
           "turn",
           "phase",
           "description"
+        ],
+        "type": "object"
+      },
+      "UserStats": {
+        "additionalProperties": false,
+        "properties": {
+          "$schema": {
+            "description": "A URL to the JSON Schema for this object.",
+            "examples": [
+              "https://example.com/schemas/UserStats.json"
+            ],
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "abandoned": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "averageVp": {
+            "format": "double",
+            "type": "number"
+          },
+          "draws": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "factionStats": {
+            "items": {
+              "$ref": "#/components/schemas/FactionStat"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "losses": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "wins": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "wins",
+          "losses",
+          "draws",
+          "abandoned",
+          "factionStats",
+          "averageVp"
         ],
         "type": "object"
       }
@@ -4040,6 +4114,28 @@
     "/api/users/me/history": {
       "get": {
         "operationId": "get-history",
+        "parameters": [
+          {
+            "description": "Filter by player's faction name",
+            "explode": false,
+            "in": "query",
+            "name": "myFaction",
+            "schema": {
+              "description": "Filter by player's faction name",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by opponent's faction name",
+            "explode": false,
+            "in": "query",
+            "name": "opponentFaction",
+            "schema": {
+              "description": "Filter by opponent's faction name",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4074,6 +4170,42 @@
           }
         ],
         "summary": "Get user's completed game history",
+        "tags": [
+          "Games"
+        ]
+      }
+    },
+    "/api/users/me/stats": {
+      "get": {
+        "operationId": "get-stats",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserStats"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get user's game stats",
         "tags": [
           "Games"
         ]
