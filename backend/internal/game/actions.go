@@ -28,6 +28,8 @@ const (
 	ActionDrawChallengerCard   ActionType = "draw_challenger_card"
 	ActionScoreChallenger      ActionType = "score_challenger"
 	ActionAdaptOrDie           ActionType = "adapt_or_die"
+	ActionRequestAbandon       ActionType = "request_abandon"
+	ActionRespondAbandon       ActionType = "respond_abandon"
 )
 
 type GameAction struct {
@@ -64,6 +66,8 @@ const (
 	EventNewOrdersUsed          EventType = "new_orders_used"
 	EventChallengerActivated    EventType = "challenger_activated"
 	EventChallengerScored       EventType = "challenger_scored"
+	EventAbandonRequested       EventType = "abandon_requested"
+	EventAbandonRejected        EventType = "abandon_rejected"
 )
 
 type GameEvent struct {

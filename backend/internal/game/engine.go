@@ -101,6 +101,10 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applyScoreChallenger(action)
 	case ActionAdaptOrDie:
 		return e.applyAdaptOrDie(action)
+	case ActionRequestAbandon:
+		return e.applyRequestAbandon(action)
+	case ActionRespondAbandon:
+		return e.applyRespondAbandon(action)
 	default:
 		return nil, fmt.Errorf("unknown action type: %s", action.Type)
 	}
@@ -542,6 +546,58 @@ func (e *Engine) endGame(events []GameEvent) ([]GameEvent, error) {
 	})
 
 	return events, nil
+}
+
+func (e *Engine) applyRequestAbandon(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+	if e.state.AbandonRequestedBy != nil {
+		return nil, fmt.Errorf("an abandon request is already pending")
+	}
+
+	e.state.AbandonRequestedBy = &action.PlayerNumber
+
+	return []GameEvent{{
+		Type:         EventAbandonRequested,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+	}}, nil
+}
+
+func (e *Engine) applyRespondAbandon(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+	if e.state.AbandonRequestedBy == nil {
+		return nil, fmt.Errorf("no abandon request is pending")
+	}
+	if *e.state.AbandonRequestedBy == action.PlayerNumber {
+		return nil, fmt.Errorf("cannot respond to your own abandon request")
+	}
+
+	accept, _ := action.Data["accept"].(bool)
+
+	if !accept {
+		e.state.AbandonRequestedBy = nil
+		return []GameEvent{{
+			Type:         EventAbandonRejected,
+			PlayerNumber: action.PlayerNumber,
+			Round:        e.state.CurrentRound,
+			Phase:        e.state.CurrentPhase,
+		}}, nil
+	}
+
+	e.state.AbandonRequestedBy = nil
+	e.state.Status = StatusAbandoned
+	now := time.Now()
+	e.state.CompletedAt = &now
+
+	return []GameEvent{{
+		Type: EventGameEnd,
+		Data: map[string]any{"reason": "abandoned"},
+	}}, nil
 }
 
 // Helpers to extract typed values from action data

@@ -47,6 +47,7 @@ export interface GameState {
   createdAt: string;
   completedAt?: string;
   winnerId?: string;
+  abandonRequestedBy?: number;
 }
 
 /**

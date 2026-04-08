@@ -802,6 +802,8 @@ export interface components {
              */
             readonly $schema?: string;
             /** Format: int64 */
+            abandonRequestedBy?: number;
+            /** Format: int64 */
             activePlayer: number;
             /** Format: date-time */
             completedAt?: string;

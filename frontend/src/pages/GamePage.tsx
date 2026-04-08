@@ -19,6 +19,8 @@ import { MissionInfo } from "../components/game/MissionInfo";
 import { MissionScoring } from "../components/game/MissionScoring";
 import { GameLog } from "../components/game/GameLog";
 import { ScoringPrompt, ScoringPromptItem } from "../components/game/ScoringPrompt";
+import { ConfirmModal } from "../components/game/ConfirmModal";
+import { GameSummary } from "../components/game/GameSummary";
 
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -33,6 +35,8 @@ export function GamePage() {
   const [currentMission, setCurrentMission] = useState<Mission | null>(null);
   const [showStratagems, setShowStratagems] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showConcedeModal, setShowConcedeModal] = useState(false);
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
@@ -206,10 +210,21 @@ export function GamePage() {
   );
 
   const handleConcede = useCallback(() => {
-    if (window.confirm("Are you sure you want to concede?")) {
-      sendAction("concede");
-    }
+    sendAction("concede");
+    setShowConcedeModal(false);
   }, [sendAction]);
+
+  const handleRequestAbandon = useCallback(() => {
+    sendAction("request_abandon");
+    setShowAbandonModal(false);
+  }, [sendAction]);
+
+  const handleRespondAbandon = useCallback(
+    (accept: boolean) => {
+      sendAction("respond_abandon", { accept });
+    },
+    [sendAction],
+  );
 
   const handleAchieveSecondary = useCallback(
     (secondaryId: string, vpScored: number) => {
@@ -262,32 +277,14 @@ export function GamePage() {
     ? opponent.vpPrimary + opponent.vpSecondary + opponent.vpGambit + opponent.vpPaint
     : 0;
 
-  if (gameState.status === "completed") {
-    const isWinner = gameState.winnerId === user?.id;
+  if (gameState.status === "completed" || gameState.status === "abandoned") {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center p-8 space-y-4">
-          <h1 className="text-3xl font-bold">
-            {gameState.winnerId ? (isWinner ? "Victory!" : "Defeat") : "Draw"}
-          </h1>
-          <div className="space-y-2">
-            <p className="text-xl">
-              {myPlayer.username}: {totalVP} VP
-            </p>
-            {opponent && (
-              <p className="text-xl text-gray-400">
-                {opponent.username}: {opponentVP} VP
-              </p>
-            )}
-          </div>
-          <a
-            href="/"
-            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg"
-          >
-            Back to Lobby
-          </a>
-        </div>
-      </div>
+      <GameSummary
+        gameState={gameState}
+        myPlayer={myPlayer}
+        opponent={opponent}
+        currentUserId={user?.id ?? ""}
+      />
     );
   }
 
@@ -465,12 +462,58 @@ export function GamePage() {
           </button>
         )}
         <button
-          onClick={handleConcede}
+          onClick={() => setShowConcedeModal(true)}
           className="bg-red-900 hover:bg-red-800 text-red-200 font-semibold px-4 py-3 rounded-lg transition-colors"
         >
           Concede
         </button>
+        <button
+          onClick={() => setShowAbandonModal(true)}
+          className="bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold px-4 py-3 rounded-lg transition-colors"
+        >
+          Abandon
+        </button>
       </div>
+
+      {/* Concede Confirmation Modal */}
+      {showConcedeModal && (
+        <ConfirmModal
+          title="Concede Game"
+          message="Are you sure you want to concede? Your opponent will be declared the winner."
+          confirmLabel="Concede"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={handleConcede}
+          onCancel={() => setShowConcedeModal(false)}
+        />
+      )}
+
+      {/* Abandon Request Modal */}
+      {showAbandonModal && (
+        <ConfirmModal
+          title="Abandon Game"
+          message="Request to abandon this game with no winner. Your opponent must agree for the game to be abandoned."
+          confirmLabel="Request Abandon"
+          cancelLabel="Cancel"
+          variant="default"
+          onConfirm={handleRequestAbandon}
+          onCancel={() => setShowAbandonModal(false)}
+        />
+      )}
+
+      {/* Abandon Request Received Modal */}
+      {gameState.abandonRequestedBy != null &&
+        gameState.abandonRequestedBy !== myPlayer.playerNumber && (
+          <ConfirmModal
+            title="Abandon Request"
+            message={`${opponent?.username ?? "Your opponent"} wants to abandon this game (no winner). Do you agree?`}
+            confirmLabel="Accept"
+            cancelLabel="Decline"
+            variant="default"
+            onConfirm={() => handleRespondAbandon(true)}
+            onCancel={() => handleRespondAbandon(false)}
+          />
+        )}
 
       {/* Scoring Prompt Modal */}
       {scoringPromptItems && (

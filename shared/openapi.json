@@ -386,6 +386,10 @@
             "readOnly": true,
             "type": "string"
           },
+          "abandonRequestedBy": {
+            "format": "int64",
+            "type": "integer"
+          },
           "activePlayer": {
             "format": "int64",
             "type": "integer"
