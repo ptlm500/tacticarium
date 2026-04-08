@@ -99,10 +99,11 @@ type GameState struct {
 	MissionName     string          `json:"missionName"`
 	TwistID         string          `json:"twistId"`
 	TwistName       string          `json:"twistName"`
-	Players         [2]*PlayerState `json:"players"`
-	CreatedAt       time.Time       `json:"createdAt"`
-	CompletedAt     *time.Time      `json:"completedAt,omitempty"`
-	WinnerID        string          `json:"winnerId,omitempty"`
+	Players            [2]*PlayerState `json:"players"`
+	CreatedAt          time.Time       `json:"createdAt"`
+	CompletedAt        *time.Time      `json:"completedAt,omitempty"`
+	WinnerID           string          `json:"winnerId,omitempty"`
+	AbandonRequestedBy *int            `json:"abandonRequestedBy,omitempty"`
 }
 
 func (gs *GameState) GetPlayer(playerNumber int) *PlayerState {
