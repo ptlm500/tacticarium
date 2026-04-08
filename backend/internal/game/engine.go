@@ -272,7 +272,7 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 			Data: map[string]any{"round": 1, "firstPlayer": e.state.ActivePlayer},
 		})
 
-		// Both players gain 1 CP at the start of battle round 1
+		// Both players gain 1 CP at the start of the first Command Phase
 		for _, p := range e.state.Players {
 			if p != nil {
 				p.CP += CPPerCommandPhase
@@ -314,19 +314,10 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 			}
 			e.state.CurrentTurn = 1
 
-			// Both players gain 1 CP at the start of each new battle round
-			// and reset the per-round additional CP cap
+			// Reset the per-round additional CP cap at the start of each new battle round
 			for _, p := range e.state.Players {
 				if p != nil {
 					p.CPGainedThisRound = 0
-					p.CP += CPPerCommandPhase
-					events = append(events, GameEvent{
-						Type:         EventCPGain,
-						PlayerNumber: p.PlayerNumber,
-						Round:        e.state.CurrentRound,
-						Phase:        PhaseCommand,
-						Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
-					})
 				}
 			}
 		} else {
@@ -335,6 +326,20 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 		}
 		e.state.ActivePlayer = otherPlayer
 		e.state.CurrentPhase = PhaseCommand
+
+		// Both players gain 1 CP at the start of each Command Phase
+		for _, p := range e.state.Players {
+			if p != nil {
+				p.CP += CPPerCommandPhase
+				events = append(events, GameEvent{
+					Type:         EventCPGain,
+					PlayerNumber: p.PlayerNumber,
+					Round:        e.state.CurrentRound,
+					Phase:        PhaseCommand,
+					Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
+				})
+			}
+		}
 	} else {
 		e.state.CurrentPhase = nextPhase
 	}
