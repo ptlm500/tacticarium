@@ -68,3 +68,7 @@ export interface GameEvent {
 export type GameSummary = Omit<Schemas["GameSummary"], "status"> & {
   status: GameStatus;
 };
+
+export type FactionStat = Schemas["FactionStat"];
+
+export type UserStats = Schemas["UserStats"];

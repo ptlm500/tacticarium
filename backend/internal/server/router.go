@@ -260,6 +260,16 @@ func NewAPI(r chi.Router, h *Handlers, jwtSecret string) huma.API {
 		Middlewares: huma.Middlewares{playerMiddleware},
 	}, h.Game.GetHistory)
 
+	huma.Register(api, huma.Operation{
+		OperationID: "get-stats",
+		Method:      http.MethodGet,
+		Path:        "/api/users/me/stats",
+		Summary:     "Get user's game stats",
+		Tags:        []string{"Games"},
+		Security:    playerSecurity,
+		Middlewares: huma.Middlewares{playerMiddleware},
+	}, h.Game.GetStats)
+
 	// --- Admin auth (huma) ---
 	huma.Register(api, huma.Operation{
 		OperationID: "get-admin-me",

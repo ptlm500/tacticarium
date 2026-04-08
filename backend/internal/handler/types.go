@@ -137,6 +137,30 @@ type GameEventsOutput struct {
 	Body []GameEvent
 }
 
+type HistoryInput struct {
+	MyFaction       string `query:"myFaction" doc:"Filter by player's faction name"`
+	OpponentFaction string `query:"opponentFaction" doc:"Filter by opponent's faction name"`
+}
+
+type FactionStat struct {
+	FactionName string `json:"factionName"`
+	GamesPlayed int    `json:"gamesPlayed"`
+	Wins        int    `json:"wins"`
+}
+
+type UserStats struct {
+	Wins         int           `json:"wins"`
+	Losses       int           `json:"losses"`
+	Draws        int           `json:"draws"`
+	Abandoned    int           `json:"abandoned"`
+	FactionStats []FactionStat `json:"factionStats"`
+	AverageVP    float64       `json:"averageVp"`
+}
+
+type StatsOutput struct {
+	Body UserStats
+}
+
 // --- Admin CRUD ---
 
 // Inputs with body

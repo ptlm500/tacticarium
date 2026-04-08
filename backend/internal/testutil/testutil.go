@@ -304,6 +304,50 @@ func SeedGambit(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
 	}
 }
 
+// CompleteTestGame marks a game as completed with an optional winner.
+func CompleteTestGame(t *testing.T, pool *pgxpool.Pool, gameID string, winnerID *string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`UPDATE games SET status = 'completed', completed_at = NOW(), winner_id = $2 WHERE id = $1`,
+		gameID, winnerID)
+	if err != nil {
+		t.Fatalf("Failed to complete test game: %v", err)
+	}
+}
+
+// AbandonTestGame marks a game as abandoned.
+func AbandonTestGame(t *testing.T, pool *pgxpool.Pool, gameID string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`UPDATE games SET status = 'abandoned', completed_at = NOW() WHERE id = $1`, gameID)
+	if err != nil {
+		t.Fatalf("Failed to abandon test game: %v", err)
+	}
+}
+
+// SetPlayerFaction sets the faction for a player in a game.
+func SetPlayerFaction(t *testing.T, pool *pgxpool.Pool, gameID, userID, factionID string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`UPDATE game_players SET faction_id = $3 WHERE game_id = $1 AND user_id = $2`,
+		gameID, userID, factionID)
+	if err != nil {
+		t.Fatalf("Failed to set player faction: %v", err)
+	}
+}
+
+// SetPlayerVP sets VP columns for a player in a game.
+func SetPlayerVP(t *testing.T, pool *pgxpool.Pool, gameID, userID string, primary, secondary, gambit, paint int) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(),
+		`UPDATE game_players SET vp_primary = $3, vp_secondary = $4, vp_gambit = $5, vp_paint = $6
+		 WHERE game_id = $1 AND user_id = $2`,
+		gameID, userID, primary, secondary, gambit, paint)
+	if err != nil {
+		t.Fatalf("Failed to set player VP: %v", err)
+	}
+}
+
 // AuthHeader returns headers with a Bearer token.
 func AuthHeader(token string) map[string]string {
 	return map[string]string{"Authorization": "Bearer " + token}
