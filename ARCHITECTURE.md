@@ -39,7 +39,8 @@ tacticarium/
 │   ├── go.mod
 │   ├── cmd/
 │   │   ├── server/main.go         # HTTP + WS server entrypoint (slog + OTEL init)
-│   │   └── seed/main.go           # Data seeding CLI
+│   │   ├── seed/main.go           # Data seeding CLI
+│   │   └── openapi/main.go        # OpenAPI spec extraction (no server/DB required)
 │   └── internal/
 │       ├── config/config.go       # Environment configuration
 │       ├── auth/
@@ -104,8 +105,12 @@ tacticarium/
 │   │       ├── challenger-cards/  #   Challenger Cards
 │   │       └── mission-rules/     #   Mission Rules
 │
+├── shared/
+│   ├── openapi.json               # Generated OpenAPI spec (golden file, committed)
+│   └── api.generated.ts           # Generated TypeScript types (single source of truth)
+│
 ├── frontend/
-│   ├── Dockerfile                 # Multi-stage: Vite build → nginx
+│   ├── Dockerfile                 # Multi-stage: Vite build → nginx (repo-root context)
 │   ├── nginx.conf                 # SPA fallback config
 │   ├── src/
 │   │   ├── App.tsx                # Router + AuthGuard
@@ -115,7 +120,7 @@ tacticarium/
 │   │   │   ├── useWebSocket.ts    # WS connection + reconnect
 │   │   │   └── useGameState.ts    # WS → Zustand bridge
 │   │   ├── stores/gameStore.ts    # Zustand game state
-│   │   ├── types/                 # TypeScript type definitions
+│   │   ├── types/                 # TypeScript type definitions (derived from shared/api.generated.ts)
 │   │   ├── pages/                 # Login, Lobby, Setup, Game, History
 │   │   └── components/
 │   │       ├── game/              # PhaseTracker, CPCounter, VPCounter, etc.
@@ -201,7 +206,40 @@ Auth middleware exists in two forms: huma middleware (`auth.HumaMiddleware`, `au
 
 **Why**: Eliminates manual JSON marshaling boilerplate, provides automatic OpenAPI spec for TypeScript type generation, and standardises error responses.
 
-### 10. OpenTelemetry Observability
+### 10. OpenAPI TypeScript Type Generation
+
+Frontend and admin TypeScript types are generated from the backend's OpenAPI spec using a golden file pattern — generated files are committed to the repo, and CI validates they're up to date.
+
+**Pipeline (`make generate-types`):**
+
+1. `backend/cmd/openapi/main.go` extracts the OpenAPI spec by building the huma API with a nil database pool and dummy config (no running server or DB required)
+2. Spec is written to `shared/openapi.json`
+3. `openapi-typescript` generates `shared/api.generated.ts` from the spec
+4. Both `frontend/` and `admin/` import types from this single file
+
+**Type usage conventions:**
+
+```typescript
+import type { components } from "../../../shared/api.generated";
+type Schemas = components["schemas"];
+
+// IDs are optional in the schema (not present on create).
+// For read types, narrow with & { id: string }:
+export type Faction = Schemas["Faction"] & { id: string };
+
+// Override specific fields when the OpenAPI type is too broad:
+export type GameSummary = Omit<Schemas["GameSummary"], "status"> & { status: GameStatus };
+```
+
+**Nullable arrays:** Go nil slices serialize as `null` in JSON, so generated array fields are `T[] | null`. These are **not** overridden in type definitions — consumers guard at usage sites with `?? []`.
+
+**Types NOT in OpenAPI (kept manual):** `Phase` and `GameStatus` string literal unions, `PHASE_ORDER`/`PHASE_LABELS` constants, WebSocket message types, `GameState` (needs Phase/GameStatus unions and players tuple), `GameEvent` (WebSocket shape differs from HTTP response shape).
+
+**CI (`generated-types-check` job):** Regenerates types and runs `git diff --exit-code shared/` — fails if generated files differ from what's committed.
+
+**Why**: Single source of truth prevents frontend/backend type drift. The golden file pattern means frontend developers don't need Go installed to build.
+
+### 11. OpenTelemetry Observability
 
 The backend has full distributed tracing via OpenTelemetry (OTLP):
 
@@ -502,9 +540,11 @@ LoginPage → DashboardPage → EntityListPage → EntityEditPage
 | Service | Build | Port | Health Check |
 |---------|-------|------|-------------|
 | backend | `backend/Dockerfile` (Go → alpine) | 8080 | `GET /api/health` |
-| frontend | `frontend/Dockerfile` (Vite → nginx) | 80 | — |
-| admin | `admin/` (Vite build → nginx) | 80 | — |
+| frontend | `docker build -f frontend/Dockerfile .` (Vite → nginx, repo-root context) | 80 | — |
+| admin | `docker build -f admin/Dockerfile .` (Vite build → nginx, repo-root context) | 80 | — |
 | PostgreSQL | Railway managed plugin | 5432 | — |
+
+Frontend and admin Dockerfiles use the repo root as build context so they can `COPY shared/` for the generated TypeScript types. A root `.dockerignore` excludes `node_modules`, `dist`, `.git`, and `backend`.
 
 ### Environment Variables
 
