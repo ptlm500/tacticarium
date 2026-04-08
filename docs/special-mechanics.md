@@ -14,9 +14,9 @@ Stratagems are powerful one-off abilities that cost Command Points (CP) to activ
 
 ### Automatic CP Gain
 
-Both players gain **1 CP** at the start of each battle round during the Command Phase. This happens automatically:
-- Round 1: during the setup → active transition (`engine.go:275-287`)
-- Rounds 2-5: when the round advances after the second player's Fight phase (`engine.go:317-331`)
+Both players gain **1 CP at the start of every Command Phase** — twice per battle round (once per player turn). This happens automatically:
+- Round 1, Turn 1: during the setup → active transition (`engine.go:275-287`)
+- Every subsequent Command Phase: during `advance_phase` when a turn ends (`engine.go:317-341`)
 
 Constant: `CPPerCommandPhase = 1` (`rules.go:12`)
 

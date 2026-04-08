@@ -76,5 +76,5 @@ When **both players are ready**, the game automatically transitions:
 2. Round set to 1, turn to 1, phase to `command`
 3. First turn player is set (defaults to Player 1 if not specified)
 4. Active player set to the first turn player
-5. Both players gain **1 CP** (Command Phase CP gain for round 1)
+5. Both players gain **1 CP** (first Command Phase CP gain)
 6. `game_start` event is emitted

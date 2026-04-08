@@ -926,6 +926,8 @@ func TestAdvancePhase(t *testing.T) {
 func TestAdvancePhase_TurnEnd_FirstPlayer(t *testing.T) {
 	state := newActiveTestState()
 	state.CurrentPhase = PhaseFight // last phase
+	state.Players[0].CP = 0
+	state.Players[1].CP = 0
 	e := NewEngine(state)
 
 	events, err := e.Apply(context.Background(), GameAction{
@@ -948,15 +950,21 @@ func TestAdvancePhase_TurnEnd_FirstPlayer(t *testing.T) {
 	if state.CurrentPhase != PhaseCommand {
 		t.Fatal("expected command phase")
 	}
-	// No CP gain mid-round (CP is only granted at start of battle round)
-	hasCPEvent := false
+	// Both players gain 1 CP at the start of each Command Phase (including turn 2)
+	if state.Players[0].CP != 1 {
+		t.Fatalf("expected player 1 CP=1, got %d", state.Players[0].CP)
+	}
+	if state.Players[1].CP != 1 {
+		t.Fatalf("expected player 2 CP=1, got %d", state.Players[1].CP)
+	}
+	cpEvents := 0
 	for _, ev := range events {
 		if ev.Type == EventCPGain {
-			hasCPEvent = true
+			cpEvents++
 		}
 	}
-	if hasCPEvent {
-		t.Fatal("should not gain CP mid-round when switching to second player")
+	if cpEvents != 2 {
+		t.Fatalf("expected 2 CP gain events, got %d", cpEvents)
 	}
 }
 
@@ -1381,51 +1389,52 @@ func TestFullGame_10PlayerTurns(t *testing.T) {
 	}
 }
 
-func TestCPGain_BothPlayersAtRoundStart(t *testing.T) {
+func TestCPGain_BothPlayersAtEachCommandPhase(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].CP = 0
 	state.Players[1].CP = 0
 	e := NewEngine(state)
 
-	// Play through round 1 (both players)
-	// Player 1: 5 phases
+	// Player 1: 5 phases → turn 2 command phase, +1 CP each
 	for range 5 {
 		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 	}
-	// Player 2: 5 phases → triggers round 2
+	if state.Players[0].CP != 1 {
+		t.Fatalf("expected player 1 CP=1 after turn 2 start, got %d", state.Players[0].CP)
+	}
+	if state.Players[1].CP != 1 {
+		t.Fatalf("expected player 2 CP=1 after turn 2 start, got %d", state.Players[1].CP)
+	}
+
+	// Player 2: 5 phases → round 2 turn 1 command phase, +1 CP each
 	for range 5 {
 		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
 	}
-
-	// After round 2 starts, both players should have gained 1 more CP
-	// (They started with 0 in this test state, but game start grants them 0 since
-	// we're using newActiveTestState which doesn't go through applySetReady)
-	// Round 2 start: +1 CP each
-	if state.Players[0].CP != 1 {
-		t.Fatalf("expected player 1 CP=1, got %d", state.Players[0].CP)
+	if state.Players[0].CP != 2 {
+		t.Fatalf("expected player 1 CP=2 after round 2 start, got %d", state.Players[0].CP)
 	}
-	if state.Players[1].CP != 1 {
-		t.Fatalf("expected player 2 CP=1, got %d", state.Players[1].CP)
+	if state.Players[1].CP != 2 {
+		t.Fatalf("expected player 2 CP=2 after round 2 start, got %d", state.Players[1].CP)
 	}
 }
 
-func TestCPGain_NoCPMidRound(t *testing.T) {
+func TestCPGain_BothPlayersGainCPOnTurnSwitch(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].CP = 5
 	state.Players[1].CP = 3
 	e := NewEngine(state)
 
-	// Player 1 finishes turn (5 phases) → switches to player 2
+	// Player 1 finishes turn (5 phases) → switches to player 2's command phase
 	for range 5 {
 		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
 	}
 
-	// No CP should be gained when switching to player 2 mid-round
-	if state.Players[0].CP != 5 {
-		t.Fatalf("player 1 CP should be unchanged at 5, got %d", state.Players[0].CP)
+	// Both players should gain 1 CP at the start of player 2's command phase
+	if state.Players[0].CP != 6 {
+		t.Fatalf("expected player 1 CP=6, got %d", state.Players[0].CP)
 	}
-	if state.Players[1].CP != 3 {
-		t.Fatalf("player 2 CP should be unchanged at 3, got %d", state.Players[1].CP)
+	if state.Players[1].CP != 4 {
+		t.Fatalf("expected player 2 CP=4, got %d", state.Players[1].CP)
 	}
 }
 
@@ -1465,7 +1474,7 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	state := newTestState()
 	e := NewEngine(state)
 
-	// Start game via set_ready (grants 1 CP each)
+	// Start game via set_ready (grants 1 CP each for first command phase)
 	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
 	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
 
@@ -1485,16 +1494,20 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 		}
 	}
 
-	// After round 1 start: 1 CP each (from game start)
-	// After round 2 start: +1 CP each = 2
-	// After round 3 start: +1 CP each = 3
-	// After round 4 start: +1 CP each = 4
+	// CP gains (1 per command phase, 2 command phases per round):
+	// Round 1 turn 1 start (game start): +1 each = 1
+	// Round 1 turn 2 start:              +1 each = 2
+	// Round 2 turn 1 start:              +1 each = 3
+	// Round 2 turn 2 start:              +1 each = 4
+	// Round 3 turn 1 start:              +1 each = 5
+	// Round 3 turn 2 start:              +1 each = 6
+	// Round 4 turn 1 start:              +1 each = 7
 	// (We played 3 full rounds, so we're now at start of round 4)
-	if state.Players[0].CP != 4 {
-		t.Fatalf("expected player 1 CP=4, got %d", state.Players[0].CP)
+	if state.Players[0].CP != 7 {
+		t.Fatalf("expected player 1 CP=7, got %d", state.Players[0].CP)
 	}
-	if state.Players[1].CP != 4 {
-		t.Fatalf("expected player 2 CP=4, got %d", state.Players[1].CP)
+	if state.Players[1].CP != 7 {
+		t.Fatalf("expected player 2 CP=7, got %d", state.Players[1].CP)
 	}
 }
 
@@ -1561,9 +1574,10 @@ func TestDiscardSecondary_CPCapResetsNextRound(t *testing.T) {
 
 	// Play through rest of round 2 to trigger round 3
 	// Player 1 finishes their turn (already past some phases, set to fight)
+	// Turn switch → +1 CP each (turn 2 command phase)
 	state.CurrentPhase = PhaseFight
 	e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
-	// Player 2's full turn
+	// Player 2's full turn → round advance → +1 CP each (round 3 command phase)
 	for range 5 {
 		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
 	}
@@ -1677,6 +1691,22 @@ func TestAdjustCP_PositiveCountsTowardCap(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error on second positive adjust")
+	}
+}
+
+func TestCPGainedThisRound_DoesNotResetOnTurnSwitch(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 5
+	state.Players[0].CPGainedThisRound = 1 // already gained bonus CP this round
+	state.CurrentPhase = PhaseFight
+	e := NewEngine(state)
+
+	// Player 1 finishes turn → switches to player 2's command phase
+	e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+
+	// CPGainedThisRound should NOT reset on turn switch (only on round advance)
+	if state.Players[0].CPGainedThisRound != 1 {
+		t.Fatalf("expected CPGainedThisRound=1 (not reset on turn switch), got %d", state.Players[0].CPGainedThisRound)
 	}
 }
 

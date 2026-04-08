@@ -66,14 +66,13 @@ Key constraint: only the active player can call `advance_phase`. However, **both
 
 ## Command Points (CP) Gain
 
-At the start of each battle round (when the Command Phase begins for the first player's turn), **both players automatically gain 1 CP**. This happens:
+Both players automatically gain **1 CP at the start of every Command Phase** — that is, at the start of each player's turn. This means each player gains **2 CP per battle round** (once when Player A's turn begins, once when Player B's turn begins).
 
-- At game start (round 1) — during the `set_ready` transition (`engine.go:275-287`)
-- At the start of rounds 2-5 — during `advance_phase` when the round increments (`engine.go:317-331`)
+This happens:
+- At game start (round 1, turn 1) — during the `set_ready` transition (`engine.go:275-287`)
+- At every subsequent Command Phase — during `advance_phase` when a turn ends and the next Command Phase begins (`engine.go:317-341`)
 
-The `ShouldGainCP()` function (`rules.go:22-24`) returns true for all rounds >= 1.
-
-Additionally, both players' `CPGainedThisRound` counters are reset to 0 at the start of each new round, allowing for additional CP gains during that round (see [Special Mechanics — CP Gain Limits](special-mechanics.md#cp-gain-limits)).
+Both players' `CPGainedThisRound` counters are reset to 0 at the start of each new **battle round** (not each turn), limiting additional CP gains to 1 per round (see [Special Mechanics — CP Gain Limits](special-mechanics.md#cp-gain-limits)).
 
 ## State Fields
 
