@@ -6,7 +6,7 @@
 
 - [ ] Select which player goes first
 
-- [ ] There's no reminder text for priamry and twist
+- [x] There's no reminder text for priamry and twist
 
 - [ ] Non-active player has enabled draw secondaries button
 

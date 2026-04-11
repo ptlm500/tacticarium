@@ -7,7 +7,7 @@ import { getToken } from "../api/client";
 import { factionsApi } from "../api/factions";
 import { missionsApi } from "../api/missions";
 import { Stratagem } from "../types/faction";
-import { Mission } from "../types/mission";
+import { Mission, MissionRule } from "../types/mission";
 import { PHASE_LABELS, PHASE_ORDER } from "../types/game";
 import { PhaseTracker } from "../components/game/PhaseTracker";
 import { RoundIndicator } from "../components/game/RoundIndicator";
@@ -33,6 +33,7 @@ export function GamePage() {
 
   const [stratagems, setStratagems] = useState<Stratagem[]>([]);
   const [currentMission, setCurrentMission] = useState<Mission | null>(null);
+  const [currentTwist, setCurrentTwist] = useState<MissionRule | null>(null);
   const [showStratagems, setShowStratagems] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showConcedeModal, setShowConcedeModal] = useState(false);
@@ -67,6 +68,19 @@ export function GamePage() {
         .catch(() => setLoadError("Failed to load mission data"));
     }
   }, [gameState?.missionPackId, gameState?.missionId]);
+
+  // Load twist details
+  useEffect(() => {
+    if (gameState?.missionPackId && gameState?.twistId) {
+      missionsApi
+        .listRules(gameState.missionPackId)
+        .then((rules) => {
+          const t = rules.find((r) => r.id === gameState.twistId);
+          setCurrentTwist(t ?? null);
+        })
+        .catch(() => setLoadError("Failed to load twist data"));
+    }
+  }, [gameState?.missionPackId, gameState?.twistId]);
 
   // Filter stratagems for current phase
   const availableStratagems = stratagems.filter((s) => {
@@ -413,10 +427,7 @@ export function GamePage() {
         )}
 
         {/* Mission Info */}
-        <MissionInfo
-          missionName={gameState.missionName || ""}
-          twistName={gameState.twistName || ""}
-        />
+        <MissionInfo mission={currentMission} twist={currentTwist} />
 
         {/* Stratagem Panel (collapsible) */}
         <section>
