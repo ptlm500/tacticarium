@@ -3,7 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { GamePage } from "./GamePage";
 import { useGameStore } from "../stores/gameStore";
-import { makeGameState, makePlayerState, mockUser, mockStratagems, mockActiveSecondary } from "../test/fixtures";
+import {
+  makeGameState,
+  makePlayerState,
+  mockUser,
+  mockStratagems,
+  mockActiveSecondary,
+} from "../test/fixtures";
 import { ws, http, HttpResponse } from "msw";
 import { worker } from "../mocks/browser";
 import { Route, Routes } from "react-router-dom";
@@ -234,7 +240,12 @@ describe("GamePage", () => {
   describe("primary scoring prompts", () => {
     function useMissionMock(
       overrides: Partial<{
-        scoringRules: Array<{ label: string; vp: number; minRound?: number; scoringTiming?: string }>;
+        scoringRules: Array<{
+          label: string;
+          vp: number;
+          minRound?: number;
+          scoringTiming?: string;
+        }>;
         scoringTiming: string;
         name: string;
       }> = {},
