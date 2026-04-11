@@ -1,11 +1,11 @@
 import { ScoringAction } from "../../types/mission";
 import { ActiveSecondary } from "../../types/game";
+import { ReminderPrompt } from "./ReminderPrompt";
 
 export type ScoringPromptItem =
   | { kind: "primary"; missionName: string; scoringRules: ScoringAction[]; currentRound: number }
   | { kind: "secondary" }
   | { kind: "fixed_secondary"; secondaries: ActiveSecondary[] }
-  | { kind: "tactical_draw" }
   | { kind: "end_of_round_primary"; missionName: string; note: string };
 
 interface Props {
@@ -14,10 +14,7 @@ interface Props {
   activeSecondaries: ActiveSecondary[];
   onAchieveSecondary: (id: string, vp: number) => void;
   onDiscardSecondary: (id: string, free: boolean) => void;
-  onDrawSecondary: () => void;
   canGainCP: boolean;
-  deckSize: number;
-  activeSecondaryCount: number;
   onScoreFixedVP: (delta: number) => void;
   onConfirm: () => void;
   onCancel: () => void;
@@ -29,81 +26,52 @@ export function ScoringPrompt({
   activeSecondaries,
   onAchieveSecondary,
   onDiscardSecondary,
-  onDrawSecondary,
   canGainCP,
-  deckSize,
-  activeSecondaryCount,
   onScoreFixedVP,
   onConfirm,
   onCancel,
 }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="bg-gray-800 border border-gray-600 rounded-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto">
-        <div className="px-5 py-4 border-b border-gray-700">
-          <h2 className="text-lg font-bold text-white">Scoring Reminder</h2>
-          <p className="text-sm text-gray-400 mt-1">
-            Before advancing, check if you need to score.
-          </p>
-        </div>
-
-        <div className="px-5 py-4 space-y-4">
-          {items.map((item, i) => (
-            <div key={i}>
-              {item.kind === "primary" && (
-                <PrimaryReminder
-                  missionName={item.missionName}
-                  scoringRules={item.scoringRules}
-                  currentRound={item.currentRound}
-                  onScore={(vp) => onScore("primary", vp)}
-                />
-              )}
-              {item.kind === "end_of_round_primary" && (
-                <div className="bg-indigo-900/40 border border-indigo-700 rounded-lg p-3">
-                  <h3 className="text-sm font-semibold text-indigo-200">
-                    Primary Mission — {item.missionName}
-                  </h3>
-                  <p className="text-xs text-indigo-300 mt-1">{item.note}</p>
-                </div>
-              )}
-              {item.kind === "fixed_secondary" && (
-                <FixedSecondaryReminder secondaries={item.secondaries} onScore={onScoreFixedVP} />
-              )}
-              {item.kind === "secondary" && (
-                <SecondaryReminder
-                  activeSecondaries={activeSecondaries}
-                  onAchieve={onAchieveSecondary}
-                  onDiscard={onDiscardSecondary}
-                  canGainCP={canGainCP}
-                />
-              )}
-              {item.kind === "tactical_draw" && (
-                <TacticalDrawReminder
-                  deckSize={deckSize}
-                  activeCount={activeSecondaryCount}
-                  onDraw={onDrawSecondary}
-                />
-              )}
+    <ReminderPrompt
+      title="Scoring Reminder"
+      description="Before advancing, check if you need to score."
+      confirmLabel="I've scored, continue"
+      cancelLabel="Let me score first"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    >
+      {items.map((item, i) => (
+        <div key={i}>
+          {item.kind === "primary" && (
+            <PrimaryReminder
+              missionName={item.missionName}
+              scoringRules={item.scoringRules}
+              currentRound={item.currentRound}
+              onScore={(vp) => onScore("primary", vp)}
+            />
+          )}
+          {item.kind === "end_of_round_primary" && (
+            <div className="bg-indigo-900/40 border border-indigo-700 rounded-lg p-3">
+              <h3 className="text-sm font-semibold text-indigo-200">
+                Primary Mission — {item.missionName}
+              </h3>
+              <p className="text-xs text-indigo-300 mt-1">{item.note}</p>
             </div>
-          ))}
+          )}
+          {item.kind === "fixed_secondary" && (
+            <FixedSecondaryReminder secondaries={item.secondaries} onScore={onScoreFixedVP} />
+          )}
+          {item.kind === "secondary" && (
+            <SecondaryReminder
+              activeSecondaries={activeSecondaries}
+              onAchieve={onAchieveSecondary}
+              onDiscard={onDiscardSecondary}
+              canGainCP={canGainCP}
+            />
+          )}
         </div>
-
-        <div className="px-5 py-4 border-t border-gray-700 flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
-            Let me score first
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
-            I've scored, continue
-          </button>
-        </div>
-      </div>
-    </div>
+      ))}
+    </ReminderPrompt>
   );
 }
 
@@ -199,38 +167,6 @@ function SecondaryReminder({
             );
           })}
         </div>
-      )}
-    </div>
-  );
-}
-
-function TacticalDrawReminder({
-  deckSize,
-  activeCount,
-  onDraw,
-}: {
-  deckSize: number;
-  activeCount: number;
-  onDraw: () => void;
-}) {
-  const canDraw = activeCount < 2 && deckSize > 0;
-  return (
-    <div className="bg-amber-900/40 border border-amber-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-amber-200">Draw Tactical Secondaries</h3>
-      <p className="text-xs text-amber-300 mt-1">
-        {canDraw
-          ? `You have ${activeCount} active secondary mission${activeCount === 1 ? "" : "s"}. Draw up to 2.`
-          : activeCount >= 2
-            ? "You already have 2 active secondaries."
-            : "Deck is empty."}
-      </p>
-      {canDraw && (
-        <button
-          onClick={onDraw}
-          className="mt-2 bg-amber-700 hover:bg-amber-600 text-white text-xs px-3 py-2 rounded transition-colors"
-        >
-          Draw Secondaries ({deckSize} remaining)
-        </button>
       )}
     </div>
   );

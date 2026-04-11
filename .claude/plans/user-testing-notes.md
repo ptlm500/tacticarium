@@ -32,7 +32,7 @@
 
 - [ ] Adding score phase might be handy?
 
-- [ ] Draw secondaries prompt has the wrong text
+- [x] Draw secondaries prompt has the wrong text
 
 - [ ] Strategems don't appear on opponents turn
 

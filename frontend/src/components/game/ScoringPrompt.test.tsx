@@ -10,10 +10,7 @@ function renderPrompt(overrides: Partial<Parameters<typeof ScoringPrompt>[0]> = 
     activeSecondaries: [],
     onAchieveSecondary: vi.fn(),
     onDiscardSecondary: vi.fn(),
-    onDrawSecondary: vi.fn(),
     canGainCP: true,
-    deckSize: 5,
-    activeSecondaryCount: 1,
     onScoreFixedVP: vi.fn(),
     onConfirm: vi.fn(),
     onCancel: vi.fn(),
@@ -23,14 +20,17 @@ function renderPrompt(overrides: Partial<Parameters<typeof ScoringPrompt>[0]> = 
 }
 
 describe("ScoringPrompt", () => {
-  it("renders scoring reminder header", () => {
+  it("renders Scoring Reminder title and scoring-specific buttons", () => {
     renderPrompt();
     expect(screen.getByText("Scoring Reminder")).toBeTruthy();
+    expect(screen.getByText("I've scored, continue")).toBeTruthy();
+    expect(screen.getByText("Let me score first")).toBeTruthy();
   });
 
-  it("renders confirm and cancel buttons", async () => {
+  it("fires confirm and cancel callbacks", async () => {
     const user = userEvent.setup();
-    const { props } = renderPrompt();
+    const items: ScoringPromptItem[] = [{ kind: "secondary" }];
+    const { props } = renderPrompt({ items });
 
     await user.click(screen.getByText("I've scored, continue"));
     expect(props.onConfirm).toHaveBeenCalledOnce();
@@ -120,34 +120,6 @@ describe("ScoringPrompt", () => {
       const items: ScoringPromptItem[] = [{ kind: "secondary" }];
       renderPrompt({ items, activeSecondaries: [] });
       expect(screen.getByText("No active secondary missions.")).toBeTruthy();
-    });
-  });
-
-  describe("TacticalDrawReminder", () => {
-    it("shows draw button when eligible", async () => {
-      const user = userEvent.setup();
-      const items: ScoringPromptItem[] = [{ kind: "tactical_draw" }];
-      const { props } = renderPrompt({
-        items,
-        activeSecondaryCount: 1,
-        deckSize: 5,
-      });
-
-      const drawBtn = screen.getByText(/Draw Secondaries/);
-      await user.click(drawBtn);
-      expect(props.onDrawSecondary).toHaveBeenCalledOnce();
-    });
-
-    it('shows "already have 2" when at max', () => {
-      const items: ScoringPromptItem[] = [{ kind: "tactical_draw" }];
-      renderPrompt({ items, activeSecondaryCount: 2, deckSize: 5 });
-      expect(screen.getByText("You already have 2 active secondaries.")).toBeTruthy();
-    });
-
-    it('shows "deck empty" when no cards left', () => {
-      const items: ScoringPromptItem[] = [{ kind: "tactical_draw" }];
-      renderPrompt({ items, activeSecondaryCount: 0, deckSize: 0 });
-      expect(screen.getByText("Deck is empty.")).toBeTruthy();
     });
   });
 
