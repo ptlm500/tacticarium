@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { GamePage } from "./GamePage";
 import { useGameStore } from "../stores/gameStore";
-import { makeGameState, makePlayerState, mockUser, mockStratagems } from "../test/fixtures";
+import { makeGameState, makePlayerState, mockUser, mockStratagems, mockActiveSecondary } from "../test/fixtures";
 import { ws, http, HttpResponse } from "msw";
 import { worker } from "../mocks/browser";
 import { Route, Routes } from "react-router-dom";
@@ -228,6 +228,205 @@ describe("GamePage", () => {
     // Fight phase should show secondary scoring prompt
     await vi.waitFor(() => {
       expect(screen.getByText("Scoring Reminder")).toBeTruthy();
+    });
+  });
+
+  describe("primary scoring prompts", () => {
+    function useMissionMock(
+      overrides: Partial<{
+        scoringRules: Array<{ label: string; vp: number; minRound?: number; scoringTiming?: string }>;
+        scoringTiming: string;
+        name: string;
+      }> = {},
+    ) {
+      worker.use(
+        http.get(`${API_URL}/api/mission-packs/:packId/missions`, () => {
+          return HttpResponse.json([
+            {
+              id: "mission-1",
+              missionPackId: "chapter-approved-2025-26",
+              name: overrides.name ?? "Supply Drop",
+              lore: "",
+              description: "",
+              scoringRules: overrides.scoringRules ?? [
+                { label: "2 objectives", vp: 5, minRound: 2 },
+                { label: "3+ objectives", vp: 10, minRound: 2 },
+              ],
+              scoringTiming: overrides.scoringTiming ?? "end_of_command_phase",
+            },
+          ]);
+        }),
+      );
+    }
+
+    it("shows primary scoring prompt when advancing out of command phase in BR2+", async () => {
+      useMissionMock();
+
+      await act(async () => {
+        renderGame({
+          activePlayer: 1,
+          currentPhase: "command",
+          currentRound: 2,
+          currentTurn: 1,
+        });
+      });
+
+      const user = userEvent.setup();
+
+      // Wait for mission data to load before clicking Advance Phase
+      await vi.waitFor(() => {
+        expect(screen.getByText("Quick Score")).toBeTruthy();
+      });
+
+      await user.click(screen.getByText("Advance Phase"));
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Scoring Reminder")).toBeTruthy();
+        expect(screen.getByText("Score Primary — Supply Drop")).toBeTruthy();
+        // Scoring buttons appear in both Quick Score and the modal — check both exist
+        expect(screen.getAllByText("2 objectives (+5)")).toHaveLength(2);
+        expect(screen.getAllByText("3+ objectives (+10)")).toHaveLength(2);
+      });
+    });
+
+    it("does not show primary scoring prompt in BR1", async () => {
+      useMissionMock();
+
+      await act(async () => {
+        renderGame({
+          activePlayer: 1,
+          currentPhase: "command",
+          currentRound: 1,
+          currentTurn: 1,
+        });
+      });
+
+      const user = userEvent.setup();
+
+      // Wait for mission data to load
+      await vi.waitFor(() => {
+        expect(screen.getByText("Quick Score")).toBeTruthy();
+      });
+
+      await user.click(screen.getByText("Advance Phase"));
+
+      // BR1 command phase should not trigger primary scoring — no prompt shown
+      // (tactical draw might show if applicable, but not primary)
+      await vi.waitFor(() => {
+        expect(screen.queryByText("Score Primary — Supply Drop")).toBeNull();
+      });
+    });
+
+    it("shows primary and secondary prompts together for end_of_turn timing", async () => {
+      useMissionMock({
+        name: "Terraform",
+        scoringRules: [{ label: "Terraformed marker", vp: 1, scoringTiming: "end_of_turn" }],
+        scoringTiming: "end_of_turn",
+      });
+
+      await act(async () => {
+        renderGame({
+          activePlayer: 1,
+          currentPhase: "fight",
+          currentRound: 3,
+          currentTurn: 1,
+          players: [
+            makePlayerState({
+              secondaryMode: "tactical",
+              activeSecondaries: [mockActiveSecondary],
+              tacticalDeck: [],
+            }),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+            }),
+          ],
+        });
+      });
+
+      const user = userEvent.setup();
+
+      // Wait for mission data to load
+      await vi.waitFor(() => {
+        expect(screen.getByText("Quick Score")).toBeTruthy();
+      });
+
+      await user.click(screen.getByText("Advance Phase"));
+
+      // Both primary and secondary prompts should appear together
+      await vi.waitFor(() => {
+        expect(screen.getByText("Scoring Reminder")).toBeTruthy();
+        expect(screen.getByText(/Score Primary — Terraform/)).toBeTruthy();
+        // Scoring button appears in both Quick Score and the modal
+        expect(screen.getAllByText("Terraformed marker (+1)").length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText("Score / Discard Secondaries")).toBeTruthy();
+        // "Behind Enemy Lines" appears in both SecondaryPanel and the modal
+        expect(screen.getAllByText("Behind Enemy Lines").length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    it("scores primary VP when clicking a scoring button in the prompt", async () => {
+      useMissionMock();
+
+      const wsMessages: string[] = [];
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      const gs = makeGameState({
+        activePlayer: 1,
+        currentPhase: "command",
+        currentRound: 3,
+        currentTurn: 1,
+      });
+
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.addEventListener("message", (event) => {
+            wsMessages.push(typeof event.data === "string" ? event.data : "");
+          });
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+        }),
+      );
+
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      // Wait for mission data to load
+      await vi.waitFor(() => {
+        expect(screen.getByText("Quick Score")).toBeTruthy();
+      });
+
+      await user.click(screen.getByText("Advance Phase"));
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Score Primary — Supply Drop")).toBeTruthy();
+      });
+
+      // Click the scoring button inside the modal (indigo-800 bg), not the Quick Score one
+      const buttons = screen.getAllByText("3+ objectives (+10)");
+      const modalButton = buttons.find((btn) =>
+        btn.closest("button")?.classList.contains("bg-indigo-800"),
+      );
+      await user.click(modalButton!);
+
+      // Verify score_vp action was sent via WebSocket
+      await vi.waitFor(() => {
+        const scoreMsg = wsMessages.find((m) => m.includes("score_vp"));
+        expect(scoreMsg).toBeTruthy();
+        const parsed = JSON.parse(scoreMsg!);
+        expect(parsed.data.category).toBe("primary");
+        expect(parsed.data.delta).toBe(10);
+      });
     });
   });
 });

@@ -93,6 +93,7 @@ export function GameSetupPage() {
   const handleSelectMission = useCallback(
     (mission: Mission) => {
       sendAction("select_primary_mission", {
+        missionPackId: PACK_ID,
         missionId: mission.id,
         missionName: mission.name,
       });
@@ -104,6 +105,7 @@ export function GameSetupPage() {
     if (missions.length === 0) return;
     const m = missions[Math.floor(Math.random() * missions.length)];
     sendAction("select_primary_mission", {
+      missionPackId: PACK_ID,
       missionId: m.id,
       missionName: m.name,
     });
