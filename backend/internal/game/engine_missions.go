@@ -9,6 +9,7 @@ func (e *Engine) applySelectPrimaryMission(action GameAction) ([]GameEvent, erro
 		return nil, fmt.Errorf("can only select primary mission during setup")
 	}
 
+	missionPackID := strFromData(action.Data, "missionPackId")
 	missionID := strFromData(action.Data, "missionId")
 	missionName := strFromData(action.Data, "missionName")
 
@@ -16,6 +17,7 @@ func (e *Engine) applySelectPrimaryMission(action GameAction) ([]GameEvent, erro
 		return nil, fmt.Errorf("missionId is required")
 	}
 
+	e.state.MissionPackID = missionPackID
 	e.state.MissionID = missionID
 	e.state.MissionName = missionName
 
@@ -29,7 +31,7 @@ func (e *Engine) applySelectPrimaryMission(action GameAction) ([]GameEvent, erro
 	return []GameEvent{{
 		Type:         EventPrimaryMissionSelected,
 		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"missionId": missionID, "missionName": missionName},
+		Data:         map[string]any{"missionPackId": missionPackID, "missionId": missionID, "missionName": missionName},
 	}}, nil
 }
 

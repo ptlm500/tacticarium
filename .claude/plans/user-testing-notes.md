@@ -6,7 +6,7 @@
 
 - [ ] Select which player goes first
 
-- [ ] There's no reminder text for priamry and twist
+- [x] There's no reminder text for priamry and twist
 
 - [ ] Non-active player has enabled draw secondaries button
 
@@ -28,14 +28,15 @@
 
 - [ ] There's no cull the horde?
 
-- [ ] Why no primary scoring?
+- [x] Why no primary scoring?
 
 - [ ] Adding score phase might be handy?
 
-- [ ] Draw secondaries prompt has the wrong text
+- [x] Draw secondaries prompt has the wrong text
 
 - [ ] Strategems don't appear on opponents turn
 
 - [ ] Restrict strategem usage (e.g. once per turn)
 
 - [ ] I want to delete games
+- [ ] Enhance the game event log with more info about why things have been scored (e.g. scored based on secondary/primary mission etc)

@@ -7,7 +7,7 @@ import { getToken } from "../api/client";
 import { factionsApi } from "../api/factions";
 import { missionsApi } from "../api/missions";
 import { Stratagem } from "../types/faction";
-import { Mission } from "../types/mission";
+import { Mission, MissionRule } from "../types/mission";
 import { PHASE_LABELS, PHASE_ORDER } from "../types/game";
 import { PhaseTracker } from "../components/game/PhaseTracker";
 import { RoundIndicator } from "../components/game/RoundIndicator";
@@ -19,6 +19,8 @@ import { MissionInfo } from "../components/game/MissionInfo";
 import { MissionScoring } from "../components/game/MissionScoring";
 import { GameLog } from "../components/game/GameLog";
 import { ScoringPrompt, ScoringPromptItem } from "../components/game/ScoringPrompt";
+import { ReminderPrompt } from "../components/game/ReminderPrompt";
+import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
 
@@ -33,6 +35,7 @@ export function GamePage() {
 
   const [stratagems, setStratagems] = useState<Stratagem[]>([]);
   const [currentMission, setCurrentMission] = useState<Mission | null>(null);
+  const [currentTwist, setCurrentTwist] = useState<MissionRule | null>(null);
   const [showStratagems, setShowStratagems] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showConcedeModal, setShowConcedeModal] = useState(false);
@@ -44,6 +47,7 @@ export function GamePage() {
 
   const [loadError, setLoadError] = useState("");
   const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
+  const [showDrawPrompt, setShowDrawPrompt] = useState(false);
 
   // Load stratagems for player's faction
   useEffect(() => {
@@ -68,6 +72,19 @@ export function GamePage() {
     }
   }, [gameState?.missionPackId, gameState?.missionId]);
 
+  // Load twist details
+  useEffect(() => {
+    if (gameState?.missionPackId && gameState?.twistId) {
+      missionsApi
+        .listRules(gameState.missionPackId)
+        .then((rules) => {
+          const t = rules.find((r) => r.id === gameState.twistId);
+          setCurrentTwist(t ?? null);
+        })
+        .catch(() => setLoadError("Failed to load twist data"));
+    }
+  }, [gameState?.missionPackId, gameState?.twistId]);
+
   // Filter stratagems for current phase
   const availableStratagems = stratagems.filter((s) => {
     if (!gameState) return false;
@@ -87,6 +104,7 @@ export function GamePage() {
 
   const doAdvancePhase = useCallback(() => {
     setScoringPromptItems(null);
+    setShowDrawPrompt(false);
     sendAction("advance_phase");
   }, [sendAction]);
 
@@ -156,15 +174,6 @@ export function GamePage() {
       }
     }
 
-    // Tactical draw prompt — advancing out of Command Phase
-    if (isCommandPhase && myPlayer.secondaryMode === "tactical") {
-      const activeCount = myPlayer.activeSecondaries?.length ?? 0;
-      const deckSize = myPlayer.tacticalDeck?.length ?? 0;
-      if (activeCount < 2 && deckSize > 0) {
-        items.push({ kind: "tactical_draw" });
-      }
-    }
-
     // Secondary scoring prompt — advancing out of Fight Phase (end of turn)
     if (isFightPhase) {
       if (myPlayer.secondaryMode === "fixed") {
@@ -177,8 +186,20 @@ export function GamePage() {
       }
     }
 
+    // Tactical draw prompt — advancing out of Command Phase (separate from scoring)
+    let needsDraw = false;
+    if (isCommandPhase && myPlayer.secondaryMode === "tactical") {
+      const activeCount = myPlayer.activeSecondaries?.length ?? 0;
+      const deckSize = myPlayer.tacticalDeck?.length ?? 0;
+      if (activeCount < 2 && deckSize > 0) {
+        needsDraw = true;
+      }
+    }
+
     if (items.length > 0) {
       setScoringPromptItems(items);
+    } else if (needsDraw) {
+      setShowDrawPrompt(true);
     } else {
       doAdvancePhase();
     }
@@ -413,10 +434,7 @@ export function GamePage() {
         )}
 
         {/* Mission Info */}
-        <MissionInfo
-          missionName={gameState.missionName || ""}
-          twistName={gameState.twistName || ""}
-        />
+        <MissionInfo mission={currentMission} twist={currentTwist} />
 
         {/* Stratagem Panel (collapsible) */}
         <section>
@@ -523,14 +541,29 @@ export function GamePage() {
           activeSecondaries={myPlayer.activeSecondaries ?? []}
           onAchieveSecondary={handleAchieveSecondary}
           onDiscardSecondary={handleDiscardSecondary}
-          onDrawSecondary={handleDrawSecondary}
           canGainCP={myPlayer.cpGainedThisRound < 1}
-          deckSize={myPlayer.tacticalDeck?.length ?? 0}
-          activeSecondaryCount={myPlayer.activeSecondaries?.length ?? 0}
           onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
           onConfirm={doAdvancePhase}
           onCancel={() => setScoringPromptItems(null)}
         />
+      )}
+
+      {/* Draw Prompt Modal */}
+      {showDrawPrompt && (
+        <ReminderPrompt
+          title="Command Phase Reminder"
+          description="Before advancing, check if you need to draw secondaries."
+          confirmLabel="Continue"
+          cancelLabel="Let me draw first"
+          onConfirm={doAdvancePhase}
+          onCancel={() => setShowDrawPrompt(false)}
+        >
+          <TacticalDrawReminder
+            deckSize={myPlayer.tacticalDeck?.length ?? 0}
+            activeCount={myPlayer.activeSecondaries?.length ?? 0}
+            onDraw={handleDrawSecondary}
+          />
+        </ReminderPrompt>
       )}
     </div>
   );

@@ -64,7 +64,7 @@ func TestSelectPrimaryMission(t *testing.T) {
 	events, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectPrimaryMission,
 		PlayerNumber: 1,
-		Data:         map[string]any{"missionId": "m1", "missionName": "Take and Hold"},
+		Data:         map[string]any{"missionPackId": "pack1", "missionId": "m1", "missionName": "Take and Hold"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +72,7 @@ func TestSelectPrimaryMission(t *testing.T) {
 	if len(events) != 1 || events[0].Type != EventPrimaryMissionSelected {
 		t.Fatal("expected primary_mission_selected event")
 	}
-	if e.state.MissionID != "m1" || e.state.MissionName != "Take and Hold" {
+	if e.state.MissionPackID != "pack1" || e.state.MissionID != "m1" || e.state.MissionName != "Take and Hold" {
 		t.Fatal("mission not set on state")
 	}
 }
