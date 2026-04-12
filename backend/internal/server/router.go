@@ -241,6 +241,17 @@ func NewAPI(r chi.Router, h *Handlers, jwtSecret string) huma.API {
 	}, h.Game.GetGame)
 
 	huma.Register(api, huma.Operation{
+		OperationID:   "hide-game",
+		Method:        http.MethodPost,
+		Path:          "/api/games/{gameId}/hide",
+		Summary:       "Hide a game from the current user's game list",
+		Tags:          []string{"Games"},
+		Security:      playerSecurity,
+		Middlewares:   huma.Middlewares{playerMiddleware},
+		DefaultStatus: 204,
+	}, h.Game.HideGame)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "get-game-events",
 		Method:      http.MethodGet,
 		Path:        "/api/games/{gameId}/events",

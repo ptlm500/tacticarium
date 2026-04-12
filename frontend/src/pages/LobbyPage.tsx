@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { gamesApi } from "../api/games";
 import { GameSummary } from "../types/game";
+import { ConfirmModal } from "../components/game/ConfirmModal";
 
 export function LobbyPage() {
   const { user, logout } = useAuth();
@@ -11,6 +12,7 @@ export function LobbyPage() {
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [gameToRemove, setGameToRemove] = useState<GameSummary | null>(null);
 
   useEffect(() => {
     gamesApi
@@ -43,6 +45,18 @@ export function LobbyPage() {
       setError("Invalid invite code");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveGame = async () => {
+    if (!gameToRemove) return;
+    try {
+      await gamesApi.hide(gameToRemove.id);
+      setGames((prev) => prev.filter((g) => g.id !== gameToRemove.id));
+    } catch {
+      setError("Failed to remove game");
+    } finally {
+      setGameToRemove(null);
     }
   };
 
@@ -108,38 +122,72 @@ export function LobbyPage() {
             <h2 className="text-lg font-semibold">Your Games</h2>
             <div className="space-y-2">
               {games.map((game) => (
-                <button
-                  key={game.id}
-                  onClick={() =>
-                    navigate(
-                      game.status === "setup" ? `/game/${game.id}/setup` : `/game/${game.id}`,
-                    )
-                  }
-                  className="w-full bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-4 text-left transition-colors"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{game.missionName || "No mission selected"}</span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded ${
-                        game.status === "active"
-                          ? "bg-green-900 text-green-300"
-                          : game.status === "setup"
-                            ? "bg-yellow-900 text-yellow-300"
-                            : "bg-gray-700 text-gray-400"
-                      }`}
+                <div key={game.id} className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      navigate(
+                        game.status === "setup" ? `/game/${game.id}/setup` : `/game/${game.id}`,
+                      )
+                    }
+                    className="flex-1 bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-4 text-left transition-colors"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">
+                        {game.missionName || "No mission selected"}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded ${
+                          game.status === "active"
+                            ? "bg-green-900 text-green-300"
+                            : game.status === "setup"
+                              ? "bg-yellow-900 text-yellow-300"
+                              : "bg-gray-700 text-gray-400"
+                        }`}
+                      >
+                        {game.status}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-400 mt-1">
+                      {(game.players ?? []).map((p) => p.username).join(" vs ")}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setGameToRemove(game)}
+                    className="self-center px-3 py-2 text-gray-500 hover:text-red-400 transition-colors"
+                    aria-label="Remove game"
+                    title="Remove game"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
                     >
-                      {game.status}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-400 mt-1">
-                    {(game.players ?? []).map((p) => p.username).join(" vs ")}
-                  </div>
-                </button>
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
               ))}
             </div>
           </section>
         )}
       </main>
+
+      {gameToRemove && (
+        <ConfirmModal
+          title="Remove Game"
+          message="Are you sure you want to remove this game? It will no longer appear in your game list. This cannot be undone."
+          confirmLabel="Remove"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={handleRemoveGame}
+          onCancel={() => setGameToRemove(null)}
+        />
+      )}
     </div>
   );
 }
