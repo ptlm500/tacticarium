@@ -3768,6 +3768,47 @@
         ]
       }
     },
+    "/api/games/{gameId}/hide": {
+      "post": {
+        "operationId": "hide-game",
+        "parameters": [
+          {
+            "description": "Game ID",
+            "in": "path",
+            "name": "gameId",
+            "required": true,
+            "schema": {
+              "description": "Game ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Hide a game from the current user's game list",
+        "tags": [
+          "Games"
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "health-check",
