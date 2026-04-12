@@ -237,6 +237,127 @@ func TestGetGameEvents(t *testing.T) {
 	assert.Equal(t, "test_event_2", events[1]["eventType"])
 }
 
+// --- Hide Game Tests ---
+
+func TestHideGame(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	userID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, userID)
+	token := testutil.GenerateToken(t, userID, "player1")
+
+	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	resp.Body.Close()
+
+	// Game should no longer appear in list
+	resp = testutil.DoRequest(t, env, "GET", "/api/games", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var games []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games)
+	assert.Len(t, games, 0)
+}
+
+func TestHideGame_OnlyHidesForRequestingUser(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, gameID, user2ID)
+
+	token1 := testutil.GenerateToken(t, user1ID, "player1")
+	token2 := testutil.GenerateToken(t, user2ID, "player2")
+
+	// Player 1 hides the game
+	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token1))
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	resp.Body.Close()
+
+	// Player 1 should not see it
+	resp = testutil.DoRequest(t, env, "GET", "/api/games", nil, testutil.AuthHeader(token1))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	var games1 []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games1)
+	assert.Len(t, games1, 0)
+
+	// Player 2 should still see it
+	resp = testutil.DoRequest(t, env, "GET", "/api/games", nil, testutil.AuthHeader(token2))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	var games2 []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games2)
+	assert.Len(t, games2, 1)
+}
+
+func TestHideGame_NotInGame(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+
+	token2 := testutil.GenerateToken(t, user2ID, "player2")
+
+	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token2))
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
+}
+
+func TestHideGame_AlreadyHidden(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	userID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, userID)
+	token := testutil.GenerateToken(t, userID, "player1")
+
+	// Hide once
+	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	resp.Body.Close()
+
+	// Hide again - should return 404
+	resp = testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
+	testutil.AssertProblemDetails(t, resp, http.StatusNotFound)
+}
+
+func TestHideGame_Unauthorized(t *testing.T) {
+	env := testutil.SharedEnv
+
+	resp := testutil.DoRequest(t, env, "POST", "/api/games/00000000-0000-0000-0000-000000000000/hide", nil, nil)
+	testutil.AssertProblemDetails(t, resp, http.StatusUnauthorized)
+}
+
+func TestHideGame_HiddenFromHistory(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, gameID, user2ID)
+	testutil.CompleteTestGame(t, env.Pool, gameID, &user1ID)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+
+	// Hide the completed game
+	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	resp.Body.Close()
+
+	// Should not appear in history
+	resp = testutil.DoRequest(t, env, "GET", "/api/users/me/history", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var games []map[string]interface{}
+	testutil.ReadJSON(t, resp, &games)
+	assert.Len(t, games, 0)
+}
+
 // --- Stats Tests ---
 
 func TestGetStats_Empty(t *testing.T) {

@@ -15,4 +15,5 @@ export const gamesApi = {
   },
   getEvents: (id: string) => api.get<unknown[]>(`/api/games/${id}/events`),
   getStats: () => api.get<UserStats>("/api/users/me/stats"),
+  hide: (id: string) => api.post<void>(`/api/games/${id}/hide`),
 };

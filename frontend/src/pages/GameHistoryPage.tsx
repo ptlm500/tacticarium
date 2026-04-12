@@ -5,6 +5,7 @@ import { factionsApi } from "../api/factions";
 import { GameSummary, UserStats } from "../types/game";
 import { Faction } from "../types/faction";
 import { useAuth } from "../hooks/useAuth";
+import { ConfirmModal } from "../components/game/ConfirmModal";
 
 export function GameHistoryPage() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export function GameHistoryPage() {
 
   const [myFaction, setMyFaction] = useState("");
   const [opponentFaction, setOpponentFaction] = useState("");
+  const [gameToRemove, setGameToRemove] = useState<GameSummary | null>(null);
 
   // Load stats and factions once
   useEffect(() => {
@@ -43,6 +45,18 @@ export function GameHistoryPage() {
       .catch(() => setError("Failed to load game history"))
       .finally(() => setLoading(false));
   }, [myFaction, opponentFaction]);
+
+  const handleRemoveGame = async () => {
+    if (!gameToRemove) return;
+    try {
+      await gamesApi.hide(gameToRemove.id);
+      setGames((prev) => prev.filter((g) => g.id !== gameToRemove.id));
+    } catch {
+      setError("Failed to remove game");
+    } finally {
+      setGameToRemove(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -137,54 +151,86 @@ export function GameHistoryPage() {
               const isDraw = !game.winnerId && game.status === "completed";
               const isAbandoned = game.status === "abandoned";
               return (
-                <button
-                  key={game.id}
-                  onClick={() => navigate(`/history/${game.id}`)}
-                  className="w-full text-left bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium">{game.missionName || "Unknown Mission"}</span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded font-semibold ${
-                        isAbandoned
-                          ? "bg-yellow-900 text-yellow-300"
-                          : isDraw
-                            ? "bg-gray-700 text-gray-300"
-                            : isWinner
-                              ? "bg-green-900 text-green-300"
-                              : "bg-red-900 text-red-300"
-                      }`}
-                    >
-                      {isAbandoned ? "Abandoned" : isDraw ? "Draw" : isWinner ? "Won" : "Lost"}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-sm">
-                    {(game.players ?? []).map((p) => (
-                      <div
-                        key={p.userId}
-                        className={`flex justify-between ${
-                          p.userId === user?.id ? "text-white" : "text-gray-400"
+                <div key={game.id} className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/history/${game.id}`)}
+                    className="flex-1 text-left bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">{game.missionName || "Unknown Mission"}</span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded font-semibold ${
+                          isAbandoned
+                            ? "bg-yellow-900 text-yellow-300"
+                            : isDraw
+                              ? "bg-gray-700 text-gray-300"
+                              : isWinner
+                                ? "bg-green-900 text-green-300"
+                                : "bg-red-900 text-red-300"
                         }`}
                       >
-                        <span>
-                          {p.username}
-                          {p.factionName && ` (${p.factionName})`}
-                        </span>
-                        <span>{p.totalVp} VP</span>
-                      </div>
-                    ))}
-                  </div>
-                  {game.completedAt && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      {new Date(game.completedAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </button>
+                        {isAbandoned ? "Abandoned" : isDraw ? "Draw" : isWinner ? "Won" : "Lost"}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      {(game.players ?? []).map((p) => (
+                        <div
+                          key={p.userId}
+                          className={`flex justify-between ${
+                            p.userId === user?.id ? "text-white" : "text-gray-400"
+                          }`}
+                        >
+                          <span>
+                            {p.username}
+                            {p.factionName && ` (${p.factionName})`}
+                          </span>
+                          <span>{p.totalVp} VP</span>
+                        </div>
+                      ))}
+                    </div>
+                    {game.completedAt && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(game.completedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setGameToRemove(game)}
+                    className="self-center px-3 py-2 text-gray-500 hover:text-red-400 transition-colors"
+                    aria-label="Remove game"
+                    title="Remove game"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
               );
             })}
           </div>
         )}
       </main>
+
+      {gameToRemove && (
+        <ConfirmModal
+          title="Remove Game"
+          message="Are you sure you want to remove this game from your history? This cannot be undone."
+          confirmLabel="Remove"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={handleRemoveGame}
+          onCancel={() => setGameToRemove(null)}
+        />
+      )}
     </div>
   );
 }

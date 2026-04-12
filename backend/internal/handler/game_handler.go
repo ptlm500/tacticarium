@@ -139,7 +139,7 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 		`SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
 		 JOIN game_players gp ON g.id = gp.game_id
-		 WHERE gp.user_id = $1
+		 WHERE gp.user_id = $1 AND gp.hidden_at IS NULL
 		 ORDER BY g.created_at DESC
 		 LIMIT 50`, user.UserID)
 	if err != nil {
@@ -186,7 +186,7 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 	query := `SELECT g.id, g.invite_code, g.status, COALESCE(g.mission_name, ''), g.created_at, g.completed_at, g.winner_id
 		 FROM games g
 		 JOIN game_players gp ON g.id = gp.game_id
-		 WHERE gp.user_id = $1 AND g.status IN ('completed', 'abandoned')`
+		 WHERE gp.user_id = $1 AND gp.hidden_at IS NULL AND g.status IN ('completed', 'abandoned')`
 	args := []any{user.UserID}
 	paramN := 2
 
@@ -323,6 +323,28 @@ func (h *GameHandler) GetStats(ctx context.Context, input *struct{}) (*StatsOutp
 	}
 
 	return &StatsOutput{Body: stats}, nil
+}
+
+func (h *GameHandler) HideGame(ctx context.Context, input *GameIDParam) (*struct{}, error) {
+	user := auth.GetUser(ctx)
+	if user == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+
+	result, err := h.db.Exec(ctx,
+		`UPDATE game_players SET hidden_at = NOW()
+		 WHERE game_id = $1 AND user_id = $2 AND hidden_at IS NULL`,
+		input.GameID, user.UserID)
+	if err != nil {
+		slog.ErrorContext(ctx, "Hide game error", "error", err)
+		return nil, huma.Error500InternalServerError("database error")
+	}
+
+	if result.RowsAffected() == 0 {
+		return nil, huma.Error404NotFound("game not found or already hidden")
+	}
+
+	return nil, nil
 }
 
 func (h *GameHandler) GetGameEvents(ctx context.Context, input *GameIDParam) (*GameEventsOutput, error) {
