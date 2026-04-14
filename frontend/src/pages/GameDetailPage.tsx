@@ -1,6 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { type RestGameEvent, buildPlayerStats, getEndReason, getRoundsPlayed } from "../components/game/vpUtils";
+import {
+  type RestGameEvent,
+  buildPlayerStats,
+  getEndReason,
+  getRoundsPlayed,
+} from "../components/game/vpUtils";
 import { VPBreakdownTable } from "../components/game/VPBreakdownTable";
 import { VPProgressionChart } from "../components/game/VPProgressionChart";
 import { EventTimeline } from "../components/game/EventTimeline";

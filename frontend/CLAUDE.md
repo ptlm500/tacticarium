@@ -20,13 +20,13 @@ REST API calls use **TanStack Query**. WebSocket-driven game state uses **Zustan
 
 All query/mutation hooks live in `src/hooks/queries/`:
 
-| File | Hooks |
-|------|-------|
-| `useGamesQueries.ts` | `useGameList()`, `useGame(id)`, `useGameEvents(id)` |
-| `useHistoryQueries.ts` | `useGameHistory(filters?)`, `useUserStats()` |
+| File                   | Hooks                                                                      |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `useGamesQueries.ts`   | `useGameList()`, `useGame(id)`, `useGameEvents(id)`                        |
+| `useHistoryQueries.ts` | `useGameHistory(filters?)`, `useUserStats()`                               |
 | `useFactionQueries.ts` | `useFactions()`, `useDetachments(factionId?)`, `useStratagems(factionId?)` |
 | `useMissionQueries.ts` | `useMissions(packId)`, `useMissionRules(packId)`, `useSecondaries(packId)` |
-| `useGameMutations.ts` | `useCreateGame()`, `useJoinGame()`, `useHideGame()` |
+| `useGameMutations.ts`  | `useCreateGame()`, `useJoinGame()`, `useHideGame()`                        |
 
 Query keys are defined in `src/hooks/queryKeys.ts` as a factory object.
 
