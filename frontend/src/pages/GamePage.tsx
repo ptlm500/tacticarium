@@ -1,13 +1,10 @@
-import { useEffect, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
 import { getToken } from "../api/client";
-import { factionsApi } from "../api/factions";
-import { missionsApi } from "../api/missions";
 import { Stratagem } from "../types/faction";
-import { Mission, MissionRule } from "../types/mission";
 import { PHASE_LABELS, PHASE_ORDER } from "../types/game";
 import { PhaseTracker } from "../components/game/PhaseTracker";
 import { RoundIndicator } from "../components/game/RoundIndicator";
@@ -23,6 +20,8 @@ import { ReminderPrompt } from "../components/game/ReminderPrompt";
 import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
+import { useStratagems } from "../hooks/queries/useFactionQueries";
+import { useMissions, useMissionRules } from "../hooks/queries/useMissionQueries";
 
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -33,9 +32,6 @@ export function GamePage() {
 
   const { connected, sendAction } = useGameConnection(gameId!, token);
 
-  const [stratagems, setStratagems] = useState<Stratagem[]>([]);
-  const [currentMission, setCurrentMission] = useState<Mission | null>(null);
-  const [currentTwist, setCurrentTwist] = useState<MissionRule | null>(null);
   const [showStratagems, setShowStratagems] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showConcedeModal, setShowConcedeModal] = useState(false);
@@ -45,45 +41,15 @@ export function GamePage() {
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
   const isMyTurn = myPlayer?.playerNumber === gameState?.activePlayer;
 
-  const [loadError, setLoadError] = useState("");
   const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
   const [showDrawPrompt, setShowDrawPrompt] = useState(false);
 
-  // Load stratagems for player's faction
-  useEffect(() => {
-    if (myPlayer?.factionId) {
-      factionsApi
-        .getStratagems(myPlayer.factionId)
-        .then(setStratagems)
-        .catch(() => setLoadError("Failed to load stratagems"));
-    }
-  }, [myPlayer?.factionId]);
+  const { data: stratagems = [] } = useStratagems(myPlayer?.factionId);
+  const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
+  const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
 
-  // Load mission scoring rules
-  useEffect(() => {
-    if (gameState?.missionPackId && gameState?.missionId) {
-      missionsApi
-        .listMissions(gameState.missionPackId)
-        .then((missions) => {
-          const m = missions.find((m) => m.id === gameState.missionId);
-          setCurrentMission(m ?? null);
-        })
-        .catch(() => setLoadError("Failed to load mission data"));
-    }
-  }, [gameState?.missionPackId, gameState?.missionId]);
-
-  // Load twist details
-  useEffect(() => {
-    if (gameState?.missionPackId && gameState?.twistId) {
-      missionsApi
-        .listRules(gameState.missionPackId)
-        .then((rules) => {
-          const t = rules.find((r) => r.id === gameState.twistId);
-          setCurrentTwist(t ?? null);
-        })
-        .catch(() => setLoadError("Failed to load twist data"));
-    }
-  }, [gameState?.missionPackId, gameState?.twistId]);
+  const currentMission = allMissions.find((m) => m.id === gameState?.missionId) ?? null;
+  const currentTwist = allRules.find((r) => r.id === gameState?.twistId) ?? null;
 
   // Filter stratagems for current phase
   const availableStratagems = stratagems.filter((s) => {
@@ -273,8 +239,6 @@ export function GamePage() {
   }, [sendAction]);
 
   const handleDrawChallengerCard = useCallback(() => {
-    // For now, pick a placeholder challenger card — the UI could be enhanced
-    // with a card picker in the future
     sendAction("draw_challenger_card", {
       challengerCardId: "challenger-card-generic",
       challengerCardName: "Challenger Mission",
@@ -323,11 +287,6 @@ export function GamePage() {
 
       {/* Error Banners */}
       {error && <div className="bg-red-900/50 text-red-200 text-center py-2 text-sm">{error}</div>}
-      {loadError && (
-        <div className="bg-red-900/50 border border-red-700 text-red-200 text-center py-2 text-sm">
-          {loadError}
-        </div>
-      )}
 
       {/* Round & Phase */}
       <div className="px-4 py-3 space-y-2 border-b border-gray-800">

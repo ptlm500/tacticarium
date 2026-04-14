@@ -7,10 +7,11 @@ A real-time, mobile-first turn tracker for Warhammer 40K 10th Edition. Two playe
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | Frontend | React 18 + TypeScript | UI framework |
-| Build | Vite 5 | Dev server + bundler |
+| Build | Vite+ (Vite 8) | Dev server + bundler + toolchain |
 | Styling | Tailwind CSS 4 | Utility-first CSS |
-| State | Zustand | Lightweight state management |
-| Routing | React Router v6 | Client-side routing |
+| Data Fetching | TanStack Query v5 | REST API caching, loading/error states |
+| State | Zustand | Real-time game state (WebSocket) |
+| Routing | React Router v7 | Client-side routing |
 | Backend | Go 1.22 | API server |
 | API Framework | huma v2 (on chi v5) | Typed handlers, auto OpenAPI, RFC 9457 errors |
 | Router | chi v5 | HTTP routing + middleware (underlying router for huma) |
@@ -113,18 +114,28 @@ tacticarium/
 │   ├── Dockerfile                 # Multi-stage: Vite build → nginx (repo-root context)
 │   ├── nginx.conf                 # SPA fallback config
 │   ├── src/
-│   │   ├── App.tsx                # Router + AuthGuard
+│   │   ├── App.tsx                # Router + AuthGuard + QueryClientProvider
+│   │   ├── queryClient.ts         # TanStack Query client config (staleTime, error handling)
 │   │   ├── api/                   # REST client (auth, games, factions, missions)
 │   │   ├── hooks/
 │   │   │   ├── useAuth.ts         # Auth context + Discord login
 │   │   │   ├── useWebSocket.ts    # WS connection + reconnect
-│   │   │   └── useGameState.ts    # WS → Zustand bridge
+│   │   │   ├── useGameState.ts    # WS → Zustand bridge
+│   │   │   ├── queryKeys.ts       # Query key factory
+│   │   │   └── queries/           # TanStack Query hooks
+│   │   │       ├── useGamesQueries.ts    # useGameList, useGame, useGameEvents
+│   │   │       ├── useHistoryQueries.ts  # useGameHistory, useUserStats
+│   │   │       ├── useFactionQueries.ts  # useFactions, useDetachments, useStratagems
+│   │   │       ├── useMissionQueries.ts  # useMissions, useMissionRules, useSecondaries
+│   │   │       └── useGameMutations.ts   # useCreateGame, useJoinGame, useHideGame
 │   │   ├── stores/gameStore.ts    # Zustand game state
 │   │   ├── types/                 # TypeScript type definitions (derived from shared/api.generated.ts)
 │   │   ├── pages/                 # Login, Lobby, Setup, Game, History
 │   │   └── components/
 │   │       ├── game/              # PhaseTracker, CPCounter, VPCounter, etc.
-│   │       └── setup/             # FactionPicker, DetachmentPicker
+│   │       ├── setup/             # FactionPicker, DetachmentPicker
+│   │       ├── ErrorBoundary.tsx   # Root-level error boundary
+│   │       └── QueryErrorBoundary.tsx # Page-level error boundary with retry
 │
 └── scraper/                       # (Planned) Playwright mission scraper
 ```
@@ -503,20 +514,42 @@ LoginPage → LobbyPage → GameSetupPage → GamePage
 
 ### State Management
 
-- **Zustand store** (`gameStore.ts`): Holds `gameState`, `events[]`, `error`, `opponentConnected`
-- **useWebSocket hook**: Manages WS connection lifecycle, exponential backoff reconnection (1s → 30s), 30s ping interval
-- **useGameConnection hook**: Routes incoming WS messages to the Zustand store
+Two complementary systems handle different data concerns:
+
+- **TanStack Query** — All REST API data (game lists, factions, missions, history, stats). Provides caching, automatic loading/error states, dependent queries, and cache invalidation on mutations.
+- **Zustand store** (`gameStore.ts`) — Real-time game state received via WebSocket. Holds `gameState`, `events[]`, `error`, `opponentConnected`.
+- **React Context** — Auth state only (`useAuth`). Not managed by TanStack Query because auth drives routing above the QueryClientProvider.
 
 ### Data Flow
 
 ```
-WebSocket message → useWebSocket.onMessage → useGameConnection.handleMessage → Zustand store → React components
-User action → sendAction() → WebSocket → Server engine → broadcast state_update → all clients
+REST API data:
+  Component → useQuery() → TanStack Query cache → api module → fetch → server
+  Mutation → useMutation() → api module → server → cache invalidation → re-render
+
+Real-time game state:
+  WebSocket message → useWebSocket.onMessage → useGameConnection.handleMessage → Zustand store → React components
+  User action → sendAction() → WebSocket → Server engine → broadcast state_update → all clients
 ```
+
+### Error Handling
+
+- **Query errors** (`throwOnError: true`): Propagate to the nearest `QueryErrorBoundary`, which renders an error message with Retry and Back to Lobby buttons. Each route in `App.tsx` is wrapped with its own boundary.
+- **Mutation errors** (`throwOnError: false`): Handled inline in page components. Pages map mutation errors to user-friendly strings (e.g., "Failed to remove game") rather than surfacing raw API messages.
+- **401 errors**: A global handler in `QueryCache.onError` clears the auth token and redirects to `/login`.
+- **Root ErrorBoundary**: Catches non-query React errors (render crashes) as a final fallback.
+
+### Query Patterns
+
+- **Query keys** (`hooks/queryKeys.ts`): Hierarchical factory (e.g., `queryKeys.factions.detachments(factionId)`) enabling targeted cache invalidation.
+- **Dependent queries**: Use `enabled: !!value` — e.g., `useDetachments(factionId)` only fetches when a faction is selected.
+- **Parallel queries**: Multiple `useQuery` calls in a component run concurrently (no `Promise.all` needed).
+- **Cache invalidation**: `useHideGame` optimistically removes the game from the list cache via `setQueryData`, then invalidates history queries.
+- **Mutations**: Use `mutate()` with `onSuccess`/`onSettled` callbacks to avoid unhandled promise rejections.
 
 ### Admin Frontend (`admin/`)
 
-Same tech stack as the player frontend (React 18 + TypeScript + Vite 5 + Tailwind CSS 4) but as a separate standalone Vite application.
+Same tech stack as the player frontend (React 18 + TypeScript + Vite+ + Tailwind CSS 4) but as a separate standalone Vite application. Currently uses manual `useState` + `useEffect` for data fetching (TanStack Query migration planned).
 
 **Page Flow:**
 ```
