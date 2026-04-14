@@ -1,41 +1,21 @@
-import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { gamesApi } from "../api/games";
-import { GameState } from "../types/game";
-import {
-  type RestGameEvent,
-  buildPlayerStats,
-  getEndReason,
-  getRoundsPlayed,
-} from "../components/game/vpUtils";
+import { type RestGameEvent, buildPlayerStats, getEndReason, getRoundsPlayed } from "../components/game/vpUtils";
 import { VPBreakdownTable } from "../components/game/VPBreakdownTable";
 import { VPProgressionChart } from "../components/game/VPProgressionChart";
 import { EventTimeline } from "../components/game/EventTimeline";
 import { normalizeRestEvent } from "../components/game/eventFormatting";
+import { useGame, useGameEvents } from "../hooks/queries/useGamesQueries";
 
 export function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [events, setEvents] = useState<RestGameEvent[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: gameState, isPending: gameLoading } = useGame(id!);
+  const { data: events, isPending: eventsLoading } = useGameEvents(id!);
 
-  useEffect(() => {
-    if (!id) return;
-    Promise.all([gamesApi.get(id), gamesApi.getEvents(id) as Promise<RestGameEvent[]>])
-      .then(([state, evts]) => {
-        setGameState(state);
-        setEvents(evts);
-      })
-      .catch(() => setError("Failed to load game data"))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) {
+  if (gameLoading || eventsLoading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <p>Loading...</p>
@@ -43,11 +23,11 @@ export function GameDetailPage() {
     );
   }
 
-  if (error || !gameState || !events) {
+  if (!gameState || !events) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-red-400">{error || "Game not found"}</p>
+          <p className="text-red-400">Game not found</p>
           <button
             onClick={() => navigate("/history")}
             className="text-indigo-400 hover:text-indigo-300"
@@ -70,13 +50,14 @@ export function GameDetailPage() {
     );
   }
 
-  const endReason = getEndReason(events);
-  const roundsPlayed = getRoundsPlayed(events);
+  const typedEvents = events as RestGameEvent[];
+  const endReason = getEndReason(typedEvents);
+  const roundsPlayed = getRoundsPlayed(typedEvents);
   const rounds = Array.from({ length: roundsPlayed }, (_, i) => i + 1);
 
-  const myStats = buildPlayerStats(events, myPlayer.playerNumber, myPlayer.vpPaint);
+  const myStats = buildPlayerStats(typedEvents, myPlayer.playerNumber, myPlayer.vpPaint);
   const opponentStats = opponent
-    ? buildPlayerStats(events, opponent.playerNumber, opponent.vpPaint)
+    ? buildPlayerStats(typedEvents, opponent.playerNumber, opponent.vpPaint)
     : null;
 
   const isAbandoned = gameState.status === "abandoned";
@@ -107,7 +88,7 @@ export function GameDetailPage() {
           ? `Completed after ${roundsPlayed} rounds`
           : null;
 
-  const normalizedEvents = events.map(normalizeRestEvent);
+  const normalizedEvents = typedEvents.map(normalizeRestEvent);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">

@@ -4,16 +4,16 @@ import { useAuth } from "../hooks/useAuth";
 import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
 import { getToken } from "../api/client";
-import { factionsApi } from "../api/factions";
-import { missionsApi } from "../api/missions";
 import { Faction, Detachment } from "../types/faction";
-import { Mission, MissionRule, Secondary } from "../types/mission";
+import { Mission, MissionRule } from "../types/mission";
 import { ActiveSecondary } from "../types/game";
 import { FactionPicker } from "../components/setup/FactionPicker";
 import { DetachmentPicker } from "../components/setup/DetachmentPicker";
 import { MissionPicker } from "../components/setup/MissionPicker";
 import { TwistPicker } from "../components/setup/TwistPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
+import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
+import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
 
 const PACK_ID = "chapter-approved-2025-26";
 
@@ -27,41 +27,21 @@ export function GameSetupPage() {
 
   const { connected, sendAction } = useGameConnection(gameId!, token);
 
-  const [factions, setFactions] = useState<Faction[]>([]);
-  const [detachments, setDetachments] = useState<Detachment[]>([]);
-  const [missions, setMissions] = useState<Mission[]>([]);
-  const [rules, setRules] = useState<MissionRule[]>([]);
-  const [secondaries, setSecondaries] = useState<Secondary[]>([]);
+  const { data: factions = [] } = useFactions();
+  const { data: missions = [] } = useMissions(PACK_ID);
+  const { data: rules = [] } = useMissionRules(PACK_ID);
+  const { data: secondaries = [] } = useSecondaries(PACK_ID);
+
   const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
-  const [loadError, setLoadError] = useState("");
-
-  useEffect(() => {
-    Promise.all([
-      factionsApi.list().then(setFactions),
-      missionsApi.listMissions(PACK_ID).then(setMissions),
-      missionsApi.listRules(PACK_ID).then(setRules),
-      missionsApi.listSecondaries(PACK_ID).then(setSecondaries),
-    ]).catch(() => setLoadError("Failed to load game data. Please refresh the page."));
-  }, []);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
 
+  const { data: detachments = [] } = useDetachments(myPlayer?.factionId);
+
   const fixedSecondaries = secondaries.filter((s) => s.isFixed);
   const tacticalSecondaries = secondaries.filter((s) => !s.isFixed);
-
-  // Load detachments when faction changes
-  useEffect(() => {
-    if (myPlayer?.factionId) {
-      factionsApi
-        .getDetachments(myPlayer.factionId)
-        .then(setDetachments)
-        .catch(() => setLoadError("Failed to load detachments"));
-    } else {
-      setDetachments([]);
-    }
-  }, [myPlayer?.factionId]);
 
   // Navigate to game when it starts
   useEffect(() => {
@@ -206,12 +186,6 @@ export function GameSetupPage() {
       </header>
 
       <main className="max-w-md mx-auto p-6 space-y-6">
-        {loadError && (
-          <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded">
-            {loadError}
-          </div>
-        )}
-
         {/* Faction Selection */}
         <section>
           <h2 className="text-lg font-semibold mb-3">Your Faction</h2>

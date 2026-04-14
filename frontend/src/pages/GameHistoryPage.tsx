@@ -1,61 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { gamesApi } from "../api/games";
-import { factionsApi } from "../api/factions";
-import { GameSummary, UserStats } from "../types/game";
-import { Faction } from "../types/faction";
+import { GameSummary } from "../types/game";
 import { useAuth } from "../hooks/useAuth";
 import { ConfirmModal } from "../components/game/ConfirmModal";
+import { useGameHistory, useUserStats } from "../hooks/queries/useHistoryQueries";
+import { useFactions } from "../hooks/queries/useFactionQueries";
+import { useHideGame } from "../hooks/queries/useGameMutations";
 
 export function GameHistoryPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [games, setGames] = useState<GameSummary[]>([]);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [factions, setFactions] = useState<Faction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const [myFaction, setMyFaction] = useState("");
   const [opponentFaction, setOpponentFaction] = useState("");
   const [gameToRemove, setGameToRemove] = useState<GameSummary | null>(null);
 
-  // Load stats and factions once
-  useEffect(() => {
-    gamesApi
-      .getStats()
-      .then(setStats)
-      .catch(() => {});
-    factionsApi
-      .list()
-      .then(setFactions)
-      .catch(() => {});
-  }, []);
+  const filters =
+    myFaction || opponentFaction
+      ? { myFaction: myFaction || undefined, opponentFaction: opponentFaction || undefined }
+      : undefined;
 
-  // Load history (re-fetch when filters change)
-  useEffect(() => {
-    setLoading(true);
-    const filters: { myFaction?: string; opponentFaction?: string } = {};
-    if (myFaction) filters.myFaction = myFaction;
-    if (opponentFaction) filters.opponentFaction = opponentFaction;
+  const { data: games = [], isPending: loading } = useGameHistory(filters);
+  const { data: stats } = useUserStats();
+  const { data: factions = [] } = useFactions();
+  const hideGame = useHideGame();
 
-    gamesApi
-      .getHistory(Object.keys(filters).length > 0 ? filters : undefined)
-      .then(setGames)
-      .catch(() => setError("Failed to load game history"))
-      .finally(() => setLoading(false));
-  }, [myFaction, opponentFaction]);
+  const error = hideGame.error?.message || "";
 
-  const handleRemoveGame = async () => {
+  const handleRemoveGame = () => {
     if (!gameToRemove) return;
-    try {
-      await gamesApi.hide(gameToRemove.id);
-      setGames((prev) => prev.filter((g) => g.id !== gameToRemove.id));
-    } catch {
-      setError("Failed to remove game");
-    } finally {
-      setGameToRemove(null);
-    }
+    hideGame.mutate(gameToRemove.id, {
+      onSettled: () => setGameToRemove(null),
+    });
   };
 
   return (

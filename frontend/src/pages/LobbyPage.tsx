@@ -1,63 +1,49 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { gamesApi } from "../api/games";
 import { GameSummary } from "../types/game";
 import { ConfirmModal } from "../components/game/ConfirmModal";
+import { useGameList } from "../hooks/queries/useGamesQueries";
+import { useCreateGame, useJoinGame, useHideGame } from "../hooks/queries/useGameMutations";
 
 export function LobbyPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [games, setGames] = useState<GameSummary[]>([]);
   const [joinCode, setJoinCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [gameToRemove, setGameToRemove] = useState<GameSummary | null>(null);
 
-  useEffect(() => {
-    gamesApi
-      .list()
-      .then((g) => setGames(g || []))
-      .catch(() => {
-        setError("Failed to load your games");
-      });
-  }, []);
+  const { data: games = [] } = useGameList();
+  const createGame = useCreateGame();
+  const joinGame = useJoinGame();
+  const hideGame = useHideGame();
 
-  const handleCreate = async () => {
-    setLoading(true);
-    try {
-      const { id } = await gamesApi.create();
-      navigate(`/game/${id}/setup`);
-    } catch {
-      setError("Failed to create game");
-    } finally {
-      setLoading(false);
-    }
+  const loading = createGame.isPending || joinGame.isPending;
+  const error = createGame.error
+    ? "Failed to create game"
+    : joinGame.error
+      ? "Invalid invite code"
+      : hideGame.error
+        ? "Failed to remove game"
+        : "";
+
+  const handleCreate = () => {
+    createGame.mutate(undefined, {
+      onSuccess: ({ id }) => navigate(`/game/${id}/setup`),
+    });
   };
 
-  const handleJoin = async () => {
+  const handleJoin = () => {
     if (!joinCode.trim()) return;
-    setLoading(true);
-    try {
-      const { id } = await gamesApi.join(joinCode.trim().toUpperCase());
-      navigate(`/game/${id}/setup`);
-    } catch {
-      setError("Invalid invite code");
-    } finally {
-      setLoading(false);
-    }
+    joinGame.mutate(joinCode.trim().toUpperCase(), {
+      onSuccess: ({ id }) => navigate(`/game/${id}/setup`),
+    });
   };
 
-  const handleRemoveGame = async () => {
+  const handleRemoveGame = () => {
     if (!gameToRemove) return;
-    try {
-      await gamesApi.hide(gameToRemove.id);
-      setGames((prev) => prev.filter((g) => g.id !== gameToRemove.id));
-    } catch {
-      setError("Failed to remove game");
-    } finally {
-      setGameToRemove(null);
-    }
+    hideGame.mutate(gameToRemove.id, {
+      onSettled: () => setGameToRemove(null),
+    });
   };
 
   return (

@@ -140,6 +140,10 @@ src/
         └── {Entity}EditPage.tsx
 ```
 
+## Data Fetching
+
+Currently uses manual `useState` + `useEffect` + `fetch` patterns. A migration to TanStack Query is planned (the player frontend has already been migrated).
+
 ## Conventions
 
 - Each entity has a list page and a shared create/edit page

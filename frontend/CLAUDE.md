@@ -1,3 +1,64 @@
+# Player Frontend
+
+React application for playing Tacticarium games.
+
+## Tech Stack
+
+- pnpm
+- React 18 + TypeScript
+- Vite+
+- Tailwind CSS 4 (via `@tailwindcss/vite` plugin)
+- React Router v7
+- TanStack Query v5 (REST API data fetching + caching)
+- Zustand (real-time game state via WebSocket)
+
+## Data Fetching
+
+REST API calls use **TanStack Query**. WebSocket-driven game state uses **Zustand**.
+
+### Query Hooks
+
+All query/mutation hooks live in `src/hooks/queries/`:
+
+| File | Hooks |
+|------|-------|
+| `useGamesQueries.ts` | `useGameList()`, `useGame(id)`, `useGameEvents(id)` |
+| `useHistoryQueries.ts` | `useGameHistory(filters?)`, `useUserStats()` |
+| `useFactionQueries.ts` | `useFactions()`, `useDetachments(factionId?)`, `useStratagems(factionId?)` |
+| `useMissionQueries.ts` | `useMissions(packId)`, `useMissionRules(packId)`, `useSecondaries(packId)` |
+| `useGameMutations.ts` | `useCreateGame()`, `useJoinGame()`, `useHideGame()` |
+
+Query keys are defined in `src/hooks/queryKeys.ts` as a factory object.
+
+### Patterns
+
+- **Dependent queries**: Use `enabled: !!value` (e.g., `useDetachments` only fetches when factionId exists)
+- **Parallel queries**: Multiple `useQuery` calls run in parallel automatically
+- **Mutations**: Use `mutate()` with `onSuccess`/`onSettled` callbacks — not `mutateAsync` — to avoid unhandled rejections
+- **Error messages**: Pages map mutation errors to user-friendly strings rather than surfacing raw API errors
+- **Error boundaries**: `QueryErrorBoundary` wraps each route in `App.tsx`; query errors throw to the boundary via `throwOnError: true`
+
+### What NOT to use TanStack Query for
+
+- Real-time game state — handled by WebSocket + Zustand (`useGameConnection` / `useGameStore`)
+- Auth state — handled by React Context (`useAuth`)
+
+## API Client
+
+Thin fetch wrapper in `src/api/client.ts` with `api.get<T>()` / `api.post<T>()`. Domain-specific modules in `src/api/` (auth, games, factions, missions). Query hooks call these modules — they are the `queryFn` implementations.
+
+## Testing
+
+- Vitest in browser mode (Chromium via Playwright) — run with `vp test`
+- MSW v2 for API mocking (`src/mocks/handlers/`)
+- `renderWithProviders()` in `src/test/renderWithProviders.tsx` wraps with QueryClientProvider, AuthContext, and MemoryRouter
+- Each test render gets a fresh QueryClient (retry disabled for fast failures)
+- Test fixtures in `src/test/fixtures.ts`
+
+## Environment Variables
+
+- `VITE_API_URL` — Backend URL (default: `http://localhost:8080`)
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
