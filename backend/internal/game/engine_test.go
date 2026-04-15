@@ -155,7 +155,7 @@ func TestSelectFirstTurnPlayer(t *testing.T) {
 			events, err := e.Apply(context.Background(), GameAction{
 				Type:         ActionSelectFirstTurnPlayer,
 				PlayerNumber: 1,
-				Data:         map[string]any{"playerNumber": pn},
+				Data:         map[string]any{"firstTurnPlayer": pn},
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -177,7 +177,7 @@ func TestSelectFirstTurnPlayer_RejectsInvalid(t *testing.T) {
 			_, err := e.Apply(context.Background(), GameAction{
 				Type:         ActionSelectFirstTurnPlayer,
 				PlayerNumber: 1,
-				Data:         map[string]any{"playerNumber": pn},
+				Data:         map[string]any{"firstTurnPlayer": pn},
 			})
 			if err == nil {
 				t.Fatalf("expected error for playerNumber=%d", pn)
@@ -191,7 +191,7 @@ func TestSelectFirstTurnPlayer_RequiresSetup(t *testing.T) {
 	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectFirstTurnPlayer,
 		PlayerNumber: 1,
-		Data:         map[string]any{"playerNumber": 2},
+		Data:         map[string]any{"firstTurnPlayer": 2},
 	})
 	if err == nil {
 		t.Fatal("expected error when not in setup")
@@ -208,7 +208,7 @@ func TestSelectFirstTurnPlayer_ResetsReadiness(t *testing.T) {
 	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectFirstTurnPlayer,
 		PlayerNumber: 1,
-		Data:         map[string]any{"playerNumber": 2},
+		Data:         map[string]any{"firstTurnPlayer": 2},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -167,12 +167,16 @@ func (e *Engine) applySelectFirstTurnPlayer(action GameAction) ([]GameEvent, err
 		return nil, fmt.Errorf("can only select first turn player during setup")
 	}
 
-	playerNumber := intFromData(action.Data, "playerNumber")
-	if playerNumber != 1 && playerNumber != 2 {
+	// NOTE: the data field is named `firstTurnPlayer` rather than `playerNumber`
+	// because the WS client handler strips `playerNumber` from incoming action
+	// data (to prevent clients spoofing which player they are) — see
+	// backend/internal/ws/client.go.
+	firstTurnPlayer := intFromData(action.Data, "firstTurnPlayer")
+	if firstTurnPlayer != 1 && firstTurnPlayer != 2 {
 		return nil, fmt.Errorf("first turn player must be 1 or 2")
 	}
 
-	e.state.FirstTurnPlayer = playerNumber
+	e.state.FirstTurnPlayer = firstTurnPlayer
 
 	// Reset readiness when the first turn player changes
 	for _, p := range e.state.Players {
@@ -184,7 +188,7 @@ func (e *Engine) applySelectFirstTurnPlayer(action GameAction) ([]GameEvent, err
 	return []GameEvent{{
 		Type:         EventFirstTurnPlayerSelected,
 		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"playerNumber": playerNumber},
+		Data:         map[string]any{"firstTurnPlayer": firstTurnPlayer},
 	}}, nil
 }
 

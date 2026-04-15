@@ -51,7 +51,7 @@ An optional mission modifier (twist) can be selected. Twists add special rules �
 
 Either player can set which player takes the first turn each battle round (see `firstTurnPlayer` in [Turn Structure](turn-structure.md#turns)). There is **no default** — the first turn player must be explicitly chosen before either player can ready up. Either player may set or change the value; the last write wins.
 
-- Action: `select_first_turn_player` with `{playerNumber}` — must be `1` or `2`
+- Action: `select_first_turn_player` with `{firstTurnPlayer}` — must be `1` or `2`
 - Changing this resets both players' ready status
 
 ### Secondary Objective Mode

@@ -113,14 +113,14 @@ export function GameSetupPage() {
 
   const handleSelectFirstPlayer = useCallback(
     (playerNumber: 1 | 2) => {
-      sendAction("select_first_turn_player", { playerNumber });
+      sendAction("select_first_turn_player", { firstTurnPlayer: playerNumber });
     },
     [sendAction],
   );
 
   const handleRandomFirstPlayer = useCallback(() => {
     const playerNumber = Math.random() < 0.5 ? 1 : 2;
-    sendAction("select_first_turn_player", { playerNumber });
+    sendAction("select_first_turn_player", { firstTurnPlayer: playerNumber });
   }, [sendAction]);
 
   const handleModeChange = useCallback(
