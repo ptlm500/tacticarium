@@ -243,6 +243,14 @@ func TestWSSetReady_GameStart(t *testing.T) {
 	testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)
 	testutil.DrainUntil(t, conn2, "state_update", 5*time.Second)
 
+	// Pick who goes first (required before readying up)
+	testutil.SendWSMessage(t, conn1, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{"type": "select_first_turn_player", "playerNumber": 1},
+	})
+	testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)
+	testutil.DrainUntil(t, conn2, "state_update", 5*time.Second)
+
 	// Both ready
 	testutil.SendWSMessage(t, conn1, map[string]interface{}{
 		"type": "action",

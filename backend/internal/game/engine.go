@@ -55,6 +55,8 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applySelectFaction(action)
 	case ActionSelectDetachment:
 		return e.applySelectDetachment(action)
+	case ActionSelectFirstTurnPlayer:
+		return e.applySelectFirstTurnPlayer(action)
 	case ActionSelectMission:
 		return e.applySelectMission(action)
 	case ActionSelectSecondary:
@@ -160,6 +162,32 @@ func (e *Engine) applySelectDetachment(action GameAction) ([]GameEvent, error) {
 	}}, nil
 }
 
+func (e *Engine) applySelectFirstTurnPlayer(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusSetup {
+		return nil, fmt.Errorf("can only select first turn player during setup")
+	}
+
+	playerNumber := intFromData(action.Data, "playerNumber")
+	if playerNumber != 1 && playerNumber != 2 {
+		return nil, fmt.Errorf("first turn player must be 1 or 2")
+	}
+
+	e.state.FirstTurnPlayer = playerNumber
+
+	// Reset readiness when the first turn player changes
+	for _, p := range e.state.Players {
+		if p != nil {
+			p.Ready = false
+		}
+	}
+
+	return []GameEvent{{
+		Type:         EventFirstTurnPlayerSelected,
+		PlayerNumber: action.PlayerNumber,
+		Data:         map[string]any{"playerNumber": playerNumber},
+	}}, nil
+}
+
 func (e *Engine) applySelectMission(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
 		return nil, fmt.Errorf("can only select mission during setup")
@@ -247,6 +275,9 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 	}
 
 	ready, _ := action.Data["ready"].(bool)
+	if ready && e.state.FirstTurnPlayer == 0 {
+		return nil, fmt.Errorf("first turn player must be selected before readying up")
+	}
 	player.Ready = ready
 
 	events := []GameEvent{{
@@ -262,9 +293,6 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 		e.state.CurrentRound = 1
 		e.state.CurrentTurn = 1
 		e.state.CurrentPhase = PhaseCommand
-		if e.state.FirstTurnPlayer == 0 {
-			e.state.FirstTurnPlayer = 1
-		}
 		e.state.ActivePlayer = e.state.FirstTurnPlayer
 
 		events = append(events, GameEvent{

@@ -4,7 +4,7 @@
 
 - [ ] opponent down the bottom!
 
-- [ ] Select which player goes first
+- [x] Select which player goes first
 
 - [x] There's no reminder text for priamry and twist
 

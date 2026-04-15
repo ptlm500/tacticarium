@@ -147,6 +147,77 @@ func TestSelectTwist_RequiresSetup(t *testing.T) {
 	}
 }
 
+func TestSelectFirstTurnPlayer(t *testing.T) {
+	for _, pn := range []int{1, 2} {
+		t.Run(fmt.Sprintf("player_%d", pn), func(t *testing.T) {
+			state := newTestState()
+			e := NewEngine(state)
+			events, err := e.Apply(context.Background(), GameAction{
+				Type:         ActionSelectFirstTurnPlayer,
+				PlayerNumber: 1,
+				Data:         map[string]any{"playerNumber": pn},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(events) != 1 || events[0].Type != EventFirstTurnPlayerSelected {
+				t.Fatal("expected first_turn_player_selected event")
+			}
+			if state.FirstTurnPlayer != pn {
+				t.Fatalf("expected FirstTurnPlayer=%d, got %d", pn, state.FirstTurnPlayer)
+			}
+		})
+	}
+}
+
+func TestSelectFirstTurnPlayer_RejectsInvalid(t *testing.T) {
+	for _, pn := range []int{0, 3, -1} {
+		t.Run(fmt.Sprintf("value_%d", pn), func(t *testing.T) {
+			e := NewEngine(newTestState())
+			_, err := e.Apply(context.Background(), GameAction{
+				Type:         ActionSelectFirstTurnPlayer,
+				PlayerNumber: 1,
+				Data:         map[string]any{"playerNumber": pn},
+			})
+			if err == nil {
+				t.Fatalf("expected error for playerNumber=%d", pn)
+			}
+		})
+	}
+}
+
+func TestSelectFirstTurnPlayer_RequiresSetup(t *testing.T) {
+	e := NewEngine(newActiveTestState())
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSelectFirstTurnPlayer,
+		PlayerNumber: 1,
+		Data:         map[string]any{"playerNumber": 2},
+	})
+	if err == nil {
+		t.Fatal("expected error when not in setup")
+	}
+}
+
+func TestSelectFirstTurnPlayer_ResetsReadiness(t *testing.T) {
+	state := newTestState()
+	state.FirstTurnPlayer = 1
+	state.Players[0].Ready = true
+	state.Players[1].Ready = true
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSelectFirstTurnPlayer,
+		PlayerNumber: 1,
+		Data:         map[string]any{"playerNumber": 2},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].Ready || state.Players[1].Ready {
+		t.Fatal("expected readiness to be reset after first turn player change")
+	}
+}
+
 func TestSelectSecondaryMode(t *testing.T) {
 	for _, mode := range []string{"fixed", "tactical"} {
 		t.Run(mode, func(t *testing.T) {
@@ -1203,6 +1274,7 @@ func TestDeclareGambit_TooEarly(t *testing.T) {
 
 func TestSetReady_StartGame(t *testing.T) {
 	state := newTestState()
+	state.FirstTurnPlayer = 1 // must be selected before ready-up
 	state.Players[0].Ready = false
 	state.Players[1].Ready = false
 	e := NewEngine(state)
@@ -1438,19 +1510,44 @@ func TestCPGain_BothPlayersGainCPOnTurnSwitch(t *testing.T) {
 	}
 }
 
-func TestSetReady_FirstTurnPlayerDefaultsTo1(t *testing.T) {
+func TestSetReady_RejectedWhenFirstTurnPlayerUnset(t *testing.T) {
 	state := newTestState()
-	state.FirstTurnPlayer = 0 // not set
+	state.FirstTurnPlayer = 0 // not selected yet
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
-	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
-
-	if state.FirstTurnPlayer != 1 {
-		t.Fatalf("expected FirstTurnPlayer=1, got %d", state.FirstTurnPlayer)
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetReady,
+		PlayerNumber: 1,
+		Data:         map[string]any{"ready": true},
+	})
+	if err == nil {
+		t.Fatal("expected error when readying up with no first turn player set")
 	}
-	if state.ActivePlayer != 1 {
-		t.Fatalf("expected ActivePlayer=1, got %d", state.ActivePlayer)
+	if state.Players[0].Ready {
+		t.Fatal("player 1 should not be marked ready when action failed")
+	}
+	if state.Status != StatusSetup {
+		t.Fatalf("expected status to remain setup, got %s", state.Status)
+	}
+}
+
+func TestSetReady_UnreadyingAllowedWithoutFirstTurnPlayer(t *testing.T) {
+	// Setting ready=false should always work, even if first turn player is unset.
+	state := newTestState()
+	state.FirstTurnPlayer = 0
+	state.Players[0].Ready = true
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetReady,
+		PlayerNumber: 1,
+		Data:         map[string]any{"ready": false},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error unreadying: %v", err)
+	}
+	if state.Players[0].Ready {
+		t.Fatal("player 1 should be unready")
 	}
 }
 
@@ -1472,6 +1569,7 @@ func TestSetReady_PresetFirstTurnPlayer(t *testing.T) {
 
 func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	state := newTestState()
+	state.FirstTurnPlayer = 1 // must be selected before ready-up
 	e := NewEngine(state)
 
 	// Start game via set_ready (grants 1 CP each for first command phase)

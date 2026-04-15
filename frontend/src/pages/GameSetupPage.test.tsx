@@ -147,6 +147,71 @@ describe("GameSetupPage", () => {
     });
   });
 
+  it("shows first-player picker when twist is selected and hides secondary section until chosen", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      missionId: "mission-1",
+      missionName: "Supply Drop",
+      twistId: "twist-1",
+      twistName: "Hidden Supplies",
+      firstTurnPlayer: 0, // not yet chosen
+      players: [
+        makePlayerState({
+          factionId: "faction-sm",
+          factionName: "Space Marines",
+          detachmentId: "det-gladius",
+          detachmentName: "Gladius Task Force",
+          secondaryMode: "",
+          ready: false,
+        }),
+        makePlayerState({
+          userId: "user-2",
+          username: "Opponent",
+          playerNumber: 2,
+          factionId: "faction-csm",
+          factionName: "Chaos Space Marines",
+          detachmentId: "det-black-legion",
+          detachmentName: "Black Legion",
+          secondaryMode: "",
+          ready: false,
+        }),
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
+
+    // First player picker is visible
+    await vi.waitFor(() => {
+      expect(screen.getByText("Who Goes First?")).toBeTruthy();
+    });
+
+    // Prompt to pick first is shown while not yet chosen
+    expect(screen.getByText(/Pick who goes first before readying up/)).toBeTruthy();
+
+    // Secondary missions section is gated until first player is chosen
+    expect(screen.queryByText("Secondary Missions")).toBeNull();
+
+    // Ready Up button is disabled
+    const readyBtn = screen.getByText("Ready Up").closest("button")!;
+    expect(readyBtn.hasAttribute("disabled")).toBe(true);
+  });
+
   it("shows mission section when detachment is selected", async () => {
     const gs = makeGameState({
       status: "setup",
