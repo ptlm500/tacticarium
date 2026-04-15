@@ -47,6 +47,13 @@ An optional mission modifier (twist) can be selected. Twists add special rules �
 
 - Action: `select_twist` with `{twistId, twistName}`
 
+### First Turn Player
+
+Either player can set which player takes the first turn each battle round (see `firstTurnPlayer` in [Turn Structure](turn-structure.md#turns)). There is **no default** — the first turn player must be explicitly chosen before either player can ready up. Either player may set or change the value; the last write wins.
+
+- Action: `select_first_turn_player` with `{firstTurnPlayer}` — must be `1` or `2`
+- Changing this resets both players' ready status
+
 ### Secondary Objective Mode
 
 Each player independently chooses how they will handle secondary objectives: **fixed** or **tactical** mode. See [Secondary Objectives](secondary-objectives.md) for full details.
@@ -67,14 +74,13 @@ Depending on the chosen mode:
 
 ### Ready Up
 
-Once both players are satisfied with their configuration, each sets their ready status.
+Once both players are satisfied with their configuration, each sets their ready status. Readying up (`ready: true`) is rejected unless a first turn player has been selected.
 
 - Action: `set_ready` with `{ready: true/false}`
 
 When **both players are ready**, the game automatically transitions:
 1. Status changes to `active`
 2. Round set to 1, turn to 1, phase to `command`
-3. First turn player is set (defaults to Player 1 if not specified)
-4. Active player set to the first turn player
-5. Both players gain **1 CP** (first Command Phase CP gain)
-6. `game_start` event is emitted
+3. Active player set to the previously chosen `firstTurnPlayer`
+4. Both players gain **1 CP** (first Command Phase CP gain)
+5. `game_start` event is emitted

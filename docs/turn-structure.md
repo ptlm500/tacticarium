@@ -45,7 +45,7 @@ Battle Round 5
       Command → Movement → Shooting → Charge → Fight → GAME ENDS
 ```
 
-"Player A" is whichever player has the first turn (`firstTurnPlayer` in game state). This defaults to Player 1 but can be configured.
+"Player A" is whichever player has the first turn (`firstTurnPlayer` in game state). Either player chooses this during setup via the `select_first_turn_player` action — see [Game Setup](game-setup.md#first-turn-player).
 
 ## Phase Advancement
 

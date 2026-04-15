@@ -11,6 +11,7 @@ import { FactionPicker } from "../components/setup/FactionPicker";
 import { DetachmentPicker } from "../components/setup/DetachmentPicker";
 import { MissionPicker } from "../components/setup/MissionPicker";
 import { TwistPicker } from "../components/setup/TwistPicker";
+import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
@@ -110,6 +111,18 @@ export function GameSetupPage() {
     });
   }, [sendAction, rules]);
 
+  const handleSelectFirstPlayer = useCallback(
+    (playerNumber: 1 | 2) => {
+      sendAction("select_first_turn_player", { firstTurnPlayer: playerNumber });
+    },
+    [sendAction],
+  );
+
+  const handleRandomFirstPlayer = useCallback(() => {
+    const playerNumber = Math.random() < 0.5 ? 1 : 2;
+    sendAction("select_first_turn_player", { firstTurnPlayer: playerNumber });
+  }, [sendAction]);
+
   const handleModeChange = useCallback(
     (mode: "fixed" | "tactical") => {
       sendAction("select_secondary_mode", { mode });
@@ -160,13 +173,20 @@ export function GameSetupPage() {
   const hasDetachment = !!myPlayer?.detachmentId;
   const hasMission = !!gameState.missionId;
   const hasTwist = !!gameState.twistId;
+  const hasFirstPlayer = (gameState.firstTurnPlayer ?? 0) > 0;
   const hasMode = !!myPlayer?.secondaryMode;
   const hasSecondaries =
     myPlayer?.secondaryMode === "fixed"
       ? (myPlayer?.activeSecondaries?.length ?? 0) === 2
       : (myPlayer?.tacticalDeck?.length ?? 0) > 0;
   const canReady =
-    hasFaction && hasDetachment && hasMission && hasTwist && hasMode && hasSecondaries;
+    hasFaction &&
+    hasDetachment &&
+    hasMission &&
+    hasTwist &&
+    hasFirstPlayer &&
+    hasMode &&
+    hasSecondaries;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -234,8 +254,23 @@ export function GameSetupPage() {
           </section>
         )}
 
+        {/* First Turn Player */}
+        {hasTwist && myPlayer && (
+          <section>
+            <h2 className="text-lg font-semibold mb-3">Who Goes First?</h2>
+            <FirstPlayerPicker
+              myPlayerNumber={myPlayer.playerNumber}
+              myUsername={myPlayer.username}
+              opponentUsername={opponent?.username}
+              selected={gameState.firstTurnPlayer ?? 0}
+              onSelect={handleSelectFirstPlayer}
+              onRandom={handleRandomFirstPlayer}
+            />
+          </section>
+        )}
+
         {/* Secondary Mission Mode */}
-        {hasTwist && (
+        {hasFirstPlayer && (
           <section>
             <h2 className="text-lg font-semibold mb-3">Secondary Missions</h2>
             <SecondaryModePicker
