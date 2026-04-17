@@ -93,7 +93,7 @@ func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (i
 		stratType := strings.TrimSpace(record[3])
 		cpCostStr := strings.TrimSpace(record[4])
 		legend := strings.TrimSpace(record[5])
-		turn := strings.TrimSpace(record[6])
+		turn := strings.ReplaceAll(strings.TrimSpace(record[6]), "\u2019", "'")
 		phase := strings.TrimSpace(record[7])
 		detachmentID := strings.TrimSpace(record[9])
 		description := strings.TrimSpace(record[10])

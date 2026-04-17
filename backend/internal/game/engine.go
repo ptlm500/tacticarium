@@ -11,12 +11,32 @@ import (
 
 var tracer = otel.Tracer("tacticarium/game")
 
+// StratagemInfo is the canonical (DB-sourced) representation of a stratagem
+// used by the engine to validate stratagem usage.
+type StratagemInfo struct {
+	Name   string
+	CPCost int
+}
+
+// StratagemLookup resolves a stratagem ID to its canonical info. If nil,
+// the engine falls back to trusting the client-supplied name/cost (tests).
+type StratagemLookup func(id string) (*StratagemInfo, error)
+
 type Engine struct {
-	state *GameState
+	state           *GameState
+	stratagemLookup StratagemLookup
 }
 
 func NewEngine(state *GameState) *Engine {
 	return &Engine{state: state}
+}
+
+// SetStratagemLookup wires up a canonical stratagem source (typically the DB).
+// When set, the engine uses DB values for the stratagem's original CP cost and
+// name, and treats the client-supplied cpCost as the (possibly overridden)
+// amount the player is spending.
+func (e *Engine) SetStratagemLookup(fn StratagemLookup) {
+	e.stratagemLookup = fn
 }
 
 func (e *Engine) State() GameState {
@@ -470,13 +490,26 @@ func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 
 	stratagemID, _ := action.Data["stratagemId"].(string)
 	stratagemName, _ := action.Data["stratagemName"].(string)
-	cpCost := intFromData(action.Data, "cpCost")
+	cpSpent := intFromData(action.Data, "cpCost")
 
-	if player.CP < cpCost {
-		return nil, fmt.Errorf("insufficient CP: have %d, need %d", player.CP, cpCost)
+	originalCpCost := cpSpent
+	if e.stratagemLookup != nil {
+		info, err := e.stratagemLookup(stratagemID)
+		if err != nil {
+			return nil, fmt.Errorf("stratagem not found: %w", err)
+		}
+		stratagemName = info.Name
+		originalCpCost = info.CPCost
 	}
 
-	player.CP -= cpCost
+	if cpSpent < 0 {
+		return nil, fmt.Errorf("cp cost cannot be negative")
+	}
+	if player.CP < cpSpent {
+		return nil, fmt.Errorf("insufficient CP: have %d, need %d", player.CP, cpSpent)
+	}
+
+	player.CP -= cpSpent
 
 	return []GameEvent{{
 		Type:         EventStratagemUsed,
@@ -484,10 +517,11 @@ func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
 		Data: map[string]any{
-			"stratagemId":   stratagemID,
-			"stratagemName": stratagemName,
-			"cpSpent":       cpCost,
-			"cpRemaining":   player.CP,
+			"stratagemId":    stratagemID,
+			"stratagemName":  stratagemName,
+			"cpSpent":        cpSpent,
+			"originalCpCost": originalCpCost,
+			"cpRemaining":    player.CP,
 		},
 	}}, nil
 }

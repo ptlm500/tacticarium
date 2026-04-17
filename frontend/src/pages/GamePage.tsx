@@ -65,7 +65,11 @@ export function GamePage() {
 
     const detachmentMatch = !s.detachmentId || s.detachmentId === myPlayer?.detachmentId;
 
-    return phaseMatch && turnMatch && detachmentMatch;
+    // Challenger stratagems belong to the challenger-card system and are not
+    // offered through the general stratagem panel.
+    const isChallenger = s.type.startsWith("Challenger \u2013 ");
+
+    return phaseMatch && turnMatch && detachmentMatch && !isChallenger;
   });
 
   const doAdvancePhase = useCallback(() => {
@@ -186,11 +190,10 @@ export function GamePage() {
   );
 
   const handleUseStratagem = useCallback(
-    (stratagem: Stratagem) => {
+    (stratagem: Stratagem, cpSpent: number) => {
       sendAction("use_stratagem", {
         stratagemId: stratagem.id,
-        stratagemName: stratagem.name,
-        cpCost: stratagem.cpCost,
+        cpCost: cpSpent,
       });
     },
     [sendAction],

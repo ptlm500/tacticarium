@@ -1371,6 +1371,88 @@ func TestUseStratagem_InsufficientCP(t *testing.T) {
 	}
 }
 
+func TestUseStratagem_LookupResolvesOriginalCost(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 3
+	e := NewEngine(state)
+	e.SetStratagemLookup(func(id string) (*StratagemInfo, error) {
+		if id != "str1" {
+			t.Fatalf("unexpected stratagem id: %s", id)
+		}
+		return &StratagemInfo{Name: "Canonical Name", CPCost: 2}, nil
+	})
+
+	// Client sends only the spent amount (override = 0, i.e. free).
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUseStratagem,
+		PlayerNumber: 1,
+		Data:         map[string]any{"stratagemId": "str1", "stratagemName": "forged", "cpCost": 0},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	d := events[0].Data
+	if d["stratagemName"] != "Canonical Name" {
+		t.Errorf("expected server-sourced name, got %v", d["stratagemName"])
+	}
+	if d["originalCpCost"] != 2 {
+		t.Errorf("expected originalCpCost=2, got %v", d["originalCpCost"])
+	}
+	if d["cpSpent"] != 0 {
+		t.Errorf("expected cpSpent=0 (overridden), got %v", d["cpSpent"])
+	}
+	if state.Players[0].CP != 3 {
+		t.Errorf("expected CP unchanged (free override), got %d", state.Players[0].CP)
+	}
+}
+
+func TestUseStratagem_LookupAllowsRaisedCost(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 5
+	e := NewEngine(state)
+	e.SetStratagemLookup(func(id string) (*StratagemInfo, error) {
+		return &StratagemInfo{Name: "S", CPCost: 1}, nil
+	})
+
+	// Override raises cost above the default — some rules make stratagems pricier.
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUseStratagem,
+		PlayerNumber: 1,
+		Data:         map[string]any{"stratagemId": "str1", "cpCost": 3},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := events[0].Data
+	if d["cpSpent"] != 3 || d["originalCpCost"] != 1 {
+		t.Errorf("expected cpSpent=3/original=1, got spent=%v original=%v", d["cpSpent"], d["originalCpCost"])
+	}
+	if state.Players[0].CP != 2 {
+		t.Errorf("expected 2 CP remaining, got %d", state.Players[0].CP)
+	}
+}
+
+func TestUseStratagem_LookupUnknownID(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 3
+	e := NewEngine(state)
+	e.SetStratagemLookup(func(id string) (*StratagemInfo, error) {
+		return nil, fmt.Errorf("not found")
+	})
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUseStratagem,
+		PlayerNumber: 1,
+		Data:         map[string]any{"stratagemId": "nope", "cpCost": 1},
+	})
+	if err == nil {
+		t.Fatal("expected error when lookup fails")
+	}
+}
+
 // --- Turn Structure Tests ---
 
 func TestFullBattleRound_TwoPlayerTurns(t *testing.T) {

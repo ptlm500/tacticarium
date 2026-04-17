@@ -143,6 +143,16 @@ export const mockStratagems: Stratagem[] = [
     phase: "Charge phase",
     description: "Heroically intervene with a character.",
   },
+  {
+    id: "strat-challenger",
+    factionId: "faction-sm",
+    name: "Banner of Defiance",
+    type: "Challenger \u2013 Battle Tactic Stratagem",
+    cpCost: 1,
+    turn: "Your turn",
+    phase: "Any phase",
+    description: "Challenger stratagem that should not appear in the general panel.",
+  },
 ];
 
 export const mockMissions: Mission[] = [

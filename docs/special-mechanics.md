@@ -6,9 +6,13 @@ This document covers stratagems, CP management, gambits, challenger cards, the A
 
 Stratagems are powerful one-off abilities that cost Command Points (CP) to activate. They are determined by the player's faction and detachment. The app tracks CP expenditure and logs stratagem usage, but does not enforce which stratagems are valid in a given phase — that is left to the players.
 
-- Action: `use_stratagem` with `{stratagemId, stratagemName, cpCost}`
+- Action: `use_stratagem` with `{stratagemId, cpCost}`
+- The stratagem's canonical name and default CP cost are resolved from the database — the client supplies only the ID and the amount the player is spending. This means the client cannot forge a cheaper stratagem by lying about its cost.
+- `cpCost` is the (possibly overridden) amount to actually deduct. Players may raise or lower this from the default — some in-game interactions make stratagems more expensive, cheaper, or free. The server accepts any value in `[0, player.CP]`.
 - Validates that the player has sufficient CP before deducting
+- The emitted `stratagem_used` event includes both `cpSpent` (what was actually deducted) and `originalCpCost` (the default from the database) so the game log can show overrides.
 - **Both players** can use stratagems at any time (not just the active player) — this supports reactive stratagems used during the opponent's turn
+- Stratagems whose `type` starts with `Challenger – ` are **not** offered in the general stratagem panel. They belong to the challenger-card system and are surfaced separately. (This is an interim behaviour — the challenger-stratagem flow is slated for a later overhaul.)
 
 ## Command Points (CP)
 
