@@ -158,11 +158,13 @@ describe("GamePage", () => {
     // "Command Re-roll" has phase "Any phase" and turn "Either player's turn" — should show
     // "Storm of Fire" has phase "Shooting phase" and turn "Your turn" — should show (it's our turn)
     // "Heroic Intervention" has phase "Charge phase" and turn "Opponent's turn" — should NOT show
+    // "Banner of Defiance" is a Challenger stratagem — should NOT show (filtered by type)
     await vi.waitFor(() => {
       expect(screen.getByText("Command Re-roll")).toBeTruthy();
       expect(screen.getByText("Storm of Fire")).toBeTruthy();
     });
     expect(screen.queryByText("Heroic Intervention")).toBeNull();
+    expect(screen.queryByText("Banner of Defiance")).toBeNull();
   });
 
   it("updates UI when WebSocket sends state_update", async () => {

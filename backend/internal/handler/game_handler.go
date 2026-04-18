@@ -410,6 +410,7 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	engine := game.NewEngine(state)
+	engine.SetStratagemLookup(h.lookupStratagem)
 	room := h.hub.GetOrCreateRoom(gameID, engine)
 
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -590,4 +591,15 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 			slog.Error("Persist event error", "error", err)
 		}
 	}
+}
+
+func (h *GameHandler) lookupStratagem(id string) (*game.StratagemInfo, error) {
+	var info game.StratagemInfo
+	err := h.db.QueryRow(context.Background(),
+		`SELECT name, cp_cost FROM stratagems WHERE id = $1`, id,
+	).Scan(&info.Name, &info.CPCost)
+	if err != nil {
+		return nil, err
+	}
+	return &info, nil
 }

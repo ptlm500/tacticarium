@@ -53,8 +53,15 @@ export function formatEvent(event: NormalizedEvent): string {
       return `${player} gained ${event.data?.amount || 1} CP`;
     case "cp_adjust":
       return `${player} adjusted CP by ${event.data?.delta}`;
-    case "stratagem_used":
-      return `${player} used ${event.data?.stratagemName} (${event.data?.cpSpent} CP)`;
+    case "stratagem_used": {
+      const spent = event.data?.cpSpent;
+      const original = event.data?.originalCpCost;
+      const suffix =
+        typeof original === "number" && typeof spent === "number" && spent !== original
+          ? `${spent} CP, was ${original}`
+          : `${spent} CP`;
+      return `${player} used ${event.data?.stratagemName} (${suffix})`;
+    }
     case "vp_primary_score":
     case "vp_secondary_score":
     case "vp_gambit_score":

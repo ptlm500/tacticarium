@@ -12,7 +12,7 @@
 
 - [ ] is your army painted tickbox for vp
 
-- [ ] Challenger strategic ploy strats show up
+- [x] Challenger strategic ploy strats show up
 
 - [ ] There's no escape hatch for the CP gain cap (maybe add positive friction)
 
@@ -34,7 +34,7 @@
 
 - [x] Draw secondaries prompt has the wrong text
 
-- [ ] Strategems don't appear on opponents turn
+- [x] Strategems don't appear on opponents turn
 
 - [ ] Restrict strategem usage (e.g. once per turn)
 

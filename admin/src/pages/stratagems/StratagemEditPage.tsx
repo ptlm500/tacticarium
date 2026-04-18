@@ -121,17 +121,14 @@ export function StratagemEditPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Type</label>
-            <select
+            <input
+              type="text"
               value={form.type}
               onChange={(e) => set("type", e.target.value)}
+              placeholder="e.g. Core – Battle Tactic Stratagem"
+              required
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
-            >
-              <option value="">Select...</option>
-              <option value="Battle Tactic">Battle Tactic</option>
-              <option value="Epic Deed">Epic Deed</option>
-              <option value="Strategic Ploy">Strategic Ploy</option>
-              <option value="Wargear">Wargear</option>
-            </select>
+            />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">CP Cost</label>
@@ -151,12 +148,13 @@ export function StratagemEditPage() {
             <select
               value={form.turn}
               onChange={(e) => set("turn", e.target.value)}
+              required
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
             >
-              <option value="">Any</option>
-              <option value="your">Your Turn</option>
-              <option value="opponents">Opponent's Turn</option>
-              <option value="either">Either Turn</option>
+              <option value="">Select...</option>
+              <option value="Your turn">Your turn</option>
+              <option value="Opponent's turn">Opponent's turn</option>
+              <option value="Either player's turn">Either player's turn</option>
             </select>
           </div>
           <div>
@@ -164,14 +162,21 @@ export function StratagemEditPage() {
             <select
               value={form.phase}
               onChange={(e) => set("phase", e.target.value)}
+              required
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
             >
-              <option value="">Any</option>
-              <option value="command">Command</option>
-              <option value="movement">Movement</option>
-              <option value="shooting">Shooting</option>
-              <option value="charge">Charge</option>
-              <option value="fight">Fight</option>
+              <option value="">Select...</option>
+              <option value="Any phase">Any phase</option>
+              <option value="Command phase">Command phase</option>
+              <option value="Movement phase">Movement phase</option>
+              <option value="Shooting phase">Shooting phase</option>
+              <option value="Charge phase">Charge phase</option>
+              <option value="Fight phase">Fight phase</option>
+              <option value="Command or Fight phase">Command or Fight phase</option>
+              <option value="Movement or Charge phase">Movement or Charge phase</option>
+              <option value="Shooting or Charge phase">Shooting or Charge phase</option>
+              <option value="Shooting or Fight phase">Shooting or Fight phase</option>
+              <option value="Charge or Fight phase">Charge or Fight phase</option>
             </select>
           </div>
         </div>
