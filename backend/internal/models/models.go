@@ -76,15 +76,21 @@ type ScoringOption struct {
 	Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
 }
 
+type DrawRestriction struct {
+	Round int    `json:"round"`
+	Mode  string `json:"mode"` // "mandatory" or "optional"
+}
+
 type Secondary struct {
-	ID             string          `json:"id" required:"false"`
-	MissionPackID  string          `json:"missionPackId"`
-	Name           string          `json:"name"`
-	Lore           string          `json:"lore,omitempty"`
-	Description    string          `json:"description"`
-	MaxVP          int             `json:"maxVp"`
-	IsFixed        bool            `json:"isFixed"`
-	ScoringOptions []ScoringOption `json:"scoringOptions"`
+	ID              string           `json:"id" required:"false"`
+	MissionPackID   string           `json:"missionPackId"`
+	Name            string           `json:"name"`
+	Lore            string           `json:"lore,omitempty"`
+	Description     string           `json:"description"`
+	MaxVP           int              `json:"maxVp"`
+	IsFixed         bool             `json:"isFixed"`
+	ScoringOptions  []ScoringOption  `json:"scoringOptions"`
+	DrawRestriction *DrawRestriction `json:"drawRestriction,omitempty"`
 }
 
 type ChallengerCard struct {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { adminApi, Secondary, MissionPack, ScoringOption } from "../../api/admin";
+import { adminApi, Secondary, MissionPack, ScoringOption, DrawRestriction } from "../../api/admin";
 
 const emptyOption: ScoringOption = { label: "", vp: 0, mode: "" };
 
@@ -145,6 +145,67 @@ export function SecondaryEditPage() {
               Fixed Secondary
             </label>
           </div>
+        </div>
+
+        <div className="p-3 bg-gray-800 rounded border border-gray-700">
+          <label className="flex items-center gap-2 text-sm mb-2">
+            <input
+              type="checkbox"
+              checked={Boolean(form.drawRestriction)}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  drawRestriction: e.target.checked ? { round: 1, mode: "mandatory" } : undefined,
+                })
+              }
+              className="rounded"
+            />
+            Has draw restriction
+          </label>
+          <p className="text-xs text-gray-500 mb-2">
+            Tactical mode only. Triggers the "When Drawn" rule on the given battle round.
+          </p>
+          {form.drawRestriction && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Round</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.drawRestriction.round}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      drawRestriction: {
+                        ...(form.drawRestriction as DrawRestriction),
+                        round: parseInt(e.target.value) || 1,
+                      },
+                    })
+                  }
+                  className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Mode</label>
+                <select
+                  value={form.drawRestriction.mode}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      drawRestriction: {
+                        ...(form.drawRestriction as DrawRestriction),
+                        mode: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-xs"
+                >
+                  <option value="mandatory">Mandatory (auto-reshuffle)</option>
+                  <option value="optional">Optional (player choice)</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

@@ -237,6 +237,13 @@ export function GamePage() {
     [sendAction],
   );
 
+  const handleReshuffleSecondary = useCallback(
+    (secondaryId: string) => {
+      sendAction("reshuffle_secondary", { secondaryId });
+    },
+    [sendAction],
+  );
+
   const handleDrawSecondary = useCallback(() => {
     sendAction("draw_secondary");
   }, [sendAction]);
@@ -360,6 +367,7 @@ export function GamePage() {
           onAchieve={handleAchieveSecondary}
           onDiscard={handleDiscardSecondary}
           onNewOrders={handleNewOrders}
+          onReshuffle={handleReshuffleSecondary}
           onDraw={handleDrawSecondary}
           onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
         />

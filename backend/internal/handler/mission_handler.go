@@ -64,7 +64,7 @@ func (h *MissionHandler) ListMissions(ctx context.Context, input *PackIDParam) (
 
 func (h *MissionHandler) ListSecondaries(ctx context.Context, input *PackIDParam) (*SecondaryListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options
+		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options, draw_restriction
 		 FROM secondaries WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
@@ -75,12 +75,19 @@ func (h *MissionHandler) ListSecondaries(ctx context.Context, input *PackIDParam
 	for rows.Next() {
 		var s models.Secondary
 		var optionsJSON []byte
-		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON); err != nil {
+		var drawJSON []byte
+		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON, &drawJSON); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		json.Unmarshal(optionsJSON, &s.ScoringOptions)
 		if s.ScoringOptions == nil {
 			s.ScoringOptions = []models.ScoringOption{}
+		}
+		if len(drawJSON) > 0 {
+			var dr models.DrawRestriction
+			if err := json.Unmarshal(drawJSON, &dr); err == nil {
+				s.DrawRestriction = &dr
+			}
 		}
 		secondaries = append(secondaries, s)
 	}

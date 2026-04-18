@@ -451,10 +451,10 @@ func (h *AdminHandler) ListSecondaries(ctx context.Context, input *AdminPackFilt
 	var query string
 	var args []any
 	if input.PackID != "" {
-		query = `SELECT id, mission_pack_id, name, COALESCE(lore, ''), COALESCE(description, ''), max_vp, is_fixed, COALESCE(scoring_options, '[]') FROM secondaries WHERE mission_pack_id = $1 ORDER BY name`
+		query = `SELECT id, mission_pack_id, name, COALESCE(lore, ''), COALESCE(description, ''), max_vp, is_fixed, COALESCE(scoring_options, '[]'), draw_restriction FROM secondaries WHERE mission_pack_id = $1 ORDER BY name`
 		args = []any{input.PackID}
 	} else {
-		query = `SELECT id, mission_pack_id, name, COALESCE(lore, ''), COALESCE(description, ''), max_vp, is_fixed, COALESCE(scoring_options, '[]') FROM secondaries ORDER BY mission_pack_id, name`
+		query = `SELECT id, mission_pack_id, name, COALESCE(lore, ''), COALESCE(description, ''), max_vp, is_fixed, COALESCE(scoring_options, '[]'), draw_restriction FROM secondaries ORDER BY mission_pack_id, name`
 	}
 	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
@@ -466,12 +466,19 @@ func (h *AdminHandler) ListSecondaries(ctx context.Context, input *AdminPackFilt
 	for rows.Next() {
 		var s models.Secondary
 		var scoringJSON string
-		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &scoringJSON); err != nil {
+		var drawJSON *string
+		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &scoringJSON, &drawJSON); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		json.Unmarshal([]byte(scoringJSON), &s.ScoringOptions)
 		if s.ScoringOptions == nil {
 			s.ScoringOptions = []models.ScoringOption{}
+		}
+		if drawJSON != nil && *drawJSON != "" {
+			var dr models.DrawRestriction
+			if err := json.Unmarshal([]byte(*drawJSON), &dr); err == nil {
+				s.DrawRestriction = &dr
+			}
 		}
 		secondaries = append(secondaries, s)
 	}
@@ -481,15 +488,22 @@ func (h *AdminHandler) ListSecondaries(ctx context.Context, input *AdminPackFilt
 func (h *AdminHandler) GetSecondary(ctx context.Context, input *IDParam) (*SecondaryOutput, error) {
 	var s models.Secondary
 	var scoringJSON string
+	var drawJSON *string
 	err := h.db.QueryRow(ctx,
-		`SELECT id, mission_pack_id, name, COALESCE(lore, ''), COALESCE(description, ''), max_vp, is_fixed, COALESCE(scoring_options, '[]') FROM secondaries WHERE id = $1`, input.ID).
-		Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &scoringJSON)
+		`SELECT id, mission_pack_id, name, COALESCE(lore, ''), COALESCE(description, ''), max_vp, is_fixed, COALESCE(scoring_options, '[]'), draw_restriction FROM secondaries WHERE id = $1`, input.ID).
+		Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &scoringJSON, &drawJSON)
 	if err != nil {
 		return nil, huma.Error404NotFound("not found")
 	}
 	json.Unmarshal([]byte(scoringJSON), &s.ScoringOptions)
 	if s.ScoringOptions == nil {
 		s.ScoringOptions = []models.ScoringOption{}
+	}
+	if drawJSON != nil && *drawJSON != "" {
+		var dr models.DrawRestriction
+		if err := json.Unmarshal([]byte(*drawJSON), &dr); err == nil {
+			s.DrawRestriction = &dr
+		}
 	}
 	return &SecondaryOutput{Body: s}, nil
 }
@@ -503,9 +517,14 @@ func (h *AdminHandler) CreateSecondary(ctx context.Context, input *SecondaryInpu
 		s.ScoringOptions = []models.ScoringOption{}
 	}
 	scoringJSON, _ := json.Marshal(s.ScoringOptions)
+	var drawArg any
+	if s.DrawRestriction != nil {
+		drawJSON, _ := json.Marshal(s.DrawRestriction)
+		drawArg = string(drawJSON)
+	}
 	_, err := h.db.Exec(ctx,
-		`INSERT INTO secondaries (id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		s.ID, s.MissionPackID, s.Name, s.Lore, s.Description, s.MaxVP, s.IsFixed, string(scoringJSON))
+		`INSERT INTO secondaries (id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options, draw_restriction) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		s.ID, s.MissionPackID, s.Name, s.Lore, s.Description, s.MaxVP, s.IsFixed, string(scoringJSON), drawArg)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error: " + err.Error())
 	}
@@ -518,9 +537,14 @@ func (h *AdminHandler) UpdateSecondary(ctx context.Context, input *IDSecondaryIn
 		s.ScoringOptions = []models.ScoringOption{}
 	}
 	scoringJSON, _ := json.Marshal(s.ScoringOptions)
+	var drawArg any
+	if s.DrawRestriction != nil {
+		drawJSON, _ := json.Marshal(s.DrawRestriction)
+		drawArg = string(drawJSON)
+	}
 	tag, err := h.db.Exec(ctx,
-		`UPDATE secondaries SET mission_pack_id = $1, name = $2, lore = $3, description = $4, max_vp = $5, is_fixed = $6, scoring_options = $7 WHERE id = $8`,
-		s.MissionPackID, s.Name, s.Lore, s.Description, s.MaxVP, s.IsFixed, string(scoringJSON), input.ID)
+		`UPDATE secondaries SET mission_pack_id = $1, name = $2, lore = $3, description = $4, max_vp = $5, is_fixed = $6, scoring_options = $7, draw_restriction = $8 WHERE id = $9`,
+		s.MissionPackID, s.Name, s.Lore, s.Description, s.MaxVP, s.IsFixed, string(scoringJSON), drawArg, input.ID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}

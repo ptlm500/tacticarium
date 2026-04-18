@@ -68,6 +68,10 @@ export function formatEvent(event: NormalizedEvent): string {
       return `${player} scored ${event.data?.delta} ${event.data?.category} VP`;
     case "secondary_achieved":
       return `${player} achieved ${event.data?.secondaryName} (+${event.data?.vpScored} VP)`;
+    case "secondary_reshuffled": {
+      const reason = event.data?.reason === "mandatory" ? "must shuffle back" : "shuffled back";
+      return `${player} ${reason}: ${event.data?.secondaryName}`;
+    }
     case "challenger_scored":
       return `${player} completed challenger mission (+${event.data?.vpScored} VP)`;
     case "game_start":

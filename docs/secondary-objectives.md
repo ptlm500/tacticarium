@@ -74,16 +74,61 @@ Each active secondary card has:
 
 ```
 ActiveSecondary {
-  id             — Unique identifier
-  name           — Display name
-  description    — What the objective requires
-  isFixed        — Whether this is a fixed-mode secondary
-  maxVp          — Maximum VP this secondary can award
-  scoringOptions — Array of {label, vp, mode} scoring criteria
+  id              — Unique identifier
+  name            — Display name
+  description     — What the objective requires
+  isFixed         — Whether this is a fixed-mode secondary
+  maxVp           — Maximum VP this secondary can award
+  scoringOptions  — Array of {label, vp, mode} scoring criteria
+  drawRestriction — Optional {round, mode} "When Drawn" rule
 }
 ```
 
 Scoring options can be mode-filtered: an option with `mode: "fixed"` only applies in fixed mode, `mode: "tactical"` only in tactical mode, and empty/omitted applies in both.
+
+## Draw Restrictions (Tactical Mode)
+
+Some secondaries carry a "When Drawn" rule that triggers when the card is drawn
+during a specific battle round — e.g. *Defend Stronghold*, which cannot be
+achieved in the first battle round and must be shuffled back if drawn then.
+
+The optional `drawRestriction` field on a secondary carries two subfields:
+
+| Field | Description |
+|---|---|
+| `round` | The battle round on which the restriction triggers (typically `1`) |
+| `mode`  | `"mandatory"` or `"optional"` |
+
+### Mandatory
+
+When a card with a mandatory restriction is drawn during its target round, the
+engine automatically shuffles it back into the deck at a random position and
+draws the next card. This repeats until either a non-restricted card is drawn
+or the deck is exhausted of drawable cards. A `secondary_reshuffled` event is
+emitted (with `reason: "mandatory"`) for each auto-reshuffle.
+
+Mandatory restrictions apply uniformly across every engine draw:
+- `draw_secondary` (Command Phase top-up)
+- `new_orders` (the replacement draw)
+- `adapt_or_die` (the extra draw in tactical mode)
+
+### Optional
+
+An optional restriction lets the player, but does not require them to, shuffle
+the drawn card back during its target round. The card is dealt into active
+play like a normal draw; the player can then choose to reshuffle it via the
+`reshuffle_secondary` action while the round matches.
+
+- Action: `reshuffle_secondary` with `{secondaryId}`
+- **Restrictions**: Game active; tactical mode; card is in active secondaries;
+  card has `drawRestriction.mode === "optional"` with
+  `drawRestriction.round === currentRound`.
+- The card is shuffled back into the deck at a random position, a replacement
+  is drawn (which also applies mandatory rules), and `secondary_reshuffled` +
+  `secondary_drawn` events are emitted.
+- Once the round advances past `drawRestriction.round`, the option is no
+  longer available — the "When Drawn" moment has passed.
+- Implementation: `engine_missions.go` (`applyReshuffleSecondary`)
 
 ## Card Piles (Tactical Mode)
 
