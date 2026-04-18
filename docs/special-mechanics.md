@@ -14,6 +14,14 @@ Stratagems are powerful one-off abilities that cost Command Points (CP) to activ
 - **Both players** can use stratagems at any time (not just the active player) — this supports reactive stratagems used during the opponent's turn
 - Stratagems whose `type` starts with `Challenger – ` are **not** offered in the general stratagem panel. They belong to the challenger-card system and are surfaced separately. (This is an interim behaviour — the challenger-stratagem flow is slated for a later overhaul.)
 
+### Once-per-phase friction
+
+Per 10th Edition rules, each stratagem can normally only be used **once per phase per player**. Some rules allow exceptions, so the app doesn't block repeat use — instead it adds positive friction:
+
+- Each player tracks the set of stratagem IDs they have used in the current phase via `StratagemsUsedThisPhase`
+- When a player opens the confirmation modal for a stratagem already in their list, the modal shows a warning banner. The player can still confirm
+- The list is cleared for **both players** at every `advance_phase` action (both within-turn advances and turn-end advances that reset to the new Command Phase)
+
 ## Command Points (CP)
 
 ### Automatic CP Gain

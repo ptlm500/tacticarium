@@ -413,6 +413,7 @@ export function GamePage() {
             <StratagemPanel
               stratagems={availableStratagems}
               currentCP={myPlayer.cp}
+              usedThisPhase={myPlayer.stratagemsUsedThisPhase ?? []}
               onUse={handleUseStratagem}
             />
           )}

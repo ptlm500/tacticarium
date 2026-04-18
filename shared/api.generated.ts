@@ -977,6 +977,7 @@ export interface components {
             ready: boolean;
             secondaries: components["schemas"]["SecondaryObjective"][] | null;
             secondaryMode: string;
+            stratagemsUsedThisPhase: string[] | null;
             tacticalDeck: components["schemas"]["ActiveSecondary"][] | null;
             userId: string;
             username: string;

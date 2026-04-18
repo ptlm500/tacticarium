@@ -824,6 +824,15 @@
           "secondaryMode": {
             "type": "string"
           },
+          "stratagemsUsedThisPhase": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
           "tacticalDeck": {
             "items": {
               "$ref": "#/components/schemas/ActiveSecondary"
@@ -878,7 +887,8 @@
           "discardedSecondaries",
           "cpGainedThisRound",
           "isChallenger",
-          "adaptOrDieUses"
+          "adaptOrDieUses",
+          "stratagemsUsedThisPhase"
         ],
         "type": "object"
       },

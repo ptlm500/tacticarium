@@ -39,6 +39,7 @@ export function makePlayerState(overrides?: Partial<PlayerState>): PlayerState {
     cpGainedThisRound: 0,
     isChallenger: false,
     adaptOrDieUses: 0,
+    stratagemsUsedThisPhase: [],
     ...overrides,
   };
 }

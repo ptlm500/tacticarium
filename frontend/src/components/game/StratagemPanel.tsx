@@ -4,10 +4,11 @@ import { Stratagem } from "../../types/faction";
 interface Props {
   stratagems: Stratagem[];
   currentCP: number;
+  usedThisPhase: string[];
   onUse: (stratagem: Stratagem, cpSpent: number) => void;
 }
 
-export function StratagemPanel({ stratagems, currentCP, onUse }: Props) {
+export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: Props) {
   const [pending, setPending] = useState<Stratagem | null>(null);
   const [cpInput, setCpInput] = useState<number>(0);
 
@@ -75,6 +76,15 @@ export function StratagemPanel({ stratagems, currentCP, onUse }: Props) {
         >
           <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 max-w-sm w-full">
             <h3 className="font-semibold text-base mb-1">{pending.name}</h3>
+            {usedThisPhase.includes(pending.id) && (
+              <div
+                role="alert"
+                className="mb-3 rounded border border-amber-600/60 bg-amber-950/40 px-3 py-2 text-xs text-amber-200"
+              >
+                You've already used this stratagem this phase. Stratagems can normally only be used
+                once per phase — only proceed if a rule allows an exception.
+              </div>
+            )}
             <p className="text-xs text-gray-400 mb-4">
               Default cost: {pending.cpCost} CP. Adjust the amount to spend if a rule makes this
               stratagem more expensive, cheaper, or free.

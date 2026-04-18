@@ -1435,6 +1435,103 @@ func TestUseStratagem_LookupAllowsRaisedCost(t *testing.T) {
 	}
 }
 
+func TestUseStratagem_TracksUsedThisPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 5
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUseStratagem,
+		PlayerNumber: 1,
+		Data:         map[string]any{"stratagemId": "str-rr", "stratagemName": "Command Re-Roll", "cpCost": 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := state.Players[0].StratagemsUsedThisPhase; len(got) != 1 || got[0] != "str-rr" {
+		t.Fatalf("expected [str-rr], got %v", got)
+	}
+	if len(state.Players[1].StratagemsUsedThisPhase) != 0 {
+		t.Errorf("opponent list should be untouched")
+	}
+}
+
+func TestUseStratagem_RepeatUseAllowedAndNotDuplicated(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 5
+	e := NewEngine(state)
+
+	for i := 0; i < 2; i++ {
+		_, err := e.Apply(context.Background(), GameAction{
+			Type:         ActionUseStratagem,
+			PlayerNumber: 1,
+			Data:         map[string]any{"stratagemId": "str-rr", "cpCost": 1},
+		})
+		if err != nil {
+			t.Fatalf("use %d failed: %v", i+1, err)
+		}
+	}
+	if state.Players[0].CP != 3 {
+		t.Errorf("expected 3 CP remaining after two 1-CP uses, got %d", state.Players[0].CP)
+	}
+	got := state.Players[0].StratagemsUsedThisPhase
+	if len(got) != 1 || got[0] != "str-rr" {
+		t.Fatalf("expected single entry [str-rr], got %v", got)
+	}
+}
+
+func TestUseStratagem_ClearedOnPhaseAdvance(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 3
+	state.Players[1].CP = 3
+	e := NewEngine(state)
+
+	for _, pn := range []int{1, 2} {
+		if _, err := e.Apply(context.Background(), GameAction{
+			Type:         ActionUseStratagem,
+			PlayerNumber: pn,
+			Data:         map[string]any{"stratagemId": "str-rr", "cpCost": 1},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Advance within the same turn (Command -> Movement)
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1}); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, p := range state.Players {
+		if len(p.StratagemsUsedThisPhase) != 0 {
+			t.Errorf("player %d list not cleared, got %v", i+1, p.StratagemsUsedThisPhase)
+		}
+	}
+}
+
+func TestUseStratagem_ClearedOnTurnEndPhaseAdvance(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseFight
+	state.Players[0].CP = 3
+	e := NewEngine(state)
+
+	if _, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUseStratagem,
+		PlayerNumber: 1,
+		Data:         map[string]any{"stratagemId": "str-rr", "cpCost": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Advance from Fight — ends player 1's turn, resets to Command phase for player 2.
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1}); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(state.Players[0].StratagemsUsedThisPhase) != 0 {
+		t.Errorf("list not cleared on turn-end phase advance, got %v", state.Players[0].StratagemsUsedThisPhase)
+	}
+}
+
 func TestUseStratagem_LookupUnknownID(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].CP = 3
