@@ -14,6 +14,7 @@ import (
 
 func main() {
 	factionsFile := flag.String("factions", "", "Path to Factions.csv")
+	detachmentsFile := flag.String("detachments", "", "Path to Detachments.csv")
 	stratagemFile := flag.String("stratagems", "", "Path to Stratagems.csv")
 	missionsFile := flag.String("missions", "", "Path to missions.json")
 	all := flag.Bool("all", false, "Seed all data (uses default paths)")
@@ -47,6 +48,9 @@ func main() {
 		if *factionsFile == "" {
 			*factionsFile = "../Factions.csv"
 		}
+		if *detachmentsFile == "" {
+			*detachmentsFile = "../Detachments.csv"
+		}
 		if *stratagemFile == "" {
 			*stratagemFile = "../Stratagems.csv"
 		}
@@ -64,13 +68,22 @@ func main() {
 		fmt.Printf("Seeded %d factions\n", count)
 	}
 
+	if *detachmentsFile != "" {
+		log.Printf("Seeding detachments from %s...", *detachmentsFile)
+		count, err := seed.SeedDetachments(ctx, pool, *detachmentsFile)
+		if err != nil {
+			log.Fatalf("Failed to seed detachments: %v", err)
+		}
+		fmt.Printf("Seeded %d detachments\n", count)
+	}
+
 	if *stratagemFile != "" {
 		log.Printf("Seeding stratagems from %s...", *stratagemFile)
-		detCount, stratCount, err := seed.SeedStratagems(ctx, pool, *stratagemFile)
+		stratCount, err := seed.SeedStratagems(ctx, pool, *stratagemFile)
 		if err != nil {
 			log.Fatalf("Failed to seed stratagems: %v", err)
 		}
-		fmt.Printf("Seeded %d detachments, %d stratagems\n", detCount, stratCount)
+		fmt.Printf("Seeded %d stratagems\n", stratCount)
 	}
 
 	if *missionsFile != "" {
@@ -83,8 +96,8 @@ func main() {
 			stats.Missions, stats.MissionRules, stats.Secondaries, stats.ChallengerCards, stats.Gambits)
 	}
 
-	if *factionsFile == "" && *stratagemFile == "" && *missionsFile == "" && !*migrate {
-		fmt.Println("Usage: seed [--migrate] [--factions path] [--stratagems path] [--missions path] [--all]")
+	if *factionsFile == "" && *detachmentsFile == "" && *stratagemFile == "" && *missionsFile == "" && !*migrate {
+		fmt.Println("Usage: seed [--migrate] [--factions path] [--detachments path] [--stratagems path] [--missions path] [--all]")
 		os.Exit(1)
 	}
 

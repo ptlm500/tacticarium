@@ -9,6 +9,7 @@ export function StratagemListPage() {
   const [data, setData] = useState<Stratagem[]>([]);
   const [factions, setFactions] = useState<Faction[]>([]);
   const [filter, setFilter] = useState("");
+  const [gameModeFilter, setGameModeFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
 
@@ -46,18 +47,29 @@ export function StratagemListPage() {
           </button>
         </div>
       </div>
-      <select
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="mb-4 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
-      >
-        <option value="">All Factions</option>
-        {factions.map((f) => (
-          <option key={f.id} value={f.id}>
-            {f.name}
-          </option>
-        ))}
-      </select>
+      <div className="flex gap-2 mb-4">
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+        >
+          <option value="">All Factions</option>
+          {factions.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={gameModeFilter}
+          onChange={(e) => setGameModeFilter(e.target.value)}
+          className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+        >
+          <option value="">All Game Modes</option>
+          <option value="core">Core</option>
+          <option value="boarding_actions">Boarding Actions</option>
+        </select>
+      </div>
       <DataTable
         columns={[
           { key: "name", label: "Name" },
@@ -65,8 +77,13 @@ export function StratagemListPage() {
           { key: "cpCost", label: "CP" },
           { key: "phase", label: "Phase" },
           { key: "factionId", label: "Faction" },
+          {
+            key: "gameMode",
+            label: "Game Mode",
+            render: (s) => s.gameMode ?? "core",
+          },
         ]}
-        data={data}
+        data={gameModeFilter ? data.filter((s) => (s.gameMode ?? "core") === gameModeFilter) : data}
         getKey={(s) => s.id}
         searchField="name"
         onEdit={(s) => navigate(`/stratagems/${s.id}/edit`)}

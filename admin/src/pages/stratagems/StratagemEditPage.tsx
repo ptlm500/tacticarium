@@ -18,6 +18,7 @@ export function StratagemEditPage() {
     turn: "",
     phase: "",
     description: "",
+    gameMode: "core",
   });
   const [factions, setFactions] = useState<Faction[]>([]);
   const [detachments, setDetachments] = useState<Detachment[]>([]);
@@ -38,7 +39,7 @@ export function StratagemEditPage() {
     if (id)
       adminApi.stratagems
         .get(id)
-        .then(setForm)
+        .then((s) => setForm({ ...s, gameMode: s.gameMode ?? "core" }))
         .catch(() => navigate("/stratagems"));
   }, [id, navigate]);
 
@@ -197,6 +198,20 @@ export function StratagemEditPage() {
             rows={4}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
           />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Game Mode</label>
+          <select
+            value={form.gameMode ?? "core"}
+            onChange={(e) => set("gameMode", e.target.value)}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          >
+            <option value="core">Core</option>
+            <option value="boarding_actions">Boarding Actions</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Only Core stratagems are visible to players. Boarding Actions content is hidden.
+          </p>
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <div className="flex gap-2">

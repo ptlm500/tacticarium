@@ -37,6 +37,7 @@ pgdata/
 # Seed data
 Factions.csv
 Stratagems.csv
+Detachments.csv
 
 # Claude
 .claude/settings.local.json

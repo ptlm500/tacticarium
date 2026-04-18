@@ -12,10 +12,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (int, int, error) {
+// SeedStratagems reads Stratagems.csv and upserts every stratagem. Detachments
+// must already be seeded (see SeedDetachments) — the stratagem seed looks up
+// each detachment's game_mode from the DB to decide the stratagem's game_mode.
+//
+// A stratagem is tagged boarding_actions if either:
+//   - its type starts with "Boarding Actions – " (the 6 generic BA strats), or
+//   - its detachment_id points to a boarding_actions detachment.
+//
+// Otherwise it is tagged core.
+func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (int, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return 0, 0, fmt.Errorf("opening stratagems file: %w", err)
+		return 0, fmt.Errorf("opening stratagems file: %w", err)
 	}
 	defer f.Close()
 
@@ -25,19 +34,20 @@ func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (i
 
 	// Skip header
 	if _, err := reader.Read(); err != nil {
-		return 0, 0, fmt.Errorf("reading header: %w", err)
+		return 0, fmt.Errorf("reading header: %w", err)
 	}
 
-	// First pass: extract detachments
-	type detachmentInfo struct {
-		ID        string
-		FactionID string
-		Name      string
+	// Load detachment game modes from the DB so we can tag stratagems without
+	// a round-trip per row. SeedDetachments must have run first for this to be
+	// non-empty; if it hasn't, stratagems attached to BA-only detachments will
+	// default to core. We warn rather than fail so seeding stratagems
+	// independently still works in ad-hoc scenarios.
+	detachmentModes, err := loadDetachmentModesFromDB(ctx, pool)
+	if err != nil {
+		return 0, fmt.Errorf("loading detachment game modes: %w", err)
 	}
 
-	detachmentMap := make(map[string]detachmentInfo)
-	var records [][]string
-
+	stratagemCount := 0
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
@@ -47,42 +57,6 @@ func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (i
 			continue
 		}
 
-		records = append(records, record)
-
-		if len(record) < 11 {
-			continue
-		}
-
-		factionID := strings.TrimSpace(record[0])
-		detachment := strings.TrimSpace(record[8])
-		detachmentID := strings.TrimSpace(record[9])
-
-		if detachmentID != "" && detachment != "" {
-			detachmentMap[detachmentID] = detachmentInfo{
-				ID:        detachmentID,
-				FactionID: factionID,
-				Name:      detachment,
-			}
-		}
-	}
-
-	// Insert detachments
-	detachmentCount := 0
-	for _, d := range detachmentMap {
-		_, err := pool.Exec(ctx,
-			`INSERT INTO detachments (id, faction_id, name) VALUES ($1, $2, $3)
-			 ON CONFLICT (id) DO UPDATE SET name = $3`,
-			d.ID, d.FactionID, d.Name)
-		if err != nil {
-			fmt.Printf("Warning: error inserting detachment %s: %v\n", d.ID, err)
-			continue
-		}
-		detachmentCount++
-	}
-
-	// Second pass: insert stratagems
-	stratagemCount := 0
-	for _, record := range records {
 		if len(record) < 11 {
 			continue
 		}
@@ -112,13 +86,20 @@ func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (i
 			detachmentIDPtr = &detachmentID
 		}
 
-		_, err := pool.Exec(ctx,
-			`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, legend, turn, phase, description)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		gameMode := "core"
+		if strings.HasPrefix(stratType, "Boarding Actions \u2013 ") {
+			gameMode = "boarding_actions"
+		} else if mode, ok := detachmentModes[detachmentID]; ok && mode == "boarding_actions" {
+			gameMode = "boarding_actions"
+		}
+
+		_, err = pool.Exec(ctx,
+			`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, legend, turn, phase, description, game_mode)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			 ON CONFLICT (id) DO UPDATE SET
 			   faction_id = $2, detachment_id = $3, name = $4, type = $5,
-			   cp_cost = $6, legend = $7, turn = $8, phase = $9, description = $10`,
-			id, factionIDPtr, detachmentIDPtr, name, stratType, cpCost, legend, turn, phase, description)
+			   cp_cost = $6, legend = $7, turn = $8, phase = $9, description = $10, game_mode = $11`,
+			id, factionIDPtr, detachmentIDPtr, name, stratType, cpCost, legend, turn, phase, description, gameMode)
 		if err != nil {
 			fmt.Printf("Warning: error inserting stratagem %s: %v\n", id, err)
 			continue
@@ -126,5 +107,23 @@ func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (i
 		stratagemCount++
 	}
 
-	return detachmentCount, stratagemCount, nil
+	return stratagemCount, nil
+}
+
+func loadDetachmentModesFromDB(ctx context.Context, pool *pgxpool.Pool) (map[string]string, error) {
+	rows, err := pool.Query(ctx, `SELECT id, game_mode FROM detachments`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	modes := make(map[string]string)
+	for rows.Next() {
+		var id, mode string
+		if err := rows.Scan(&id, &mode); err != nil {
+			return nil, err
+		}
+		modes[id] = mode
+	}
+	return modes, rows.Err()
 }

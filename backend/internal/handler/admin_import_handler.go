@@ -41,6 +41,34 @@ func (h *AdminHandler) ImportFactions(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *AdminHandler) ImportDetachments(w http.ResponseWriter, r *http.Request) {
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "file upload required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	tmpFile, err := writeTempFile(file, "detachments-*.csv")
+	if err != nil {
+		http.Error(w, "failed to process upload", http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(tmpFile)
+
+	count, err := seed.SeedDetachments(r.Context(), h.db, tmpFile)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "Import detachments error", "error", err)
+		http.Error(w, "import failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"imported": count,
+		"entity":   "detachments",
+	})
+}
+
 func (h *AdminHandler) ImportStratagems(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("file")
 	if err != nil {
@@ -56,7 +84,7 @@ func (h *AdminHandler) ImportStratagems(w http.ResponseWriter, r *http.Request) 
 	}
 	defer os.Remove(tmpFile)
 
-	detachments, stratagems, err := seed.SeedStratagems(r.Context(), h.db, tmpFile)
+	stratagems, err := seed.SeedStratagems(r.Context(), h.db, tmpFile)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Import stratagems error", "error", err)
 		http.Error(w, "import failed: "+err.Error(), http.StatusInternalServerError)
@@ -64,9 +92,8 @@ func (h *AdminHandler) ImportStratagems(w http.ResponseWriter, r *http.Request) 
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"detachments": detachments,
-		"stratagems":  stratagems,
-		"entity":      "stratagems",
+		"stratagems": stratagems,
+		"entity":     "stratagems",
 	})
 }
 

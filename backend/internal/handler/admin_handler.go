@@ -94,10 +94,10 @@ func (h *AdminHandler) ListDetachments(ctx context.Context, input *AdminDetachme
 	var query string
 	var args []any
 	if input.FactionID != "" {
-		query = `SELECT id, faction_id, name FROM detachments WHERE faction_id = $1 ORDER BY name`
+		query = `SELECT id, faction_id, name, game_mode FROM detachments WHERE faction_id = $1 ORDER BY name`
 		args = []any{input.FactionID}
 	} else {
-		query = `SELECT id, faction_id, name FROM detachments ORDER BY faction_id, name`
+		query = `SELECT id, faction_id, name, game_mode FROM detachments ORDER BY faction_id, name`
 	}
 	rows, err := h.db.Query(ctx, query, args...)
 	if err != nil {
@@ -108,7 +108,7 @@ func (h *AdminHandler) ListDetachments(ctx context.Context, input *AdminDetachme
 	detachments := make([]models.Detachment, 0)
 	for rows.Next() {
 		var d models.Detachment
-		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name); err != nil {
+		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name, &d.GameMode); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		detachments = append(detachments, d)
@@ -118,8 +118,8 @@ func (h *AdminHandler) ListDetachments(ctx context.Context, input *AdminDetachme
 
 func (h *AdminHandler) GetDetachment(ctx context.Context, input *IDParam) (*DetachmentOutput, error) {
 	var d models.Detachment
-	err := h.db.QueryRow(ctx, `SELECT id, faction_id, name FROM detachments WHERE id = $1`, input.ID).
-		Scan(&d.ID, &d.FactionID, &d.Name)
+	err := h.db.QueryRow(ctx, `SELECT id, faction_id, name, game_mode FROM detachments WHERE id = $1`, input.ID).
+		Scan(&d.ID, &d.FactionID, &d.Name, &d.GameMode)
 	if err != nil {
 		return nil, huma.Error404NotFound("not found")
 	}
@@ -131,20 +131,29 @@ func (h *AdminHandler) CreateDetachment(ctx context.Context, input *DetachmentIn
 	if d.ID == "" || d.FactionID == "" || d.Name == "" {
 		return nil, huma.Error400BadRequest("id, factionId, and name are required")
 	}
+	gameMode := d.GameMode
+	if gameMode == "" {
+		gameMode = "core"
+	}
 	_, err := h.db.Exec(ctx,
-		`INSERT INTO detachments (id, faction_id, name) VALUES ($1, $2, $3)`,
-		d.ID, d.FactionID, d.Name)
+		`INSERT INTO detachments (id, faction_id, name, game_mode) VALUES ($1, $2, $3, $4)`,
+		d.ID, d.FactionID, d.Name, gameMode)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error: " + err.Error())
 	}
+	d.GameMode = gameMode
 	return &DetachmentOutput{Body: d}, nil
 }
 
 func (h *AdminHandler) UpdateDetachment(ctx context.Context, input *IDDetachmentInput) (*DetachmentOutput, error) {
 	d := input.Body
+	gameMode := d.GameMode
+	if gameMode == "" {
+		gameMode = "core"
+	}
 	tag, err := h.db.Exec(ctx,
-		`UPDATE detachments SET faction_id = $1, name = $2 WHERE id = $3`,
-		d.FactionID, d.Name, input.ID)
+		`UPDATE detachments SET faction_id = $1, name = $2, game_mode = $3 WHERE id = $4`,
+		d.FactionID, d.Name, gameMode, input.ID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
@@ -152,6 +161,7 @@ func (h *AdminHandler) UpdateDetachment(ctx context.Context, input *IDDetachment
 		return nil, huma.Error404NotFound("not found")
 	}
 	d.ID = input.ID
+	d.GameMode = gameMode
 	return &DetachmentOutput{Body: d}, nil
 }
 
@@ -169,7 +179,7 @@ func (h *AdminHandler) DeleteDetachment(ctx context.Context, input *IDParam) (*s
 // --- Stratagems ---
 
 func (h *AdminHandler) ListStratagems(ctx context.Context, input *AdminStratagemListInput) (*StratagemListOutput, error) {
-	query := `SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description FROM stratagems`
+	query := `SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description, game_mode FROM stratagems`
 	var args []any
 	var conditions []string
 
@@ -202,7 +212,7 @@ func (h *AdminHandler) ListStratagems(ctx context.Context, input *AdminStratagem
 	stratagems := make([]models.Stratagem, 0)
 	for rows.Next() {
 		var s models.Stratagem
-		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
+		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description, &s.GameMode); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		stratagems = append(stratagems, s)
@@ -213,8 +223,8 @@ func (h *AdminHandler) ListStratagems(ctx context.Context, input *AdminStratagem
 func (h *AdminHandler) GetStratagem(ctx context.Context, input *IDParam) (*StratagemOutput, error) {
 	var s models.Stratagem
 	err := h.db.QueryRow(ctx,
-		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description FROM stratagems WHERE id = $1`, input.ID).
-		Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description)
+		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description, game_mode FROM stratagems WHERE id = $1`, input.ID).
+		Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description, &s.GameMode)
 	if err != nil {
 		return nil, huma.Error404NotFound("not found")
 	}
@@ -226,21 +236,30 @@ func (h *AdminHandler) CreateStratagem(ctx context.Context, input *StratagemInpu
 	if s.ID == "" || s.Name == "" {
 		return nil, huma.Error400BadRequest("id and name are required")
 	}
+	gameMode := s.GameMode
+	if gameMode == "" {
+		gameMode = "core"
+	}
 	_, err := h.db.Exec(ctx,
-		`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, legend, turn, phase, description)
-		 VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), $4, $5, $6, NULLIF($7, ''), $8, $9, $10)`,
-		s.ID, s.FactionID, s.DetachmentID, s.Name, s.Type, s.CPCost, s.Legend, s.Turn, s.Phase, s.Description)
+		`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, legend, turn, phase, description, game_mode)
+		 VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), $4, $5, $6, NULLIF($7, ''), $8, $9, $10, $11)`,
+		s.ID, s.FactionID, s.DetachmentID, s.Name, s.Type, s.CPCost, s.Legend, s.Turn, s.Phase, s.Description, gameMode)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error: " + err.Error())
 	}
+	s.GameMode = gameMode
 	return &StratagemOutput{Body: s}, nil
 }
 
 func (h *AdminHandler) UpdateStratagem(ctx context.Context, input *IDStratagemInput) (*StratagemOutput, error) {
 	s := input.Body
+	gameMode := s.GameMode
+	if gameMode == "" {
+		gameMode = "core"
+	}
 	tag, err := h.db.Exec(ctx,
-		`UPDATE stratagems SET faction_id = NULLIF($1, ''), detachment_id = NULLIF($2, ''), name = $3, type = $4, cp_cost = $5, legend = NULLIF($6, ''), turn = $7, phase = $8, description = $9 WHERE id = $10`,
-		s.FactionID, s.DetachmentID, s.Name, s.Type, s.CPCost, s.Legend, s.Turn, s.Phase, s.Description, input.ID)
+		`UPDATE stratagems SET faction_id = NULLIF($1, ''), detachment_id = NULLIF($2, ''), name = $3, type = $4, cp_cost = $5, legend = NULLIF($6, ''), turn = $7, phase = $8, description = $9, game_mode = $10 WHERE id = $11`,
+		s.FactionID, s.DetachmentID, s.Name, s.Type, s.CPCost, s.Legend, s.Turn, s.Phase, s.Description, gameMode, input.ID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
@@ -248,6 +267,7 @@ func (h *AdminHandler) UpdateStratagem(ctx context.Context, input *IDStratagemIn
 		return nil, huma.Error404NotFound("not found")
 	}
 	s.ID = input.ID
+	s.GameMode = gameMode
 	return &StratagemOutput{Body: s}, nil
 }
 

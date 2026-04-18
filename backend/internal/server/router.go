@@ -339,6 +339,7 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 	r.Group(func(r chi.Router) {
 		r.Use(auth.AdminMiddleware(cfg.JWTSecret))
 		r.Post("/api/admin/import/factions", h.Admin.ImportFactions)
+		r.Post("/api/admin/import/detachments", h.Admin.ImportDetachments)
 		r.Post("/api/admin/import/stratagems", h.Admin.ImportStratagems)
 		r.Post("/api/admin/import/missions", h.Admin.ImportMissions)
 	})

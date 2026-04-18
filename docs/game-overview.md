@@ -4,6 +4,10 @@ Tacticarium is a real-time, multiplayer turn tracker for **Warhammer 40,000 (10t
 
 The app does not enforce all Warhammer 40K rules (players still resolve combat, movement, etc. on the physical tabletop). Instead, it acts as a **digital scoreboard and phase tracker**, keeping both players in sync via WebSocket.
 
+## Supported Game Modes
+
+Only the **Core** game mode is currently supported. Alternate modes that ship with the same data (e.g., Boarding Actions) are excluded from player-facing endpoints. Content is tagged with a `game_mode` column on the `stratagems` and `detachments` tables; the player API filters on `game_mode = 'core'`. Admins can still see and edit boarding-actions content through the admin UI. If support for additional modes is added later, the filter on the player endpoints would be relaxed / made configurable.
+
 ## Warhammer 40K Concepts (Brief Primer)
 
 For developers unfamiliar with Warhammer 40K:

@@ -731,6 +731,7 @@ export interface components {
              */
             readonly $schema?: string;
             factionId: string;
+            gameMode?: string;
             id?: string;
             name: string;
         };
@@ -1047,6 +1048,7 @@ export interface components {
             description: string;
             detachmentId?: string;
             factionId: string;
+            gameMode?: string;
             id?: string;
             legend?: string;
             name: string;
