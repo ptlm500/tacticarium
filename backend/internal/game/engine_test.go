@@ -973,6 +973,363 @@ func TestAdaptOrDie_WrongTwist(t *testing.T) {
 	}
 }
 
+// --- Draw Restrictions ---
+
+func makeRestrictedSecondary(id, name string, round int, mode string) ActiveSecondary {
+	s := makeActiveSecondary(id, name)
+	s.DrawRestriction = &SecondaryDrawRestriction{Round: round, Mode: mode}
+	return s
+}
+
+func TestDrawSecondary_MandatoryRestriction_Round1_Reshuffles(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	// Deck: [restricted, plain1, plain2]. On draw, restricted should be reshuffled
+	// (mandatory round 1), then plain1 drawn, then plain2 drawn.
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeRestrictedSecondary("restricted", "Restricted", 1, DrawRestrictionMandatory),
+		makeActiveSecondary("plain1", "P1"),
+		makeActiveSecondary("plain2", "P2"),
+	}
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionDrawSecondary,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	active := state.Players[0].ActiveSecondaries
+	if len(active) != 2 {
+		t.Fatalf("expected 2 active, got %d", len(active))
+	}
+	for _, s := range active {
+		if s.ID == "restricted" {
+			t.Fatal("restricted card should not be in active in round 1")
+		}
+	}
+	// Deck should still contain the restricted card (shuffled back in).
+	foundInDeck := false
+	for _, s := range state.Players[0].TacticalDeck {
+		if s.ID == "restricted" {
+			foundInDeck = true
+		}
+	}
+	if !foundInDeck {
+		t.Fatal("expected restricted card to be reshuffled into deck")
+	}
+
+	// Expect at least one reshuffle event. Random insertion means the
+	// restricted card can land back at the top and trigger additional
+	// reshuffles before a drawable card comes up — that's valid behavior.
+	reshuffles := 0
+	for _, ev := range events {
+		if ev.Type == EventSecondaryReshuffled {
+			reshuffles++
+		}
+	}
+	if reshuffles < 1 {
+		t.Fatalf("expected at least 1 reshuffle event, got %d", reshuffles)
+	}
+}
+
+func TestDrawSecondary_MandatoryRestriction_NotRound1_DrawsNormally(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 2
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeRestrictedSecondary("restricted", "R", 1, DrawRestrictionMandatory),
+		makeActiveSecondary("plain1", "P1"),
+	}
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionDrawSecondary,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Players[0].ActiveSecondaries) != 2 {
+		t.Fatalf("expected 2 active, got %d", len(state.Players[0].ActiveSecondaries))
+	}
+	// Restriction does not trigger in round 2, so the "restricted" card
+	// should be drawn as the first active.
+	if state.Players[0].ActiveSecondaries[0].ID != "restricted" {
+		t.Fatalf("expected restricted card to be drawn normally in round 2")
+	}
+}
+
+func TestDrawSecondary_AllRestrictedDeck_BailsCleanly(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	// Deck of only mandatory-restricted cards — nothing drawable. The helper
+	// should bail without infinite-looping, leaving cards in the deck.
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeRestrictedSecondary("r1", "R1", 1, DrawRestrictionMandatory),
+		makeRestrictedSecondary("r2", "R2", 1, DrawRestrictionMandatory),
+	}
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionDrawSecondary,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Players[0].ActiveSecondaries) != 0 {
+		t.Fatalf("expected 0 active, got %d", len(state.Players[0].ActiveSecondaries))
+	}
+	if len(state.Players[0].TacticalDeck) != 2 {
+		t.Fatalf("expected deck to retain 2 cards, got %d", len(state.Players[0].TacticalDeck))
+	}
+}
+
+func TestDrawSecondary_MixedRestrictedDeck_DrawsNonRestricted(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	// One restricted + one plain. Regardless of random insertion position,
+	// the non-restricted card must end up drawn.
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeRestrictedSecondary("r1", "R1", 1, DrawRestrictionMandatory),
+		makeActiveSecondary("ok", "OK"),
+	}
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionDrawSecondary,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, s := range state.Players[0].ActiveSecondaries {
+		if s.ID == "ok" {
+			found = true
+		}
+		if s.ID == "r1" {
+			t.Fatal("restricted card should not be active in round 1")
+		}
+	}
+	if !found {
+		t.Fatal("expected non-restricted card to be drawn")
+	}
+}
+
+func TestReshuffleSecondary_OptionalRound1_Succeeds(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeRestrictedSecondary("opt", "Optional", 1, DrawRestrictionOptional),
+	}
+	// Use a larger deck so the reshuffled "opt" card is very unlikely to land
+	// back on top and get immediately redrawn — we want to assert the common
+	// case (drew a different card) while keeping the random shuffle real.
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeActiveSecondary("next1", "N1"),
+		makeActiveSecondary("next2", "N2"),
+		makeActiveSecondary("next3", "N3"),
+		makeActiveSecondary("next4", "N4"),
+		makeActiveSecondary("next5", "N5"),
+	}
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionReshuffleSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "opt"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Invariants: total card count preserved, "opt" is somewhere in the
+	// deck+active set, and we still have exactly 1 active card (the drawn
+	// replacement — which may be "opt" itself if the shuffle landed it on
+	// top, but is overwhelmingly likely to be one of the other cards).
+	active := state.Players[0].ActiveSecondaries
+	deck := state.Players[0].TacticalDeck
+	if len(active) != 1 {
+		t.Fatalf("expected 1 active, got %d", len(active))
+	}
+	if len(active)+len(deck) != 6 {
+		t.Fatalf("expected 6 total cards, got %d", len(active)+len(deck))
+	}
+	foundOpt := false
+	for _, s := range deck {
+		if s.ID == "opt" {
+			foundOpt = true
+		}
+	}
+	if !foundOpt && active[0].ID != "opt" {
+		t.Fatal("expected opt card to be in deck or re-drawn into active")
+	}
+
+	// Should emit reshuffle + draw events.
+	var sawReshuffle, sawDraw bool
+	for _, ev := range events {
+		if ev.Type == EventSecondaryReshuffled {
+			sawReshuffle = true
+		}
+		if ev.Type == EventSecondaryDrawn {
+			sawDraw = true
+		}
+	}
+	if !sawReshuffle || !sawDraw {
+		t.Fatalf("expected reshuffle+draw events, got %+v", events)
+	}
+}
+
+func TestReshuffleSecondary_MandatoryRestriction_Rejected(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeRestrictedSecondary("m", "Mandatory", 1, DrawRestrictionMandatory),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionReshuffleSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "m"},
+	})
+	if err == nil {
+		t.Fatal("expected error: cannot manually reshuffle a mandatory-restriction card")
+	}
+}
+
+func TestReshuffleSecondary_WrongRound_Rejected(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 2
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeRestrictedSecondary("opt", "Optional", 1, DrawRestrictionOptional),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionReshuffleSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "opt"},
+	})
+	if err == nil {
+		t.Fatal("expected error: restriction round has passed")
+	}
+}
+
+func TestReshuffleSecondary_NoRestriction_Rejected(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("plain", "P")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionReshuffleSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "plain"},
+	})
+	if err == nil {
+		t.Fatal("expected error: card has no draw restriction")
+	}
+}
+
+func TestReshuffleSecondary_FixedMode_Rejected(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "fixed"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeRestrictedSecondary("opt", "Optional", 1, DrawRestrictionOptional),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionReshuffleSecondary,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaryId": "opt"},
+	})
+	if err == nil {
+		t.Fatal("expected error: fixed mode cannot reshuffle")
+	}
+}
+
+func TestNewOrders_AppliesMandatoryReshuffle(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 1
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondary("current", "C"),
+	}
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeRestrictedSecondary("restricted", "R", 1, DrawRestrictionMandatory),
+		makeActiveSecondary("plain", "P"),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionNewOrders,
+		PlayerNumber: 1,
+		Data:         map[string]any{"discardSecondaryId": "current"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Replacement should be "plain", not "restricted".
+	active := state.Players[0].ActiveSecondaries
+	if len(active) != 1 {
+		t.Fatalf("expected 1 active, got %d", len(active))
+	}
+	if active[0].ID == "restricted" {
+		t.Fatal("mandatory-restricted card should have been reshuffled during new_orders draw")
+	}
+}
+
+func TestAdaptOrDie_Tactical_AppliesMandatoryReshuffleOnDraw(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.TwistID = TwistAdaptOrDie
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeRestrictedSecondary("restricted", "R", 1, DrawRestrictionMandatory),
+		makeActiveSecondary("plain", "P"),
+	}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionAdaptOrDie,
+		PlayerNumber: 1,
+		Data:         map[string]any{"shuffleBackSecondaryId": "s1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Drawn should be "plain"; "restricted" goes back to deck (+s1 shuffled back = 2 in deck).
+	active := state.Players[0].ActiveSecondaries
+	if len(active) != 1 {
+		t.Fatalf("expected 1 active, got %d", len(active))
+	}
+	if active[0].ID == "restricted" {
+		t.Fatal("restricted card should not be active after mandatory reshuffle")
+	}
+}
+
 // --- Existing Engine Actions ---
 
 func TestAdvancePhase(t *testing.T) {

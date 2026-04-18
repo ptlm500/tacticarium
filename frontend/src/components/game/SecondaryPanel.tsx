@@ -18,6 +18,7 @@ interface Props {
   onAchieve: (secondaryId: string, vpScored: number) => void;
   onDiscard: (secondaryId: string, free: boolean) => void;
   onNewOrders: (discardSecondaryId: string) => void;
+  onReshuffle: (secondaryId: string) => void;
   onDraw: () => void;
   onScoreFixedVP: (delta: number) => void;
 }
@@ -34,6 +35,7 @@ export function SecondaryPanel({
   onAchieve,
   onDiscard,
   onNewOrders,
+  onReshuffle,
   onDraw,
   onScoreFixedVP,
 }: Props) {
@@ -107,6 +109,17 @@ export function SecondaryPanel({
                       >
                         New Orders
                       </button>
+                      {s.drawRestriction &&
+                        s.drawRestriction.mode === "optional" &&
+                        s.drawRestriction.round === currentRound && (
+                          <button
+                            onClick={() => onReshuffle(s.id)}
+                            className="bg-indigo-800 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded transition-colors"
+                            title="When Drawn: shuffle this card back into your deck and draw a replacement"
+                          >
+                            Shuffle Back
+                          </button>
+                        )}
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">

@@ -117,6 +117,8 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applyDiscardSecondary(action)
 	case ActionNewOrders:
 		return e.applyNewOrders(action)
+	case ActionReshuffleSecondary:
+		return e.applyReshuffleSecondary(action)
 	case ActionDrawChallengerCard:
 		return e.applyDrawChallengerCard(action)
 	case ActionScoreChallenger:

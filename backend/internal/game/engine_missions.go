@@ -1,6 +1,9 @@
 package game
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand/v2"
+)
 
 // --- Setup Actions ---
 
@@ -185,10 +188,12 @@ func (e *Engine) applyDrawSecondary(action GameAction) ([]GameEvent, error) {
 
 	var events []GameEvent
 	for len(player.ActiveSecondaries) < 2 && len(player.TacticalDeck) > 0 {
-		drawn := player.TacticalDeck[0]
-		player.TacticalDeck = player.TacticalDeck[1:]
-		player.ActiveSecondaries = append(player.ActiveSecondaries, drawn)
-
+		drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
+		events = append(events, drawEvents...)
+		if drawn == nil {
+			break
+		}
+		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
 		events = append(events, GameEvent{
 			Type:         EventSecondaryDrawn,
 			PlayerNumber: action.PlayerNumber,
@@ -199,6 +204,65 @@ func (e *Engine) applyDrawSecondary(action GameAction) ([]GameEvent, error) {
 	}
 
 	return events, nil
+}
+
+// drawNextCard pops the top card of the player's tactical deck and applies any
+// mandatory "when drawn" restriction by shuffling the card back into the deck
+// (at a random position) and drawing the next one. Returns the final drawn
+// card (or nil if the deck contains no drawable cards) along with any
+// reshuffle events emitted along the way.
+func drawNextCard(player *PlayerState, round, playerNumber int, phase Phase) (*ActiveSecondary, []GameEvent) {
+	var events []GameEvent
+	for len(player.TacticalDeck) > 0 {
+		card := player.TacticalDeck[0]
+		player.TacticalDeck = player.TacticalDeck[1:]
+		if isMandatoryReshuffle(card, round) {
+			// Bail cleanly if the rest of the deck is all restricted — otherwise
+			// we'd cycle forever.
+			anyDrawable := false
+			for _, c := range player.TacticalDeck {
+				if !isMandatoryReshuffle(c, round) {
+					anyDrawable = true
+					break
+				}
+			}
+			player.TacticalDeck = insertRandomlyIntoDeck(player.TacticalDeck, card)
+			if !anyDrawable {
+				return nil, events
+			}
+			events = append(events, GameEvent{
+				Type:         EventSecondaryReshuffled,
+				PlayerNumber: playerNumber,
+				Round:        round,
+				Phase:        phase,
+				Data: map[string]any{
+					"secondaryId":   card.ID,
+					"secondaryName": card.Name,
+					"reason":        "mandatory",
+				},
+			})
+			continue
+		}
+		return &card, events
+	}
+	return nil, events
+}
+
+func isMandatoryReshuffle(card ActiveSecondary, round int) bool {
+	return card.DrawRestriction != nil &&
+		card.DrawRestriction.Round == round &&
+		card.DrawRestriction.Mode == DrawRestrictionMandatory
+}
+
+// insertRandomlyIntoDeck returns the deck with card inserted at a random
+// position (inclusive of start and end).
+func insertRandomlyIntoDeck(deck []ActiveSecondary, card ActiveSecondary) []ActiveSecondary {
+	pos := rand.IntN(len(deck) + 1)
+	result := make([]ActiveSecondary, 0, len(deck)+1)
+	result = append(result, deck[:pos]...)
+	result = append(result, card)
+	result = append(result, deck[pos:]...)
+	return result
 }
 
 func (e *Engine) applyAchieveSecondary(action GameAction) ([]GameEvent, error) {
@@ -368,13 +432,10 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 	// Spend CP
 	player.CP -= cpCost
 
-	// Draw replacement from deck
-	var drawn *ActiveSecondary
-	if len(player.TacticalDeck) > 0 {
-		d := player.TacticalDeck[0]
-		player.TacticalDeck = player.TacticalDeck[1:]
-		player.ActiveSecondaries = append(player.ActiveSecondaries, d)
-		drawn = &d
+	// Draw replacement from deck (applies mandatory reshuffle rules)
+	drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
+	if drawn != nil {
+		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
 	}
 
 	data := map[string]any{
@@ -387,13 +448,81 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 		data["drawnName"] = drawn.Name
 	}
 
-	return []GameEvent{{
+	events := drawEvents
+	events = append(events, GameEvent{
 		Type:         EventNewOrdersUsed,
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
 		Data:         data,
-	}}, nil
+	})
+	return events, nil
+}
+
+func (e *Engine) applyReshuffleSecondary(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+
+	if player.SecondaryMode != "tactical" {
+		return nil, fmt.Errorf("can only reshuffle secondaries in tactical mode")
+	}
+
+	secondaryID := strFromData(action.Data, "secondaryId")
+
+	idx := -1
+	for i, s := range player.ActiveSecondaries {
+		if s.ID == secondaryID {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return nil, fmt.Errorf("secondary not found in active secondaries")
+	}
+
+	card := player.ActiveSecondaries[idx]
+	if card.DrawRestriction == nil ||
+		card.DrawRestriction.Mode != DrawRestrictionOptional ||
+		card.DrawRestriction.Round != e.state.CurrentRound {
+		return nil, fmt.Errorf("secondary cannot be reshuffled: no optional draw restriction active this round")
+	}
+
+	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
+	player.TacticalDeck = insertRandomlyIntoDeck(player.TacticalDeck, card)
+
+	events := []GameEvent{{
+		Type:         EventSecondaryReshuffled,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data: map[string]any{
+			"secondaryId":   card.ID,
+			"secondaryName": card.Name,
+			"reason":        "optional",
+		},
+	}}
+
+	// Draw a replacement from the deck (applies mandatory reshuffle rules).
+	drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
+	events = append(events, drawEvents...)
+	if drawn != nil {
+		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
+		events = append(events, GameEvent{
+			Type:         EventSecondaryDrawn,
+			PlayerNumber: action.PlayerNumber,
+			Round:        e.state.CurrentRound,
+			Phase:        e.state.CurrentPhase,
+			Data:         map[string]any{"secondaryId": drawn.ID, "secondaryName": drawn.Name},
+		})
+	}
+
+	return events, nil
 }
 
 func (e *Engine) applyDrawChallengerCard(action GameAction) ([]GameEvent, error) {
@@ -479,6 +608,8 @@ func (e *Engine) applyAdaptOrDie(action GameAction) ([]GameEvent, error) {
 
 	player := e.state.GetPlayer(action.PlayerNumber)
 
+	var events []GameEvent
+
 	if player.SecondaryMode == "fixed" {
 		// Swap one fixed secondary for another
 		discardID := strFromData(action.Data, "discardSecondaryId")
@@ -504,15 +635,19 @@ func (e *Engine) applyAdaptOrDie(action GameAction) ([]GameEvent, error) {
 		// The client sends which card to shuffle back
 		shuffleBackID := strFromData(action.Data, "shuffleBackSecondaryId")
 
-		// Draw one extra
 		if len(player.TacticalDeck) == 0 {
 			return nil, fmt.Errorf("tactical deck is empty")
 		}
-		drawn := player.TacticalDeck[0]
-		player.TacticalDeck = player.TacticalDeck[1:]
-		player.ActiveSecondaries = append(player.ActiveSecondaries, drawn)
 
-		// Shuffle one back
+		// Draw one extra — applies mandatory reshuffle rules.
+		drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
+		events = append(events, drawEvents...)
+		if drawn == nil {
+			return nil, fmt.Errorf("tactical deck is empty")
+		}
+		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
+
+		// Shuffle one back (random position)
 		idx := -1
 		for i, s := range player.ActiveSecondaries {
 			if s.ID == shuffleBackID {
@@ -525,13 +660,12 @@ func (e *Engine) applyAdaptOrDie(action GameAction) ([]GameEvent, error) {
 		}
 		toShuffle := player.ActiveSecondaries[idx]
 		player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
-		// Add back to deck (at random position — for simplicity, add to end)
-		player.TacticalDeck = append(player.TacticalDeck, toShuffle)
+		player.TacticalDeck = insertRandomlyIntoDeck(player.TacticalDeck, toShuffle)
 	}
 
 	player.AdaptOrDieUses++
 
-	return nil, nil
+	return events, nil
 }
 
 // --- Helpers ---
@@ -554,12 +688,13 @@ func activeSecondariesFromData(data map[string]any, key string) ([]ActiveSeconda
 			return nil, fmt.Errorf("expected object in %s array", key)
 		}
 		s := ActiveSecondary{
-			ID:             strFromMapAny(m, "id"),
-			Name:           strFromMapAny(m, "name"),
-			Description:    strFromMapAny(m, "description"),
-			IsFixed:        boolFromMapAny(m, "isFixed"),
-			MaxVP:          intFromMapAny(m, "maxVp"),
-			ScoringOptions: scoringOptionsFromMapAny(m, "scoringOptions"),
+			ID:              strFromMapAny(m, "id"),
+			Name:            strFromMapAny(m, "name"),
+			Description:     strFromMapAny(m, "description"),
+			IsFixed:         boolFromMapAny(m, "isFixed"),
+			MaxVP:           intFromMapAny(m, "maxVp"),
+			ScoringOptions:  scoringOptionsFromMapAny(m, "scoringOptions"),
+			DrawRestriction: drawRestrictionFromMapAny(m, "drawRestriction"),
 		}
 		result = append(result, s)
 	}
@@ -576,13 +711,29 @@ func singleActiveSecondaryFromData(data map[string]any, key string) (ActiveSecon
 		return ActiveSecondary{}, fmt.Errorf("expected object for %s", key)
 	}
 	return ActiveSecondary{
-		ID:             strFromMapAny(m, "id"),
-		Name:           strFromMapAny(m, "name"),
-		Description:    strFromMapAny(m, "description"),
-		IsFixed:        boolFromMapAny(m, "isFixed"),
-		MaxVP:          intFromMapAny(m, "maxVp"),
-		ScoringOptions: scoringOptionsFromMapAny(m, "scoringOptions"),
+		ID:              strFromMapAny(m, "id"),
+		Name:            strFromMapAny(m, "name"),
+		Description:     strFromMapAny(m, "description"),
+		IsFixed:         boolFromMapAny(m, "isFixed"),
+		MaxVP:           intFromMapAny(m, "maxVp"),
+		ScoringOptions:  scoringOptionsFromMapAny(m, "scoringOptions"),
+		DrawRestriction: drawRestrictionFromMapAny(m, "drawRestriction"),
 	}, nil
+}
+
+func drawRestrictionFromMapAny(m map[string]any, key string) *SecondaryDrawRestriction {
+	raw, ok := m[key]
+	if !ok || raw == nil {
+		return nil
+	}
+	om, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return &SecondaryDrawRestriction{
+		Round: intFromMapAny(om, "round"),
+		Mode:  strFromMapAny(om, "mode"),
+	}
 }
 
 func strFromMapAny(m map[string]any, key string) string {

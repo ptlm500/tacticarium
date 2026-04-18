@@ -7,6 +7,9 @@
           "description": {
             "type": "string"
           },
+          "drawRestriction": {
+            "$ref": "#/components/schemas/SecondaryDrawRestriction"
+          },
           "id": {
             "type": "string"
           },
@@ -153,6 +156,23 @@
         "required": [
           "factionId",
           "name"
+        ],
+        "type": "object"
+      },
+      "DrawRestriction": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "round": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "round",
+          "mode"
         ],
         "type": "object"
       },
@@ -954,6 +974,9 @@
           "description": {
             "type": "string"
           },
+          "drawRestriction": {
+            "$ref": "#/components/schemas/DrawRestriction"
+          },
           "id": {
             "type": "string"
           },
@@ -990,6 +1013,23 @@
           "maxVp",
           "isFixed",
           "scoringOptions"
+        ],
+        "type": "object"
+      },
+      "SecondaryDrawRestriction": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "round": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "round",
+          "mode"
         ],
         "type": "object"
       },

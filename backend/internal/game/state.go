@@ -41,14 +41,30 @@ type SecondaryScoringOption struct {
 	Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
 }
 
+// DrawRestrictionMode enumerates how a draw restriction is enforced.
+const (
+	DrawRestrictionMandatory = "mandatory"
+	DrawRestrictionOptional  = "optional"
+)
+
+// SecondaryDrawRestriction describes a "When Drawn" rule that triggers when a
+// card is drawn during a specific battle round. Mandatory restrictions force
+// the card to be shuffled back into the deck; optional restrictions let the
+// player choose to shuffle it back via the reshuffle_secondary action.
+type SecondaryDrawRestriction struct {
+	Round int    `json:"round"`
+	Mode  string `json:"mode"`
+}
+
 // ActiveSecondary represents a secondary mission card in the deck/active/achieved/discarded piles.
 type ActiveSecondary struct {
-	ID             string                  `json:"id"`
-	Name           string                  `json:"name"`
-	Description    string                  `json:"description"`
-	IsFixed        bool                    `json:"isFixed"`
-	MaxVP          int                     `json:"maxVp"`
-	ScoringOptions []SecondaryScoringOption `json:"scoringOptions"`
+	ID              string                    `json:"id"`
+	Name            string                    `json:"name"`
+	Description     string                    `json:"description"`
+	IsFixed         bool                      `json:"isFixed"`
+	MaxVP           int                       `json:"maxVp"`
+	ScoringOptions  []SecondaryScoringOption  `json:"scoringOptions"`
+	DrawRestriction *SecondaryDrawRestriction `json:"drawRestriction,omitempty"`
 }
 
 type PlayerState struct {

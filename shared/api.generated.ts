@@ -683,6 +683,7 @@ export interface components {
     schemas: {
         ActiveSecondary: {
             description: string;
+            drawRestriction?: components["schemas"]["SecondaryDrawRestriction"];
             id: string;
             isFixed: boolean;
             /** Format: int64 */
@@ -734,6 +735,11 @@ export interface components {
             gameMode?: string;
             id?: string;
             name: string;
+        };
+        DrawRestriction: {
+            mode: string;
+            /** Format: int64 */
+            round: number;
         };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
@@ -1013,6 +1019,7 @@ export interface components {
              */
             readonly $schema?: string;
             description: string;
+            drawRestriction?: components["schemas"]["DrawRestriction"];
             id?: string;
             isFixed: boolean;
             lore?: string;
@@ -1021,6 +1028,11 @@ export interface components {
             missionPackId: string;
             name: string;
             scoringOptions: components["schemas"]["ScoringOption"][] | null;
+        };
+        SecondaryDrawRestriction: {
+            mode: string;
+            /** Format: int64 */
+            round: number;
         };
         SecondaryObjective: {
             /** Format: int64 */
