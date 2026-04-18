@@ -1023,15 +1023,17 @@ func TestDrawSecondary_MandatoryRestriction_Round1_Reshuffles(t *testing.T) {
 		t.Fatal("expected restricted card to be reshuffled into deck")
 	}
 
-	// Expect at least one reshuffle event.
+	// Expect at least one reshuffle event. Random insertion means the
+	// restricted card can land back at the top and trigger additional
+	// reshuffles before a drawable card comes up — that's valid behavior.
 	reshuffles := 0
 	for _, ev := range events {
 		if ev.Type == EventSecondaryReshuffled {
 			reshuffles++
 		}
 	}
-	if reshuffles != 1 {
-		t.Fatalf("expected 1 reshuffle event, got %d", reshuffles)
+	if reshuffles < 1 {
+		t.Fatalf("expected at least 1 reshuffle event, got %d", reshuffles)
 	}
 }
 
@@ -1132,7 +1134,16 @@ func TestReshuffleSecondary_OptionalRound1_Succeeds(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{
 		makeRestrictedSecondary("opt", "Optional", 1, DrawRestrictionOptional),
 	}
-	state.Players[0].TacticalDeck = []ActiveSecondary{makeActiveSecondary("next", "Next")}
+	// Use a larger deck so the reshuffled "opt" card is very unlikely to land
+	// back on top and get immediately redrawn — we want to assert the common
+	// case (drew a different card) while keeping the random shuffle real.
+	state.Players[0].TacticalDeck = []ActiveSecondary{
+		makeActiveSecondary("next1", "N1"),
+		makeActiveSecondary("next2", "N2"),
+		makeActiveSecondary("next3", "N3"),
+		makeActiveSecondary("next4", "N4"),
+		makeActiveSecondary("next5", "N5"),
+	}
 	e := NewEngine(state)
 
 	events, err := e.Apply(context.Background(), GameAction{
@@ -1144,19 +1155,26 @@ func TestReshuffleSecondary_OptionalRound1_Succeeds(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Active should now have "next" (drawn replacement); "opt" should be in deck.
+	// Invariants: total card count preserved, "opt" is somewhere in the
+	// deck+active set, and we still have exactly 1 active card (the drawn
+	// replacement — which may be "opt" itself if the shuffle landed it on
+	// top, but is overwhelmingly likely to be one of the other cards).
 	active := state.Players[0].ActiveSecondaries
-	if len(active) != 1 || active[0].ID != "next" {
-		t.Fatalf("expected active=[next], got %+v", active)
+	deck := state.Players[0].TacticalDeck
+	if len(active) != 1 {
+		t.Fatalf("expected 1 active, got %d", len(active))
 	}
-	inDeck := false
-	for _, s := range state.Players[0].TacticalDeck {
+	if len(active)+len(deck) != 6 {
+		t.Fatalf("expected 6 total cards, got %d", len(active)+len(deck))
+	}
+	foundOpt := false
+	for _, s := range deck {
 		if s.ID == "opt" {
-			inDeck = true
+			foundOpt = true
 		}
 	}
-	if !inDeck {
-		t.Fatal("expected opt card reshuffled back into deck")
+	if !foundOpt && active[0].ID != "opt" {
+		t.Fatal("expected opt card to be in deck or re-drawn into active")
 	}
 
 	// Should emit reshuffle + draw events.
