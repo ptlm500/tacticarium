@@ -596,7 +596,11 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 func (h *GameHandler) lookupStratagem(id string) (*game.StratagemInfo, error) {
 	var info game.StratagemInfo
 	err := h.db.QueryRow(context.Background(),
-		`SELECT name, cp_cost FROM stratagems WHERE id = $1`, id,
+		// Defense in depth: the player-facing list endpoints already hide
+		// alternate game-mode content, so boarding-actions stratagem IDs should
+		// never reach a client. Filter here too so a crafted action can't bypass
+		// the exclusion.
+		`SELECT name, cp_cost FROM stratagems WHERE id = $1 AND game_mode = 'core'`, id,
 	).Scan(&info.Name, &info.CPCost)
 	if err != nil {
 		return nil, err

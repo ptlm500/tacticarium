@@ -7,7 +7,12 @@ export function DetachmentEditPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
 
-  const [form, setForm] = useState<Detachment>({ id: "", factionId: "", name: "" });
+  const [form, setForm] = useState<Detachment>({
+    id: "",
+    factionId: "",
+    name: "",
+    gameMode: "core",
+  });
   const [factions, setFactions] = useState<Faction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -19,7 +24,7 @@ export function DetachmentEditPage() {
     if (id)
       adminApi.detachments
         .get(id)
-        .then(setForm)
+        .then((d) => setForm({ ...d, gameMode: d.gameMode ?? "core" }))
         .catch(() => navigate("/detachments"));
   }, [id, navigate]);
 
@@ -81,6 +86,20 @@ export function DetachmentEditPage() {
             required
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
           />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Game Mode</label>
+          <select
+            value={form.gameMode ?? "core"}
+            onChange={(e) => setForm({ ...form, gameMode: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          >
+            <option value="core">Core</option>
+            <option value="boarding_actions">Boarding Actions</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Only Core detachments are visible to players. Boarding Actions content is hidden.
+          </p>
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <div className="flex gap-2">

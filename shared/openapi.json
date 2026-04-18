@@ -140,6 +140,9 @@
           "factionId": {
             "type": "string"
           },
+          "gameMode": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -1050,6 +1053,9 @@
             "type": "string"
           },
           "factionId": {
+            "type": "string"
+          },
+          "gameMode": {
             "type": "string"
           },
           "id": {

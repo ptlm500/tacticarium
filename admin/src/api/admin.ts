@@ -49,6 +49,7 @@ export const adminApi = {
 
   import: {
     factions: (file: File) => uploadFile<ImportResult>(`${base}/import/factions`, file),
+    detachments: (file: File) => uploadFile<ImportResult>(`${base}/import/detachments`, file),
     stratagems: (file: File) => uploadFile<ImportResult>(`${base}/import/stratagems`, file),
     missions: (file: File) => uploadFile<ImportResult>(`${base}/import/missions`, file),
   },

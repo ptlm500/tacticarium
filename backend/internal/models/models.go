@@ -21,6 +21,7 @@ type Detachment struct {
 	ID        string `json:"id" required:"false"`
 	FactionID string `json:"factionId"`
 	Name      string `json:"name"`
+	GameMode  string `json:"gameMode,omitempty"`
 }
 
 type Stratagem struct {
@@ -34,6 +35,7 @@ type Stratagem struct {
 	Turn         string `json:"turn"`
 	Phase        string `json:"phase"`
 	Description  string `json:"description"`
+	GameMode     string `json:"gameMode,omitempty"`
 }
 
 type MissionPack struct {

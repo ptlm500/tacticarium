@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -115,6 +116,90 @@ func TestListDetachmentStratagems(t *testing.T) {
 	testutil.ReadJSON(t, resp, &stratagems)
 	assert.Len(t, stratagems, 1)
 	assert.Equal(t, "Gladius Strat", stratagems[0]["name"])
+}
+
+// --- Boarding Actions game-mode filter ---
+
+func TestListDetachments_ExcludesBoardingActions(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanAllTables(t, env.Pool)
+
+	userID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	token := testutil.GenerateToken(t, userID, "player1")
+
+	testutil.SeedFaction(t, env.Pool, "SM", "Space Marines")
+	// Core detachment (default game_mode = 'core')
+	testutil.SeedDetachment(t, env.Pool, "det-core", "SM", "Gladius Task Force")
+	// Boarding Actions detachment — insert directly so we can set game_mode.
+	_, err := env.Pool.Exec(context.Background(),
+		`INSERT INTO detachments (id, faction_id, name, game_mode) VALUES ($1, $2, $3, $4)`,
+		"det-ba", "SM", "Boarding Butchers", "boarding_actions")
+	require.NoError(t, err)
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/factions/SM/detachments", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var detachments []map[string]interface{}
+	testutil.ReadJSON(t, resp, &detachments)
+	assert.Len(t, detachments, 1)
+	assert.Equal(t, "Gladius Task Force", detachments[0]["name"])
+}
+
+func TestListStratagems_ExcludesBoardingActions(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanAllTables(t, env.Pool)
+
+	userID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	token := testutil.GenerateToken(t, userID, "player1")
+
+	testutil.SeedFaction(t, env.Pool, "SM", "Space Marines")
+	// Core stratagem
+	testutil.SeedStratagem(t, env.Pool, "s-core", "SM", "", "Armor of Contempt")
+	// Boarding Actions stratagem — inserted directly so we can set game_mode.
+	_, err := env.Pool.Exec(context.Background(),
+		`INSERT INTO stratagems (id, faction_id, name, type, cp_cost, turn, phase, description, game_mode)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		"s-ba", "SM", "Explosive Clearance",
+		"Boarding Actions \u2013 Battle Tactic Stratagem", 1,
+		"Your turn", "Shooting phase", "Boarding Actions stratagem.", "boarding_actions")
+	require.NoError(t, err)
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/factions/SM/stratagems", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var stratagems []map[string]interface{}
+	testutil.ReadJSON(t, resp, &stratagems)
+	assert.Len(t, stratagems, 1)
+	assert.Equal(t, "Armor of Contempt", stratagems[0]["name"])
+}
+
+func TestListDetachmentStratagems_ExcludesBoardingActions(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanAllTables(t, env.Pool)
+
+	userID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	token := testutil.GenerateToken(t, userID, "player1")
+
+	testutil.SeedFaction(t, env.Pool, "SM", "Space Marines")
+	// Boarding Actions detachment with a single boarding-actions stratagem.
+	_, err := env.Pool.Exec(context.Background(),
+		`INSERT INTO detachments (id, faction_id, name, game_mode) VALUES ($1, $2, $3, $4)`,
+		"det-ba", "SM", "Boarding Butchers", "boarding_actions")
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(context.Background(),
+		`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, turn, phase, description, game_mode)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		"s-ba", "SM", "det-ba", "Savage Resilience",
+		"Boarding Butchers \u2013 Battle Tactic Stratagem", 1,
+		"Your turn", "Fight phase", "Detachment strat.", "boarding_actions")
+	require.NoError(t, err)
+
+	resp := testutil.DoRequest(t, env, "GET", "/api/detachments/det-ba/stratagems", nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var stratagems []map[string]interface{}
+	testutil.ReadJSON(t, resp, &stratagems)
+	assert.Len(t, stratagems, 0)
 }
 
 func TestFactionEndpoints_Unauthorized(t *testing.T) {

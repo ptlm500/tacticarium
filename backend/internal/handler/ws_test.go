@@ -357,6 +357,43 @@ func TestWSUseStratagem_InsufficientCP(t *testing.T) {
 	assert.Equal(t, "error", msg["type"])
 }
 
+// TestWSUseStratagem_RejectsBoardingActions verifies defense-in-depth: even if
+// a client submits a boarding-actions stratagem ID directly (bypassing the
+// filtered list endpoints), the engine's DB lookup filters it out and the
+// action is rejected.
+func TestWSUseStratagem_RejectsBoardingActions(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, token1, _, gameID := setupActiveGame(t)
+
+	// Seed a boarding-actions stratagem and give player 1 enough CP to afford
+	// it, so the only reason the action can fail is the game_mode filter.
+	_, err := env.Pool.Exec(context.Background(),
+		`INSERT INTO stratagems (id, faction_id, name, type, cp_cost, turn, phase, description, game_mode)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		"strat-ba", "SM", "Explosive Clearance",
+		"Boarding Actions \u2013 Battle Tactic Stratagem", 1,
+		"Your turn", "Shooting phase", "Boarding Actions stratagem.", "boarding_actions")
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(context.Background(),
+		`UPDATE game_players SET cp = 5 WHERE game_id = $1 AND player_number = 1`, gameID)
+	require.NoError(t, err)
+
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	testutil.ReadWSMessage(t, conn1, 5*time.Second)
+
+	testutil.SendWSMessage(t, conn1, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{
+			"type":        "use_stratagem",
+			"stratagemId": "strat-ba",
+			"cpCost":      1,
+		},
+	})
+
+	msg := testutil.ReadWSMessage(t, conn1, 5*time.Second)
+	assert.Equal(t, "error", msg["type"])
+}
+
 func TestWSConcede(t *testing.T) {
 	env := testutil.SharedEnv
 	_, _, token1, token2, gameID := setupActiveGame(t)

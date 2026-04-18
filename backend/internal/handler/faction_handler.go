@@ -36,8 +36,10 @@ func (h *FactionHandler) ListFactions(ctx context.Context, input *struct{}) (*Fa
 }
 
 func (h *FactionHandler) ListDetachments(ctx context.Context, input *FactionIDParam) (*DetachmentListOutput, error) {
+	// Only the "core" game mode is currently supported — detachments exclusive
+	// to alternate modes (e.g. Boarding Actions) are hidden from players.
 	rows, err := h.db.Query(ctx,
-		`SELECT id, faction_id, name FROM detachments WHERE faction_id = $1 ORDER BY name`, input.FactionID)
+		`SELECT id, faction_id, name, game_mode FROM detachments WHERE faction_id = $1 AND game_mode = 'core' ORDER BY name`, input.FactionID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
@@ -46,7 +48,7 @@ func (h *FactionHandler) ListDetachments(ctx context.Context, input *FactionIDPa
 	detachments := make([]models.Detachment, 0)
 	for rows.Next() {
 		var d models.Detachment
-		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name); err != nil {
+		if err := rows.Scan(&d.ID, &d.FactionID, &d.Name, &d.GameMode); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		detachments = append(detachments, d)
@@ -56,9 +58,11 @@ func (h *FactionHandler) ListDetachments(ctx context.Context, input *FactionIDPa
 }
 
 func (h *FactionHandler) ListStratagems(ctx context.Context, input *FactionIDParam) (*StratagemListOutput, error) {
+	// Only the "core" game mode is currently supported — stratagems belonging
+	// to alternate modes (e.g. Boarding Actions) are hidden from players.
 	rows, err := h.db.Query(ctx,
-		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description
-		 FROM stratagems WHERE faction_id = $1 OR faction_id IS NULL ORDER BY name`, input.FactionID)
+		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description, game_mode
+		 FROM stratagems WHERE (faction_id = $1 OR faction_id IS NULL) AND game_mode = 'core' ORDER BY name`, input.FactionID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
@@ -67,7 +71,7 @@ func (h *FactionHandler) ListStratagems(ctx context.Context, input *FactionIDPar
 	stratagems := make([]models.Stratagem, 0)
 	for rows.Next() {
 		var s models.Stratagem
-		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
+		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description, &s.GameMode); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		stratagems = append(stratagems, s)
@@ -78,8 +82,8 @@ func (h *FactionHandler) ListStratagems(ctx context.Context, input *FactionIDPar
 
 func (h *FactionHandler) ListDetachmentStratagems(ctx context.Context, input *DetachmentIDParam) (*StratagemListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description
-		 FROM stratagems WHERE detachment_id = $1 ORDER BY name`, input.DetachmentID)
+		`SELECT id, COALESCE(faction_id, ''), COALESCE(detachment_id, ''), name, type, cp_cost, COALESCE(legend, ''), turn, phase, description, game_mode
+		 FROM stratagems WHERE detachment_id = $1 AND game_mode = 'core' ORDER BY name`, input.DetachmentID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
@@ -88,7 +92,7 @@ func (h *FactionHandler) ListDetachmentStratagems(ctx context.Context, input *De
 	stratagems := make([]models.Stratagem, 0)
 	for rows.Next() {
 		var s models.Stratagem
-		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description); err != nil {
+		if err := rows.Scan(&s.ID, &s.FactionID, &s.DetachmentID, &s.Name, &s.Type, &s.CPCost, &s.Legend, &s.Turn, &s.Phase, &s.Description, &s.GameMode); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		stratagems = append(stratagems, s)
