@@ -353,6 +353,14 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 	oldPhase := e.state.CurrentPhase
 	nextPhase, turnEnded := NextPhase(e.state.CurrentPhase)
 
+	// Stratagems are tracked once per phase; clear the per-player list whenever
+	// the phase changes so the repeat-use confirmation resets each phase.
+	for _, p := range e.state.Players {
+		if p != nil {
+			p.StratagemsUsedThisPhase = nil
+		}
+	}
+
 	var events []GameEvent
 
 	if turnEnded {
@@ -510,6 +518,17 @@ func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 	}
 
 	player.CP -= cpSpent
+
+	alreadyUsedThisPhase := false
+	for _, id := range player.StratagemsUsedThisPhase {
+		if id == stratagemID {
+			alreadyUsedThisPhase = true
+			break
+		}
+	}
+	if !alreadyUsedThisPhase {
+		player.StratagemsUsedThisPhase = append(player.StratagemsUsedThisPhase, stratagemID)
+	}
 
 	return []GameEvent{{
 		Type:         EventStratagemUsed,

@@ -79,6 +79,7 @@ type PlayerState struct {
 	IsChallenger         bool              `json:"isChallenger"`
 	ChallengerCardID     string            `json:"challengerCardId,omitempty"`
 	AdaptOrDieUses       int               `json:"adaptOrDieUses"`
+	StratagemsUsedThisPhase []string       `json:"stratagemsUsedThisPhase"`
 }
 
 func (p *PlayerState) TotalVP() int {
