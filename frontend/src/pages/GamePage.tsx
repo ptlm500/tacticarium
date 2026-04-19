@@ -388,6 +388,8 @@ export function GamePage() {
           discardedSecondaries={myPlayer.discardedSecondaries ?? []}
           deckSize={myPlayer.tacticalDeck?.length ?? 0}
           currentRound={gameState.currentRound}
+          currentPhase={gameState.currentPhase}
+          isMyTurn={isMyTurn}
           currentCP={myPlayer.cp}
           canGainCP={myPlayer.cpGainedThisRound < 1}
           onAchieve={handleAchieveSecondary}

@@ -8,7 +8,7 @@
 
 - [x] There's no reminder text for priamry and twist
 
-- [ ] Non-active player has enabled draw secondaries button
+- [x] Non-active player has enabled draw secondaries button
 
 - [ ] is your army painted tickbox for vp
 
@@ -18,7 +18,7 @@
 
 - [ ] I can't see your strategems
 
-- [ ] Defend strongold doesn't trigger re-draw
+- [x] Defend stronghold doesn't trigger re-draw
 
 - [x] Roll-back to previous round?
 
@@ -26,7 +26,7 @@
 
 - [ ] New orders should only exist when new orders is active
 
-- [ ] There's no cull the horde?
+- [x] There's no cull the horde?
 
 - [x] Why no primary scoring?
 
