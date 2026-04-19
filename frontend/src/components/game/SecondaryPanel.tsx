@@ -13,6 +13,8 @@ interface Props {
   discardedSecondaries: ActiveSecondary[];
   deckSize: number;
   currentRound: number;
+  currentPhase: string;
+  isMyTurn: boolean;
   currentCP: number;
   canGainCP: boolean;
   onAchieve: (secondaryId: string, vpScored: number) => void;
@@ -30,6 +32,8 @@ export function SecondaryPanel({
   discardedSecondaries,
   deckSize,
   currentRound,
+  currentPhase,
+  isMyTurn,
   currentCP,
   canGainCP,
   onAchieve,
@@ -39,6 +43,8 @@ export function SecondaryPanel({
   onDraw,
   onScoreFixedVP,
 }: Props) {
+  const showNewOrders = isMyTurn && currentPhase === "command";
+  const showCPDiscard = isMyTurn && currentPhase === "fight";
   const [expanded, setExpanded] = useState(true);
 
   if (!mode) return null;
@@ -87,7 +93,7 @@ export function SecondaryPanel({
                       >
                         Discard
                       </button>
-                      {currentRound < 5 && (
+                      {showCPDiscard && currentRound < 5 && (
                         <button
                           onClick={() => onDiscard(s.id, false)}
                           disabled={!canGainCP}
@@ -101,14 +107,16 @@ export function SecondaryPanel({
                           {canGainCP ? "Discard +1CP" : "Discard (CP capped)"}
                         </button>
                       )}
-                      <button
-                        onClick={() => onNewOrders(s.id)}
-                        disabled={currentCP < 1}
-                        className="bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-white text-xs px-3 py-1 rounded transition-colors"
-                        title="Spend 1 CP to discard and draw a new secondary"
-                      >
-                        New Orders
-                      </button>
+                      {showNewOrders && (
+                        <button
+                          onClick={() => onNewOrders(s.id)}
+                          disabled={currentCP < 1}
+                          className="bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-white text-xs px-3 py-1 rounded transition-colors"
+                          title="Spend 1 CP to discard and draw a new secondary"
+                        >
+                          New Orders
+                        </button>
+                      )}
                       {s.drawRestriction &&
                         s.drawRestriction.mode === "optional" &&
                         s.drawRestriction.round === currentRound && (
@@ -144,7 +152,9 @@ export function SecondaryPanel({
           {mode === "tactical" && activeSecondaries.length < 2 && deckSize > 0 && (
             <button
               onClick={onDraw}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 rounded-lg transition-colors"
+              disabled={!isMyTurn}
+              title={isMyTurn ? undefined : "Only the active player can draw secondaries"}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm py-2 rounded-lg transition-colors"
             >
               Draw Secondaries ({deckSize} remaining)
             </button>
