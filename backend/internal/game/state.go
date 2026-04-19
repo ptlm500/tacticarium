@@ -96,6 +96,11 @@ type PlayerState struct {
 	ChallengerCardID     string            `json:"challengerCardId,omitempty"`
 	AdaptOrDieUses       int               `json:"adaptOrDieUses"`
 	StratagemsUsedThisPhase []string       `json:"stratagemsUsedThisPhase"`
+
+	// VPPrimaryScoredSlots maps battle round -> scoring slot -> applied VP delta.
+	// Used to prevent double-scoring the same primary slot in a round and to
+	// support undoing a specific prior score.
+	VPPrimaryScoredSlots map[int]map[string]int `json:"vpPrimaryScoredSlots"`
 }
 
 func (p *PlayerState) TotalVP() int {

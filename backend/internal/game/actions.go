@@ -32,6 +32,8 @@ const (
 	ActionAdaptOrDie           ActionType = "adapt_or_die"
 	ActionRequestAbandon       ActionType = "request_abandon"
 	ActionRespondAbandon       ActionType = "respond_abandon"
+	ActionUndoPrimaryScore     ActionType = "undo_primary_score"
+	ActionAdjustVPManual       ActionType = "adjust_vp_manual"
 )
 
 type GameAction struct {
@@ -72,6 +74,8 @@ const (
 	EventChallengerScored       EventType = "challenger_scored"
 	EventAbandonRequested       EventType = "abandon_requested"
 	EventAbandonRejected        EventType = "abandon_rejected"
+	EventVPPrimaryScoreReverted EventType = "vp_primary_score_reverted"
+	EventVPManualAdjust         EventType = "vp_manual_adjust"
 )
 
 type GameEvent struct {

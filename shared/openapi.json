@@ -880,6 +880,16 @@
             "format": "int64",
             "type": "integer"
           },
+          "vpPrimaryScoredSlots": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "type": "object"
+          },
           "vpSecondary": {
             "format": "int64",
             "type": "integer"
@@ -908,7 +918,8 @@
           "cpGainedThisRound",
           "isChallenger",
           "adaptOrDieUses",
-          "stratagemsUsedThisPhase"
+          "stratagemsUsedThisPhase",
+          "vpPrimaryScoredSlots"
         ],
         "type": "object"
       },

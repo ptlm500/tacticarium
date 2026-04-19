@@ -51,6 +51,7 @@ describe("ScoringPrompt", () => {
             { label: "3+ objectives", vp: 10 },
           ],
           currentRound: 3,
+          scoringSlot: "end_of_command_phase",
         },
       ];
       const { props } = renderPrompt({ items });
@@ -58,7 +59,7 @@ describe("ScoringPrompt", () => {
       expect(screen.getByText("Score Primary — Supply Drop")).toBeTruthy();
 
       await user.click(screen.getByText("3+ objectives (+10)"));
-      expect(props.onScore).toHaveBeenCalledWith("primary", 10);
+      expect(props.onScore).toHaveBeenCalledWith("primary", 10, "end_of_command_phase");
     });
 
     it("disables scoring buttons locked by minRound", () => {
@@ -68,6 +69,7 @@ describe("ScoringPrompt", () => {
           missionName: "Supply Drop",
           scoringRules: [{ label: "Late bonus", vp: 5, minRound: 3 }],
           currentRound: 1,
+          scoringSlot: "end_of_command_phase",
         },
       ];
       renderPrompt({ items });

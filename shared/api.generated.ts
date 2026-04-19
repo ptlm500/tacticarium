@@ -993,6 +993,11 @@ export interface components {
             vpPaint: number;
             /** Format: int64 */
             vpPrimary: number;
+            vpPrimaryScoredSlots: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
             /** Format: int64 */
             vpSecondary: number;
         };

@@ -14,8 +14,10 @@ import { StratagemPanel } from "../components/game/StratagemPanel";
 import { SecondaryPanel } from "../components/game/SecondaryPanel";
 import { MissionInfo } from "../components/game/MissionInfo";
 import { MissionScoring } from "../components/game/MissionScoring";
+import { PrimaryScoreHistory } from "../components/game/PrimaryScoreHistory";
 import { GameLog } from "../components/game/GameLog";
 import { ScoringPrompt, ScoringPromptItem } from "../components/game/ScoringPrompt";
+import { PrimaryScoringSlot } from "../types/scoring";
 import { ReminderPrompt } from "../components/game/ReminderPrompt";
 import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
@@ -102,6 +104,7 @@ export function GamePage() {
               (r) => !r.scoringTiming || r.scoringTiming === "end_of_command_phase",
             ),
             currentRound: round,
+            scoringSlot: "end_of_command_phase",
           });
         }
         // Also prompt second player at end of turn in BR5
@@ -113,6 +116,7 @@ export function GamePage() {
               (r) => !r.scoringTiming || r.scoringTiming === "end_of_command_phase",
             ),
             currentRound: round,
+            scoringSlot: "end_of_command_phase",
           });
         }
       }
@@ -139,6 +143,7 @@ export function GamePage() {
             missionName: currentMission.name + " (end of turn)",
             scoringRules: endOfTurnActions,
             currentRound: round,
+            scoringSlot: "end_of_turn",
           });
         }
       }
@@ -183,8 +188,24 @@ export function GamePage() {
   );
 
   const handleScoreVP = useCallback(
+    (category: string, delta: number, scoringSlot?: PrimaryScoringSlot) => {
+      const data: Record<string, unknown> = { category, delta };
+      if (scoringSlot) data.scoringSlot = scoringSlot;
+      sendAction("score_vp", data);
+    },
+    [sendAction],
+  );
+
+  const handleAdjustVPManual = useCallback(
     (category: string, delta: number) => {
-      sendAction("score_vp", { category, delta });
+      sendAction("adjust_vp_manual", { category, delta });
+    },
+    [sendAction],
+  );
+
+  const handleUndoPrimaryScore = useCallback(
+    (round: number, scoringSlot: PrimaryScoringSlot) => {
+      sendAction("undo_primary_score", { round, scoringSlot });
     },
     [sendAction],
   );
@@ -326,7 +347,7 @@ export function GamePage() {
               vpSecondary={myPlayer.vpSecondary}
               vpGambit={myPlayer.vpGambit}
               vpPaint={myPlayer.vpPaint}
-              onScore={handleScoreVP}
+              onAdjust={handleAdjustVPManual}
             />
           </div>
           {/* Mission Quick Scoring */}
@@ -336,9 +357,14 @@ export function GamePage() {
               <MissionScoring
                 scoringRules={currentMission.scoringRules ?? []}
                 currentRound={gameState.currentRound}
-                onScore={(vp) => handleScoreVP("primary", vp)}
+                missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
+                onScore={(vp, slot) => handleScoreVP("primary", vp, slot)}
               />
             )}
+          <PrimaryScoreHistory
+            scoredSlots={myPlayer.vpPrimaryScoredSlots ?? {}}
+            onUndo={handleUndoPrimaryScore}
+          />
         </section>
 
         {/* Opponent State */}

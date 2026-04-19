@@ -22,10 +22,41 @@ VP can be scored by **either player at any time** during an active game — it i
 
 ### Primary, Secondary, and Gambit VP
 
-- Action: `score_vp` with `{category, delta}`
+- Action: `score_vp` with `{category, delta, scoringSlot?}`
 - `category`: `"primary"`, `"secondary"`, or `"gambit"`
 - `delta`: positive or negative integer (allows corrections)
 - Values are clamped between 0 and the category maximum
+- Events record both the requested `delta` and the `appliedDelta` (after clamp),
+  so event-derived stats always reconcile with `game_players` stored values.
+
+**Primary scoring slots.** For `category: "primary"`, the action requires
+`scoringSlot`, one of:
+- `"end_of_command_phase"` — score at the start of each command phase (BR2+)
+- `"end_of_battle_round"` — score at end of round (missions that use round-end scoring)
+- `"end_of_turn"` — per-action bonuses that trigger at the end of a player's turn
+
+Each slot may be scored **at most once per battle round per player**. Attempting
+to score the same slot twice in the same round returns an error. Different
+slots can still be scored in the same round (e.g., `end_of_command_phase` +
+`end_of_turn`). Slots match the mission's `scoringTiming` values, so the
+frontend passes the appropriate slot automatically.
+
+### Undoing a primary score
+
+- Action: `undo_primary_score` with `{round, scoringSlot}`
+- Reverses the applied delta recorded for that round+slot, frees the slot so
+  it can be re-scored, and emits a `vp_primary_score_reverted` event. Any prior
+  round can be undone.
+
+### Manual VP adjustment
+
+For scenarios not covered by mission rules (e.g., ad-hoc corrections, rulings
+not modelled by the engine):
+
+- Action: `adjust_vp_manual` with `{category, delta}`
+- Bypasses slot tracking entirely; clamps to the category cap.
+- Emits a distinct `vp_manual_adjust` event so the game log visually
+  distinguishes it from rule-based scoring.
 
 ### Paint VP
 

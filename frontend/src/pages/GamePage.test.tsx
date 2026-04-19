@@ -432,13 +432,14 @@ describe("GamePage", () => {
       );
       await user.click(modalButton!);
 
-      // Verify score_vp action was sent via WebSocket
+      // Verify score_vp action was sent via WebSocket with scoringSlot
       await vi.waitFor(() => {
         const scoreMsg = wsMessages.find((m) => m.includes("score_vp"));
         expect(scoreMsg).toBeTruthy();
         const parsed = JSON.parse(scoreMsg!);
         expect(parsed.data.category).toBe("primary");
         expect(parsed.data.delta).toBe(10);
+        expect(parsed.data.scoringSlot).toBe("end_of_command_phase");
       });
     });
   });

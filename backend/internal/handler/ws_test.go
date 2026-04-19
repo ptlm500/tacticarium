@@ -323,9 +323,10 @@ func TestWSScoreVP(t *testing.T) {
 	testutil.SendWSMessage(t, conn1, map[string]interface{}{
 		"type": "action",
 		"data": map[string]interface{}{
-			"type":     "score_vp",
-			"category": "primary",
-			"delta":    5,
+			"type":        "score_vp",
+			"category":    "primary",
+			"delta":       5,
+			"scoringSlot": "end_of_command_phase",
 		},
 	})
 
@@ -430,9 +431,10 @@ func TestWSPersistence(t *testing.T) {
 	testutil.SendWSMessage(t, conn1, map[string]interface{}{
 		"type": "action",
 		"data": map[string]interface{}{
-			"type":     "score_vp",
-			"category": "primary",
-			"delta":    10,
+			"type":        "score_vp",
+			"category":    "primary",
+			"delta":       10,
+			"scoringSlot": "end_of_command_phase",
 		},
 	})
 	testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)

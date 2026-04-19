@@ -1,16 +1,23 @@
 import { ScoringAction } from "../../types/mission";
 import { ActiveSecondary } from "../../types/game";
+import { PrimaryScoringSlot } from "../../types/scoring";
 import { ReminderPrompt } from "./ReminderPrompt";
 
 export type ScoringPromptItem =
-  | { kind: "primary"; missionName: string; scoringRules: ScoringAction[]; currentRound: number }
+  | {
+      kind: "primary";
+      missionName: string;
+      scoringRules: ScoringAction[];
+      currentRound: number;
+      scoringSlot: PrimaryScoringSlot;
+    }
   | { kind: "secondary" }
   | { kind: "fixed_secondary"; secondaries: ActiveSecondary[] }
   | { kind: "end_of_round_primary"; missionName: string; note: string };
 
 interface Props {
   items: ScoringPromptItem[];
-  onScore: (category: string, delta: number) => void;
+  onScore: (category: string, delta: number, scoringSlot?: PrimaryScoringSlot) => void;
   activeSecondaries: ActiveSecondary[];
   onAchieveSecondary: (id: string, vp: number) => void;
   onDiscardSecondary: (id: string, free: boolean) => void;
@@ -47,7 +54,7 @@ export function ScoringPrompt({
               missionName={item.missionName}
               scoringRules={item.scoringRules}
               currentRound={item.currentRound}
-              onScore={(vp) => onScore("primary", vp)}
+              onScore={(vp) => onScore("primary", vp, item.scoringSlot)}
             />
           )}
           {item.kind === "end_of_round_primary" && (

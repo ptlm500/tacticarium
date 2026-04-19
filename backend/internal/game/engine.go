@@ -129,6 +129,10 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applyRequestAbandon(action)
 	case ActionRespondAbandon:
 		return e.applyRespondAbandon(action)
+	case ActionUndoPrimaryScore:
+		return e.applyUndoPrimaryScore(action)
+	case ActionAdjustVPManual:
+		return e.applyAdjustVPManual(action)
 	default:
 		return nil, fmt.Errorf("unknown action type: %s", action.Type)
 	}
@@ -464,19 +468,54 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	category, _ := action.Data["category"].(string)
 	delta := intFromData(action.Data, "delta")
 
-	var eventType EventType
+	var (
+		eventType    EventType
+		oldVP        int
+		newVP        int
+		scoringSlot  string
+	)
 	switch category {
 	case "primary":
-		player.VPPrimary = ClampVP(player.VPPrimary+delta, MaxVPPrimary)
+		scoringSlot, _ = action.Data["scoringSlot"].(string)
+		if !IsValidPrimaryScoringSlot(scoringSlot) {
+			return nil, fmt.Errorf("primary score requires a valid scoringSlot (end_of_command_phase, end_of_battle_round, end_of_turn)")
+		}
+		if _, used := player.VPPrimaryScoredSlots[e.state.CurrentRound][scoringSlot]; used {
+			return nil, fmt.Errorf("primary already scored for slot %q in round %d", scoringSlot, e.state.CurrentRound)
+		}
+		oldVP = player.VPPrimary
+		newVP = ClampVP(oldVP+delta, MaxVPPrimary)
+		player.VPPrimary = newVP
+		if player.VPPrimaryScoredSlots == nil {
+			player.VPPrimaryScoredSlots = map[int]map[string]int{}
+		}
+		if player.VPPrimaryScoredSlots[e.state.CurrentRound] == nil {
+			player.VPPrimaryScoredSlots[e.state.CurrentRound] = map[string]int{}
+		}
+		player.VPPrimaryScoredSlots[e.state.CurrentRound][scoringSlot] = newVP - oldVP
 		eventType = EventVPPrimaryScore
 	case "secondary":
-		player.VPSecondary = ClampVP(player.VPSecondary+delta, MaxVPSecondary)
+		oldVP = player.VPSecondary
+		newVP = ClampVP(oldVP+delta, MaxVPSecondary)
+		player.VPSecondary = newVP
 		eventType = EventVPSecondaryScore
 	case "gambit":
-		player.VPGambit = ClampVP(player.VPGambit+delta, MaxVPGambit)
+		oldVP = player.VPGambit
+		newVP = ClampVP(oldVP+delta, MaxVPGambit)
+		player.VPGambit = newVP
 		eventType = EventVPGambitScore
 	default:
 		return nil, fmt.Errorf("invalid VP category: %s", category)
+	}
+
+	data := map[string]any{
+		"category":     category,
+		"delta":        delta,
+		"appliedDelta": newVP - oldVP,
+		"newTotal":     player.TotalVP(),
+	}
+	if scoringSlot != "" {
+		data["scoringSlot"] = scoringSlot
 	}
 
 	return []GameEvent{{
@@ -484,7 +523,100 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
-		Data:         map[string]any{"category": category, "delta": delta, "newTotal": player.TotalVP()},
+		Data:         data,
+	}}, nil
+}
+
+func (e *Engine) applyUndoPrimaryScore(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+
+	round := intFromData(action.Data, "round")
+	scoringSlot, _ := action.Data["scoringSlot"].(string)
+	if !IsValidPrimaryScoringSlot(scoringSlot) {
+		return nil, fmt.Errorf("invalid scoringSlot")
+	}
+	if round <= 0 {
+		return nil, fmt.Errorf("invalid round")
+	}
+
+	slots, ok := player.VPPrimaryScoredSlots[round]
+	if !ok {
+		return nil, fmt.Errorf("no primary score recorded for round %d", round)
+	}
+	appliedDelta, ok := slots[scoringSlot]
+	if !ok {
+		return nil, fmt.Errorf("no primary score recorded for slot %q in round %d", scoringSlot, round)
+	}
+
+	player.VPPrimary = ClampVP(player.VPPrimary-appliedDelta, MaxVPPrimary)
+	delete(slots, scoringSlot)
+	if len(slots) == 0 {
+		delete(player.VPPrimaryScoredSlots, round)
+	}
+
+	return []GameEvent{{
+		Type:         EventVPPrimaryScoreReverted,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data: map[string]any{
+			"revertedRound": round,
+			"scoringSlot":   scoringSlot,
+			"revertedDelta": appliedDelta,
+			"newTotal":      player.TotalVP(),
+		},
+	}}, nil
+}
+
+func (e *Engine) applyAdjustVPManual(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+
+	category, _ := action.Data["category"].(string)
+	delta := intFromData(action.Data, "delta")
+
+	var oldVP, newVP int
+	switch category {
+	case "primary":
+		oldVP = player.VPPrimary
+		newVP = ClampVP(oldVP+delta, MaxVPPrimary)
+		player.VPPrimary = newVP
+	case "secondary":
+		oldVP = player.VPSecondary
+		newVP = ClampVP(oldVP+delta, MaxVPSecondary)
+		player.VPSecondary = newVP
+	case "gambit":
+		oldVP = player.VPGambit
+		newVP = ClampVP(oldVP+delta, MaxVPGambit)
+		player.VPGambit = newVP
+	default:
+		return nil, fmt.Errorf("invalid VP category: %s", category)
+	}
+
+	return []GameEvent{{
+		Type:         EventVPManualAdjust,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data: map[string]any{
+			"category":     category,
+			"delta":        delta,
+			"appliedDelta": newVP - oldVP,
+			"newTotal":     player.TotalVP(),
+		},
 	}}, nil
 }
 
