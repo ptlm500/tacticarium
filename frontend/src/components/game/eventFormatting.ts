@@ -49,6 +49,8 @@ export function formatEvent(event: NormalizedEvent): string {
   switch (event.eventType) {
     case "phase_advance":
       return `${player} advanced to ${event.data?.to || "next"} phase`;
+    case "phase_revert":
+      return `${player} reverted to ${event.data?.to || "previous"} phase`;
     case "cp_gain":
       return `${player} gained ${event.data?.amount || 1} CP`;
     case "cp_adjust":

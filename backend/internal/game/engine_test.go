@@ -1490,6 +1490,191 @@ func TestAdvancePhase_OnlyActivePlayer(t *testing.T) {
 	}
 }
 
+func TestRevertPhase_WithinTurn(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseMovement
+	state.Players[0].CP = 3
+	state.Players[1].CP = 4
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.CurrentPhase != PhaseCommand {
+		t.Fatalf("expected command phase, got %s", state.CurrentPhase)
+	}
+	if len(events) != 1 || events[0].Type != EventPhaseRevert {
+		t.Fatalf("expected a single phase_revert event, got %+v", events)
+	}
+	if state.Players[0].CP != 3 || state.Players[1].CP != 4 {
+		t.Fatal("within-turn revert must not touch CP")
+	}
+}
+
+func TestRevertPhase_TurnBoundary_T2CommandBackToT1Fight(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.CurrentTurn = 2
+	state.CurrentPhase = PhaseCommand
+	state.ActivePlayer = 2
+	state.FirstTurnPlayer = 1
+	// Both players just gained 1 CP entering this Command phase.
+	state.Players[0].CP = 2
+	state.Players[1].CP = 2
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.CurrentRound != 1 || state.CurrentTurn != 1 || state.CurrentPhase != PhaseFight {
+		t.Fatalf("expected round=1 turn=1 fight, got round=%d turn=%d phase=%s",
+			state.CurrentRound, state.CurrentTurn, state.CurrentPhase)
+	}
+	if state.ActivePlayer != 1 {
+		t.Fatalf("expected active player 1, got %d", state.ActivePlayer)
+	}
+	if state.Players[0].CP != 1 || state.Players[1].CP != 1 {
+		t.Fatalf("expected both players CP=1 after revoking auto-CP, got %d/%d",
+			state.Players[0].CP, state.Players[1].CP)
+	}
+
+	if events[0].Type != EventPhaseRevert {
+		t.Fatalf("expected first event to be phase_revert, got %s", events[0].Type)
+	}
+	cpAdjustCount := 0
+	for _, ev := range events {
+		if ev.Type == EventCPAdjust {
+			cpAdjustCount++
+			if ev.Data["reason"] != "phase_revert" {
+				t.Fatalf("expected reason=phase_revert on cp_adjust event, got %v", ev.Data["reason"])
+			}
+			if ev.Data["delta"] != -1 {
+				t.Fatalf("expected delta=-1, got %v", ev.Data["delta"])
+			}
+		}
+	}
+	if cpAdjustCount != 2 {
+		t.Fatalf("expected 2 cp_adjust events, got %d", cpAdjustCount)
+	}
+}
+
+func TestRevertPhase_RoundBoundary_R2T1CommandBackToR1T2Fight(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 2
+	state.CurrentTurn = 1
+	state.CurrentPhase = PhaseCommand
+	state.ActivePlayer = 1
+	state.FirstTurnPlayer = 1
+	state.Players[0].CP = 3
+	state.Players[1].CP = 5
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.CurrentRound != 1 || state.CurrentTurn != 2 || state.CurrentPhase != PhaseFight {
+		t.Fatalf("expected round=1 turn=2 fight, got round=%d turn=%d phase=%s",
+			state.CurrentRound, state.CurrentTurn, state.CurrentPhase)
+	}
+	if state.ActivePlayer != 2 {
+		t.Fatalf("expected active player 2 (non-first-turn player), got %d", state.ActivePlayer)
+	}
+	if state.Players[0].CP != 2 || state.Players[1].CP != 4 {
+		t.Fatalf("expected CP=2/4, got %d/%d", state.Players[0].CP, state.Players[1].CP)
+	}
+}
+
+func TestRevertPhase_ClampsCPToZero(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 1
+	state.CurrentTurn = 2
+	state.CurrentPhase = PhaseCommand
+	state.ActivePlayer = 2
+	state.FirstTurnPlayer = 1
+	state.Players[0].CP = 0
+	state.Players[1].CP = 0
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].CP != 0 || state.Players[1].CP != 0 {
+		t.Fatalf("expected CP clamped to 0, got %d/%d", state.Players[0].CP, state.Players[1].CP)
+	}
+	// A cp_adjust event with delta=0 should still be emitted (bookkeeping).
+	var p1Delta any
+	for _, ev := range events {
+		if ev.Type == EventCPAdjust && ev.PlayerNumber == 1 {
+			p1Delta = ev.Data["delta"]
+		}
+	}
+	if p1Delta != 0 {
+		t.Fatalf("expected delta=0 when clamped, got %v", p1Delta)
+	}
+}
+
+func TestRevertPhase_BlockedAtGameStart(t *testing.T) {
+	state := newActiveTestState() // round=1 turn=1 phase=command
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 1,
+	})
+	if err == nil {
+		t.Fatal("expected error reverting before game start")
+	}
+}
+
+func TestRevertPhase_OnlyActivePlayer(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseMovement
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 2,
+	})
+	if err == nil {
+		t.Fatal("expected error for non-active player")
+	}
+}
+
+func TestRevertPhase_ClearsStratagemsUsedThisPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseShooting
+	state.Players[0].StratagemsUsedThisPhase = []string{"strat-1", "strat-2"}
+	state.Players[1].StratagemsUsedThisPhase = []string{"strat-3"}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionRevertPhase,
+		PlayerNumber: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Players[0].StratagemsUsedThisPhase) != 0 || len(state.Players[1].StratagemsUsedThisPhase) != 0 {
+		t.Fatal("expected stratagems-used-this-phase to be cleared on revert")
+	}
+}
+
 func TestAdjustCP(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].CP = 5

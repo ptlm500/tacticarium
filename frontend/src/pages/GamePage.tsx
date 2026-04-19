@@ -38,6 +38,7 @@ export function GamePage() {
   const [showLog, setShowLog] = useState(false);
   const [showConcedeModal, setShowConcedeModal] = useState(false);
   const [showAbandonModal, setShowAbandonModal] = useState(false);
+  const [showRevertModal, setShowRevertModal] = useState(false);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
@@ -223,6 +224,11 @@ export function GamePage() {
   const handleConcede = useCallback(() => {
     sendAction("concede");
     setShowConcedeModal(false);
+  }, [sendAction]);
+
+  const handleRevertPhase = useCallback(() => {
+    sendAction("revert_phase");
+    setShowRevertModal(false);
   }, [sendAction]);
 
   const handleRequestAbandon = useCallback(() => {
@@ -471,12 +477,21 @@ export function GamePage() {
       {/* Bottom Action Bar */}
       <div className="p-4 border-t border-gray-800 flex gap-3">
         {isMyTurn && (
-          <button
-            onClick={handleAdvancePhase}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
-          >
-            Advance Phase
-          </button>
+          <>
+            <button
+              onClick={() => setShowRevertModal(true)}
+              className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold px-4 py-3 rounded-lg transition-colors"
+              title="Step back one phase"
+            >
+              ← Revert
+            </button>
+            <button
+              onClick={handleAdvancePhase}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
+            >
+              Advance Phase
+            </button>
+          </>
         )}
         <button
           onClick={() => setShowConcedeModal(true)}
@@ -491,6 +506,19 @@ export function GamePage() {
           Abandon
         </button>
       </div>
+
+      {/* Revert Phase Confirmation Modal */}
+      {showRevertModal && (
+        <ConfirmModal
+          title="Revert Phase"
+          message="Step back one phase. If this rolls back into the previous turn, both players lose the 1 CP they gained at the start of this Command phase (clamped at 0). Scored VP, used stratagems, and secondary draws are not reverted."
+          confirmLabel="Revert"
+          cancelLabel="Cancel"
+          variant="default"
+          onConfirm={handleRevertPhase}
+          onCancel={() => setShowRevertModal(false)}
+        />
+      )}
 
       {/* Concede Confirmation Modal */}
       {showConcedeModal && (

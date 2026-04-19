@@ -131,6 +131,141 @@ describe("GamePage", () => {
     });
   });
 
+  describe("Revert Phase button", () => {
+    it("is shown on the active player's turn", async () => {
+      await act(async () => {
+        renderGame({ activePlayer: 1, currentPhase: "movement" });
+      });
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("← Revert")).toBeTruthy();
+      });
+    });
+
+    it("is hidden on the opponent's turn", async () => {
+      await act(async () => {
+        renderGame({ activePlayer: 2, currentPhase: "movement" });
+      });
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Concede")).toBeTruthy();
+      });
+      expect(screen.queryByText("← Revert")).toBeNull();
+    });
+
+    it("opens the confirmation modal on click", async () => {
+      await act(async () => {
+        renderGame({ activePlayer: 1, currentPhase: "movement" });
+      });
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("← Revert")).toBeTruthy();
+      });
+
+      const user = userEvent.setup();
+      await user.click(screen.getByText("← Revert"));
+
+      await vi.waitFor(() => {
+        // Modal title ("Revert Phase") appears; confirm button label is "Revert"
+        expect(screen.getByText("Revert Phase")).toBeTruthy();
+        expect(screen.getByText(/both players lose the 1 CP/i)).toBeTruthy();
+      });
+    });
+
+    it("sends revert_phase action when confirmed", async () => {
+      const wsMessages: string[] = [];
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      const gs = makeGameState({ activePlayer: 1, currentPhase: "shooting" });
+
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.addEventListener("message", (event) => {
+            wsMessages.push(typeof event.data === "string" ? event.data : "");
+          });
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+        }),
+      );
+
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("← Revert")).toBeTruthy();
+      });
+
+      await user.click(screen.getByText("← Revert"));
+
+      // The confirm button inside the modal is labelled "Revert"
+      await vi.waitFor(() => {
+        const confirmBtn = screen.getAllByRole("button").find((b) => b.textContent === "Revert");
+        expect(confirmBtn).toBeTruthy();
+      });
+      const confirmBtn = screen.getAllByRole("button").find((b) => b.textContent === "Revert");
+      await user.click(confirmBtn!);
+
+      await vi.waitFor(() => {
+        const msg = wsMessages.find((m) => m.includes("revert_phase"));
+        expect(msg).toBeTruthy();
+        const parsed = JSON.parse(msg!);
+        expect(parsed.type).toBe("action");
+        expect(parsed.data.type).toBe("revert_phase");
+      });
+    });
+
+    it("does not send revert_phase when cancelled", async () => {
+      const wsMessages: string[] = [];
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      const gs = makeGameState({ activePlayer: 1, currentPhase: "shooting" });
+
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.addEventListener("message", (event) => {
+            wsMessages.push(typeof event.data === "string" ? event.data : "");
+          });
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+        }),
+      );
+
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("← Revert")).toBeTruthy();
+      });
+
+      await user.click(screen.getByText("← Revert"));
+      await vi.waitFor(() => {
+        expect(screen.getByText("Cancel")).toBeTruthy();
+      });
+      await user.click(screen.getByText("Cancel"));
+
+      // Modal should close; no revert_phase message sent
+      expect(wsMessages.find((m) => m.includes("revert_phase"))).toBeUndefined();
+    });
+  });
+
   it("filters stratagems by phase, turn, and detachment", async () => {
     // Override the stratagems API to return our mock data
     worker.use(

@@ -87,6 +87,8 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applySetReady(action)
 	case ActionAdvancePhase:
 		return e.applyAdvancePhase(action)
+	case ActionRevertPhase:
+		return e.applyRevertPhase(action)
 	case ActionAdjustCP:
 		return e.applyAdjustCP(action)
 	case ActionScoreVP:
@@ -417,6 +419,79 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 		Phase:        e.state.CurrentPhase,
 		Data:         map[string]any{"from": string(oldPhase), "to": string(e.state.CurrentPhase)},
 	})
+
+	return events, nil
+}
+
+func (e *Engine) applyRevertPhase(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+	if action.PlayerNumber != e.state.ActivePlayer {
+		return nil, fmt.Errorf("only the active player can revert the phase")
+	}
+	if e.state.CurrentRound == 1 && e.state.CurrentTurn == 1 && e.state.CurrentPhase == PhaseCommand {
+		return nil, fmt.Errorf("cannot revert before the start of the game")
+	}
+
+	oldPhase := e.state.CurrentPhase
+
+	// Mirror advance_phase: stratagem "used this phase" lists reset on any
+	// phase change so the repeat-use confirmation resets for the reverted phase.
+	for _, p := range e.state.Players {
+		if p != nil {
+			p.StratagemsUsedThisPhase = nil
+		}
+	}
+
+	crossedTurnBoundary := oldPhase == PhaseCommand
+
+	if !crossedTurnBoundary {
+		e.state.CurrentPhase = PrevPhase(oldPhase)
+	} else if e.state.CurrentTurn == 2 {
+		// Rolling back to the first player's Fight phase, same round.
+		e.state.CurrentTurn = 1
+		e.state.ActivePlayer = e.state.FirstTurnPlayer
+		e.state.CurrentPhase = PhaseFight
+	} else {
+		// currentTurn == 1, rolling back into the previous round's second turn.
+		e.state.CurrentRound--
+		e.state.CurrentTurn = 2
+		e.state.ActivePlayer = 3 - e.state.FirstTurnPlayer
+		e.state.CurrentPhase = PhaseFight
+	}
+
+	events := []GameEvent{{
+		Type:         EventPhaseRevert,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data:         map[string]any{"from": string(oldPhase), "to": string(e.state.CurrentPhase)},
+	}}
+
+	if crossedTurnBoundary {
+		// Revoke the 1 CP each player auto-gained when entering the Command
+		// phase we just rolled out of. Clamp at 0 — if a player already spent
+		// the CP, we don't push them negative; their stratagem use stands.
+		for _, p := range e.state.Players {
+			if p == nil {
+				continue
+			}
+			newCP := p.CP - CPPerCommandPhase
+			if newCP < 0 {
+				newCP = 0
+			}
+			delta := newCP - p.CP
+			p.CP = newCP
+			events = append(events, GameEvent{
+				Type:         EventCPAdjust,
+				PlayerNumber: p.PlayerNumber,
+				Round:        e.state.CurrentRound,
+				Phase:        e.state.CurrentPhase,
+				Data:         map[string]any{"delta": delta, "newTotal": newCP, "reason": "phase_revert"},
+			})
+		}
+	}
 
 	return events, nil
 }
