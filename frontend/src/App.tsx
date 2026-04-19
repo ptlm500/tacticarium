@@ -43,76 +43,76 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-      <AuthContext.Provider value={auth}>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route
-                path="/"
-                element={
-                  <AuthGuard>
-                    <QueryErrorBoundary>
-                      <LobbyPage />
-                    </QueryErrorBoundary>
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/game/:id/setup"
-                element={
-                  <AuthGuard>
-                    <QueryErrorBoundary>
-                      <GameSetupPage />
-                    </QueryErrorBoundary>
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/game/:id"
-                element={
-                  <AuthGuard>
-                    <QueryErrorBoundary>
-                      <GamePage />
-                    </QueryErrorBoundary>
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/history"
-                element={
-                  <AuthGuard>
-                    <QueryErrorBoundary>
-                      <GameHistoryPage />
-                    </QueryErrorBoundary>
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/history/:id"
-                element={
-                  <AuthGuard>
-                    <QueryErrorBoundary>
-                      <GameDetailPage />
-                    </QueryErrorBoundary>
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/join/:code"
-                element={
-                  <AuthGuard>
-                    <JoinRedirect />
-                  </AuthGuard>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-          <Toaster position="top-right" />
-          <ReactQueryDevtools initialIsOpen={false} />
-        </QueryClientProvider>
-      </AuthContext.Provider>
+        <AuthContext.Provider value={auth}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route
+                  path="/"
+                  element={
+                    <AuthGuard>
+                      <QueryErrorBoundary>
+                        <LobbyPage />
+                      </QueryErrorBoundary>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/game/:id/setup"
+                  element={
+                    <AuthGuard>
+                      <QueryErrorBoundary>
+                        <GameSetupPage />
+                      </QueryErrorBoundary>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/game/:id"
+                  element={
+                    <AuthGuard>
+                      <QueryErrorBoundary>
+                        <GamePage />
+                      </QueryErrorBoundary>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <AuthGuard>
+                      <QueryErrorBoundary>
+                        <GameHistoryPage />
+                      </QueryErrorBoundary>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/history/:id"
+                  element={
+                    <AuthGuard>
+                      <QueryErrorBoundary>
+                        <GameDetailPage />
+                      </QueryErrorBoundary>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/join/:code"
+                  element={
+                    <AuthGuard>
+                      <JoinRedirect />
+                    </AuthGuard>
+                  }
+                />
+              </Routes>
+            </BrowserRouter>
+            <Toaster position="top-right" />
+            <ReactQueryDevtools initialIsOpen={false} />
+          </QueryClientProvider>
+        </AuthContext.Provider>
       </ThemeProvider>
     </ErrorBoundary>
   );

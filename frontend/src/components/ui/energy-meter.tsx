@@ -1,18 +1,18 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface EnergyMeterProps extends React.HTMLAttributes<HTMLDivElement> {
-  value: number
-  segments?: number
-  label?: string
-  orientation?: "horizontal" | "vertical"
-  showValue?: boolean
+  value: number;
+  segments?: number;
+  label?: string;
+  orientation?: "horizontal" | "vertical";
+  showValue?: boolean;
 }
 
 function getVariant(value: number) {
-  if (value < 30) return "critical"
-  if (value <= 60) return "warning"
-  return "primary"
+  if (value < 30) return "critical";
+  if (value <= 60) return "warning";
+  return "primary";
 }
 
 const variantColors = {
@@ -28,7 +28,7 @@ const variantColors = {
     filled: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]",
     text: "text-red-500",
   },
-}
+};
 
 export function EnergyMeter({
   value,
@@ -39,49 +39,49 @@ export function EnergyMeter({
   className,
   ...props
 }: EnergyMeterProps) {
-  const clamped = Math.max(0, Math.min(100, value))
-  const filledCount = Math.round((clamped / 100) * segments)
-  const variant = getVariant(clamped)
-  const colors = variantColors[variant]
-  const isVertical = orientation === "vertical"
+  const clamped = Math.max(0, Math.min(100, value));
+  const filledCount = Math.round((clamped / 100) * segments);
+  const variant = getVariant(clamped);
+  const colors = variantColors[variant];
+  const isVertical = orientation === "vertical";
 
   // Staggered segment fill animation
-  const [visibleCount, setVisibleCount] = React.useState(0)
+  const [visibleCount, setVisibleCount] = React.useState(0);
 
   React.useEffect(() => {
     if (filledCount === 0) {
-      setVisibleCount(0)
-      return
+      setVisibleCount(0);
+      return;
     }
-    let current = 0
+    let current = 0;
     const interval = setInterval(() => {
-      current++
-      setVisibleCount(current)
-      if (current >= filledCount) clearInterval(interval)
-    }, 60)
-    return () => clearInterval(interval)
-  }, [filledCount])
+      current++;
+      setVisibleCount(current);
+      if (current >= filledCount) clearInterval(interval);
+    }, 60);
+    return () => clearInterval(interval);
+  }, [filledCount]);
 
   // Animate counter
-  const [displayPercent, setDisplayPercent] = React.useState(0)
+  const [displayPercent, setDisplayPercent] = React.useState(0);
   React.useEffect(() => {
-    const duration = filledCount * 60 + 100
-    const start = performance.now()
+    const duration = filledCount * 60 + 100;
+    const start = performance.now();
     function tick(now: number) {
-      const progress = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplayPercent(Math.round(clamped * eased))
-      if (progress < 1) requestAnimationFrame(tick)
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayPercent(Math.round(clamped * eased));
+      if (progress < 1) requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick)
-  }, [clamped, filledCount])
+    requestAnimationFrame(tick);
+  }, [clamped, filledCount]);
 
   return (
     <div
       data-slot="tron-energy-meter"
       className={cn(
         "relative overflow-hidden rounded border border-primary/30 bg-card/80 p-3 backdrop-blur-sm",
-        className
+        className,
       )}
       {...props}
     >
@@ -105,29 +105,22 @@ export function EnergyMeter({
       )}
 
       {/* Segments */}
-      <div
-        className={cn(
-          "flex gap-1",
-          isVertical && "flex-col-reverse items-center"
-        )}
-      >
+      <div className={cn("flex gap-1", isVertical && "flex-col-reverse items-center")}>
         {Array.from({ length: segments }, (_, i) => {
-          const isFilled = i < visibleCount
-          const isLast = i === visibleCount - 1
+          const isFilled = i < visibleCount;
+          const isLast = i === visibleCount - 1;
           return (
             <div
               key={i}
               className={cn(
                 "rounded-sm transition-all",
                 isVertical ? "h-2 w-full" : "h-6 flex-1",
-                isFilled
-                  ? cn(colors.filled, "duration-150")
-                  : "bg-foreground/10 duration-300",
+                isFilled ? cn(colors.filled, "duration-150") : "bg-foreground/10 duration-300",
                 isFilled && variant === "critical" && "animate-pulse",
-                isLast && "scale-y-110"
+                isLast && "scale-y-110",
               )}
             />
-          )
+          );
         })}
       </div>
 
@@ -137,5 +130,5 @@ export function EnergyMeter({
       <div className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-primary/50" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-primary/50" />
     </div>
-  )
+  );
 }

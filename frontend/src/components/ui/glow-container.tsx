@@ -1,10 +1,10 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface GlowContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-  intensity?: "sm" | "md" | "lg"
-  pulse?: boolean
-  hover?: boolean
+  intensity?: "sm" | "md" | "lg";
+  pulse?: boolean;
+  hover?: boolean;
 }
 
 export function GlowContainer({
@@ -19,7 +19,7 @@ export function GlowContainer({
     sm: "glow-sm",
     md: "glow",
     lg: "glow-lg",
-  }[intensity]
+  }[intensity];
 
   return (
     <div
@@ -28,11 +28,11 @@ export function GlowContainer({
         hover && "hover:glow-border",
         pulse && "glow-pulse",
         !hover && !pulse && glowClass,
-        className
+        className,
       )}
       {...props}
     >
       {children}
     </div>
-  )
+  );
 }

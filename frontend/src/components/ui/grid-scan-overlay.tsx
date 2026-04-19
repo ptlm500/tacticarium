@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 export interface GridScanOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
-  gridSize?: number
-  scanSpeed?: number
+  gridSize?: number;
+  scanSpeed?: number;
 }
 
 export function GridScanOverlay({
@@ -23,7 +23,8 @@ export function GridScanOverlay({
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage: "repeating-linear-gradient(0deg, var(--primary), var(--primary) 1px, transparent 1px, transparent 3px)",
+          backgroundImage:
+            "repeating-linear-gradient(0deg, var(--primary), var(--primary) 1px, transparent 1px, transparent 3px)",
         }}
       />
 
@@ -44,7 +45,6 @@ export function GridScanOverlay({
           animation: `tron-vertical-scan ${scanSpeed}s linear infinite`,
         }}
       />
-
     </div>
-  )
+  );
 }

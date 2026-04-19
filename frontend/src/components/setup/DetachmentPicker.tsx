@@ -13,9 +13,7 @@ export function DetachmentPicker({ detachments, selectedId, onSelect }: Props) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Spinner size="sm" />
-        <span className="font-mono text-[10px] uppercase tracking-widest">
-          Loading detachments
-        </span>
+        <span className="font-mono text-[10px] uppercase tracking-widest">Loading detachments</span>
       </div>
     );
   }

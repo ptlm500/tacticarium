@@ -1,9 +1,9 @@
-import { Loader2Icon } from "lucide-react"
+import { Loader2Icon } from "lucide-react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface SpinnerProps extends React.ComponentProps<"svg"> {
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg";
 }
 
 function Spinner({ className, size = "md", ...props }: SpinnerProps) {
@@ -11,7 +11,7 @@ function Spinner({ className, size = "md", ...props }: SpinnerProps) {
     sm: "size-3",
     md: "size-4",
     lg: "size-6",
-  }
+  };
 
   return (
     <Loader2Icon
@@ -20,7 +20,7 @@ function Spinner({ className, size = "md", ...props }: SpinnerProps) {
       className={cn("animate-spin", sizeClasses[size], className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Spinner }
+export { Spinner };

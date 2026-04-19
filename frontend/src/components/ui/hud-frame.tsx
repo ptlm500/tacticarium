@@ -1,22 +1,17 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface HUDFrameProps extends React.HTMLAttributes<HTMLDivElement> {
-  label?: string
+  label?: string;
 }
 
-export function HUDFrame({
-  label,
-  children,
-  className,
-  ...props
-}: HUDFrameProps) {
+export function HUDFrame({ label, children, className, ...props }: HUDFrameProps) {
   return (
     <div
       data-slot="tron-hud-frame"
       className={cn(
         "relative border border-primary/30 bg-background/50 backdrop-blur-sm",
-        className
+        className,
       )}
       {...props}
     >
@@ -48,5 +43,5 @@ export function HUDFrame({
 
       <div className="relative p-4">{children}</div>
     </div>
-  )
+  );
 }

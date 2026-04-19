@@ -560,11 +560,9 @@ describe("GamePage", () => {
         expect(screen.getByText("Score Primary — Supply Drop")).toBeTruthy();
       });
 
-      // Click the scoring button inside the modal (indigo-800 bg), not the Quick Score one
-      const buttons = screen.getAllByText("3+ objectives (+10)");
-      const modalButton = buttons.find((btn) =>
-        btn.closest("button")?.classList.contains("bg-indigo-800"),
-      );
+      // Click the scoring button inside the modal (data-testid set), not the Quick Score one
+      const modalButtons = screen.getAllByTestId("scoring-prompt-primary-btn");
+      const modalButton = modalButtons.find((btn) => btn.textContent?.includes("3+ objectives"));
       await user.click(modalButton!);
 
       // Verify score_vp action was sent via WebSocket with scoringSlot

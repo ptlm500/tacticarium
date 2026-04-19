@@ -1,5 +1,18 @@
 import { useState } from "react";
 import { Stratagem } from "../../types/faction";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface Props {
   stratagems: Stratagem[];
@@ -14,7 +27,7 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
 
   if (stratagems.length === 0) {
     return (
-      <div className="mt-2 bg-gray-800/50 rounded-lg p-4 text-gray-500 text-sm text-center">
+      <div className="mt-2 rounded-sm border border-border/40 bg-background/40 p-4 text-center text-sm text-muted-foreground">
         No stratagems available for this phase.
       </div>
     );
@@ -36,95 +49,103 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
 
   return (
     <>
-      <div className="mt-2 space-y-2 max-h-80 overflow-y-auto">
+      <div className="mt-2 max-h-80 space-y-2 overflow-y-auto pr-1">
         {stratagems.map((s) => (
-          <div key={s.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-3">
-            <div className="flex justify-between items-start mb-1">
+          <div key={s.id} className="rounded-sm border border-border/60 bg-background/40 p-3">
+            <div className="mb-1 flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-semibold text-sm">{s.name}</h3>
-                <p className="text-xs text-gray-400">{s.type}</p>
+                <h3 className="text-sm font-semibold text-foreground">{s.name}</h3>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {s.type}
+                </p>
               </div>
-              <span
-                className={`text-xs font-bold px-2 py-1 rounded ${
-                  s.cpCost === 0 ? "bg-green-900 text-green-300" : "bg-indigo-900 text-indigo-300"
-                }`}
+              <Badge
+                variant={s.cpCost === 0 ? "secondary" : "default"}
+                className={cn(
+                  "font-mono uppercase tracking-widest",
+                  s.cpCost === 0 && "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+                )}
               >
                 {s.cpCost} CP
-              </span>
+              </Badge>
             </div>
-            {s.legend && <p className="text-xs text-gray-400 mb-2">{s.legend}</p>}
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-xs text-gray-500">
+            {s.legend && <p className="mb-2 text-xs italic text-muted-foreground">{s.legend}</p>}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 {s.turn} | {s.phase}
               </span>
-              <button
-                onClick={() => openPrompt(s)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1 rounded transition-colors"
-              >
+              <Button type="button" size="sm" onClick={() => openPrompt(s)}>
                 Use
-              </button>
+              </Button>
             </div>
           </div>
         ))}
       </div>
 
-      {pending && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          role="dialog"
-          aria-label="Confirm stratagem"
-        >
-          <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 max-w-sm w-full">
-            <h3 className="font-semibold text-base mb-1">{pending.name}</h3>
+      <Dialog
+        open={pending !== null}
+        onOpenChange={(next) => {
+          if (!next) closePrompt();
+        }}
+      >
+        {pending && (
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="font-mono uppercase tracking-widest text-primary">
+                {pending.name}
+              </DialogTitle>
+              <DialogDescription>
+                Default cost: {pending.cpCost} CP. Adjust the amount to spend if a rule makes this
+                stratagem more expensive, cheaper, or free.
+              </DialogDescription>
+            </DialogHeader>
+
             {usedThisPhase.includes(pending.id) && (
               <div
                 role="alert"
-                className="mb-3 rounded border border-amber-600/60 bg-amber-950/40 px-3 py-2 text-xs text-amber-200"
+                className="rounded-sm border border-amber-600/60 bg-amber-950/40 px-3 py-2 text-xs text-amber-200"
               >
                 You've already used this stratagem this phase. Stratagems can normally only be used
                 once per phase — only proceed if a rule allows an exception.
               </div>
             )}
-            <p className="text-xs text-gray-400 mb-4">
-              Default cost: {pending.cpCost} CP. Adjust the amount to spend if a rule makes this
-              stratagem more expensive, cheaper, or free.
-            </p>
-            <label className="block text-xs text-gray-400 mb-1" htmlFor="strat-cp-input">
-              CP to spend (you have {currentCP})
-            </label>
-            <input
-              id="strat-cp-input"
-              type="number"
-              min={0}
-              max={currentCP}
-              value={cpInput}
-              onChange={(e) => setCpInput(Math.max(0, Number(e.target.value)))}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm mb-4"
-              autoFocus
-            />
-            {cpInput > currentCP && (
-              <p className="text-xs text-red-400 mb-2">
-                You only have {currentCP} CP — cannot spend more than that.
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={closePrompt}
-                className="px-3 py-1 text-sm rounded bg-gray-700 hover:bg-gray-600 text-white"
-              >
+
+            <div className="space-y-2">
+              <Label htmlFor="strat-cp-input" className="text-xs text-muted-foreground">
+                CP to spend (you have {currentCP})
+              </Label>
+              <Input
+                id="strat-cp-input"
+                type="number"
+                min={0}
+                max={currentCP}
+                value={cpInput}
+                onChange={(e) => setCpInput(Math.max(0, Number(e.target.value)))}
+                autoFocus
+              />
+              {cpInput > currentCP && (
+                <p className="text-xs text-destructive">
+                  You only have {currentCP} CP — cannot spend more than that.
+                </p>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button type="button" variant="outline" onClick={closePrompt} className="flex-1">
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
                 onClick={confirmUse}
                 disabled={cpInput > currentCP || cpInput < 0}
-                className="px-3 py-1 text-sm rounded bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 text-white font-semibold"
+                className="flex-1"
               >
                 Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </>
   );
 }

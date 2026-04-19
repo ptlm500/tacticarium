@@ -42,7 +42,11 @@ export function LoginPage() {
 
             <Separator />
 
-            <Button onClick={login} size="lg" className="w-full gap-2 font-mono tracking-widest uppercase">
+            <Button
+              onClick={login}
+              size="lg"
+              className="w-full gap-2 font-mono tracking-widest uppercase"
+            >
               <LogIn className="size-4" />
               Sign in with Discord
             </Button>

@@ -75,7 +75,11 @@ export function SecondaryModePicker({
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <button type="button" onClick={() => onModeChange("fixed")} className={modeBtn(mode === "fixed")}>
+        <button
+          type="button"
+          onClick={() => onModeChange("fixed")}
+          className={modeBtn(mode === "fixed")}
+        >
           Fixed
         </button>
         <button

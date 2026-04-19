@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface CircuitBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
-  animated?: boolean
-  opacity?: number
+  animated?: boolean;
+  opacity?: number;
 }
 
 export function CircuitBackground({
@@ -21,7 +21,7 @@ export function CircuitBackground({
       <svg
         className={cn(
           "pointer-events-none absolute inset-0 h-full w-full",
-          animated && "animate-circuit"
+          animated && "animate-circuit",
         )}
         style={{ opacity }}
         xmlns="http://www.w3.org/2000/svg"
@@ -81,7 +81,6 @@ export function CircuitBackground({
 
       {/* Content */}
       <div className="relative z-10">{children}</div>
-
     </div>
-  )
+  );
 }

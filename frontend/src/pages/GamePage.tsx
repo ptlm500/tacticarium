@@ -1,5 +1,15 @@
 import { useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
+import {
+  ChevronDown,
+  ChevronUp,
+  Flag,
+  Forward,
+  Handshake,
+  ScrollText,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
@@ -24,6 +34,11 @@ import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules } from "../hooks/queries/useMissionQueries";
+import { Button } from "@/components/ui/button";
+import { HUDFrame } from "@/components/ui/hud-frame";
+import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -54,7 +69,6 @@ export function GamePage() {
   const currentMission = allMissions.find((m) => m.id === gameState?.missionId) ?? null;
   const currentTwist = allRules.find((r) => r.id === gameState?.twistId) ?? null;
 
-  // Filter stratagems for current phase
   const availableStratagems = stratagems.filter((s) => {
     if (!gameState) return false;
 
@@ -68,8 +82,6 @@ export function GamePage() {
 
     const detachmentMatch = !s.detachmentId || s.detachmentId === myPlayer?.detachmentId;
 
-    // Challenger stratagems belong to the challenger-card system and are not
-    // offered through the general stratagem panel.
     const isChallenger = s.type.startsWith("Challenger \u2013 ");
 
     return phaseMatch && turnMatch && detachmentMatch && !isChallenger;
@@ -93,10 +105,8 @@ export function GamePage() {
 
     const items: ScoringPromptItem[] = [];
 
-    // Primary scoring prompts
     if (currentMission) {
       if (scoringTiming === "end_of_command_phase") {
-        // Prompt when advancing out of Command Phase (BR2+)
         if (isCommandPhase && round >= 2) {
           items.push({
             kind: "primary",
@@ -108,7 +118,6 @@ export function GamePage() {
             scoringSlot: "end_of_command_phase",
           });
         }
-        // Also prompt second player at end of turn in BR5
         if (isFightPhase && round === 5 && isSecondPlayerTurn) {
           items.push({
             kind: "primary",
@@ -123,7 +132,6 @@ export function GamePage() {
       }
 
       if (scoringTiming === "end_of_battle_round") {
-        // Prompt at end of round (second player advancing out of Fight)
         if (isFightPhase && isSecondPlayerTurn) {
           items.push({
             kind: "end_of_round_primary",
@@ -133,7 +141,6 @@ export function GamePage() {
         }
       }
 
-      // Per-action end_of_turn scoring (e.g., Terraform bonus)
       if (isFightPhase) {
         const endOfTurnActions = (currentMission.scoringRules ?? []).filter(
           (r) => r.scoringTiming === "end_of_turn",
@@ -150,7 +157,6 @@ export function GamePage() {
       }
     }
 
-    // Secondary scoring prompt — advancing out of Fight Phase (end of turn)
     if (isFightPhase) {
       if (myPlayer.secondaryMode === "fixed") {
         const fixedSecondaries = (myPlayer.activeSecondaries ?? []).filter((s) => s.isFixed);
@@ -162,7 +168,6 @@ export function GamePage() {
       }
     }
 
-    // Tactical draw prompt — advancing out of Command Phase (separate from scoring)
     let needsDraw = false;
     if (isCommandPhase && myPlayer.secondaryMode === "tactical") {
       const activeCount = myPlayer.activeSecondaries?.length ?? 0;
@@ -288,8 +293,13 @@ export function GamePage() {
 
   if (!gameState || !myPlayer) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p>{connected ? "Loading game..." : "Connecting..."}</p>
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="flex items-center gap-2">
+          <Spinner />
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            {connected ? "Loading game" : "Connecting"}
+          </span>
+        </div>
       </div>
     );
   }
@@ -311,22 +321,37 @@ export function GamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+
       {/* Turn Banner */}
       <div
-        className={`px-4 py-3 text-center font-semibold ${
-          isMyTurn ? "bg-indigo-900" : "bg-gray-800"
+        className={`relative z-10 border-b px-4 py-3 text-center font-mono text-sm uppercase tracking-widest backdrop-blur-sm ${
+          isMyTurn
+            ? "border-primary/50 bg-primary/15 text-primary shadow-[0_0_20px_var(--primary)]"
+            : "border-border/60 bg-background/60 text-muted-foreground"
         }`}
       >
         Battle Round {gameState.currentRound} — {isMyTurn ? "Your" : `${opponent?.username}'s`} Turn
         — {PHASE_LABELS[gameState.currentPhase]} Phase
       </div>
 
-      {/* Error Banners */}
-      {error && <div className="bg-red-900/50 text-red-200 text-center py-2 text-sm">{error}</div>}
+      {error && (
+        <div className="relative z-10 px-4 pt-2">
+          <ErrorBanner message={error} />
+        </div>
+      )}
 
       {/* Round & Phase */}
-      <div className="px-4 py-3 space-y-2 border-b border-gray-800">
+      <div className="relative z-10 space-y-3 border-b border-border/60 bg-background/40 px-4 py-3 backdrop-blur-sm">
         <RoundIndicator
           currentRound={gameState.currentRound}
           currentTurn={gameState.currentTurn}
@@ -336,178 +361,215 @@ export function GamePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* Your State */}
-        <section className="bg-gray-800 rounded-lg p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-400">
-            {myPlayer.username} — {myPlayer.factionName}
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            <CPCounter
-              cp={myPlayer.cp}
-              canGainCP={myPlayer.cpGainedThisRound < 1}
-              onAdjust={handleAdjustCP}
-            />
-            <VPCounter
-              vpPrimary={myPlayer.vpPrimary}
-              vpSecondary={myPlayer.vpSecondary}
-              vpGambit={myPlayer.vpGambit}
-              vpPaint={myPlayer.vpPaint}
-              onAdjust={handleAdjustVPManual}
-            />
-          </div>
-          {/* Mission Quick Scoring */}
-          {currentMission &&
-            currentMission.scoringRules &&
-            currentMission.scoringRules.length > 0 && (
-              <MissionScoring
-                scoringRules={currentMission.scoringRules ?? []}
-                currentRound={gameState.currentRound}
-                missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
-                onScore={(vp, slot) => handleScoreVP("primary", vp, slot)}
+      <div className="relative z-0 flex-1 overflow-auto px-4 py-4">
+        <div className="mx-auto max-w-3xl space-y-4">
+          {/* Your State */}
+          <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
+            <div className="space-y-3 py-1">
+              <div className="grid grid-cols-2 gap-4">
+                <CPCounter
+                  cp={myPlayer.cp}
+                  canGainCP={myPlayer.cpGainedThisRound < 1}
+                  onAdjust={handleAdjustCP}
+                />
+                <VPCounter
+                  vpPrimary={myPlayer.vpPrimary}
+                  vpSecondary={myPlayer.vpSecondary}
+                  vpGambit={myPlayer.vpGambit}
+                  vpPaint={myPlayer.vpPaint}
+                  onAdjust={handleAdjustVPManual}
+                />
+              </div>
+              {currentMission &&
+                currentMission.scoringRules &&
+                currentMission.scoringRules.length > 0 && (
+                  <MissionScoring
+                    scoringRules={currentMission.scoringRules ?? []}
+                    currentRound={gameState.currentRound}
+                    missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
+                    onScore={(vp, slot) => handleScoreVP("primary", vp, slot)}
+                  />
+                )}
+              <PrimaryScoreHistory
+                scoredSlots={myPlayer.vpPrimaryScoredSlots ?? {}}
+                onUndo={handleUndoPrimaryScore}
+              />
+            </div>
+          </HUDFrame>
+
+          {/* Opponent State */}
+          {opponent && (
+            <div className="rounded-sm border border-border/40 bg-background/40 p-3">
+              <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {opponent.username} — {opponent.factionName}
+              </h2>
+              <div className="mt-2 flex gap-6 font-mono text-sm tabular-nums">
+                <span>
+                  <span className="text-muted-foreground">CP:</span> {opponent.cp}
+                </span>
+                <span>
+                  <span className="text-muted-foreground">VP:</span> {opponentVP}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Secondary Missions */}
+          <SecondaryPanel
+            mode={myPlayer.secondaryMode}
+            activeSecondaries={myPlayer.activeSecondaries ?? []}
+            achievedSecondaries={myPlayer.achievedSecondaries ?? []}
+            discardedSecondaries={myPlayer.discardedSecondaries ?? []}
+            deckSize={myPlayer.tacticalDeck?.length ?? 0}
+            currentRound={gameState.currentRound}
+            currentPhase={gameState.currentPhase}
+            isMyTurn={isMyTurn}
+            currentCP={myPlayer.cp}
+            canGainCP={myPlayer.cpGainedThisRound < 1}
+            onAchieve={handleAchieveSecondary}
+            onDiscard={handleDiscardSecondary}
+            onNewOrders={handleNewOrders}
+            onReshuffle={handleReshuffleSecondary}
+            onDraw={handleDrawSecondary}
+            onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
+          />
+
+          {/* Challenger Card Banner */}
+          {opponent &&
+            gameState.currentPhase === "command" &&
+            totalVP + 6 <= opponentVP &&
+            !myPlayer.isChallenger && (
+              <div className="rounded-sm border border-amber-500/40 bg-amber-500/10 p-3 text-center">
+                <p className="text-xs text-amber-200">
+                  You are trailing by{" "}
+                  <Badge variant="outline" className="border-amber-400/60 font-mono text-amber-300">
+                    {opponentVP - totalVP} VP
+                  </Badge>{" "}
+                  — eligible for a Challenger Card!
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleDrawChallengerCard}
+                  className="mt-2 gap-1 bg-amber-600 text-white hover:bg-amber-700"
+                >
+                  <Sparkles className="size-3" />
+                  Draw Challenger Card
+                </Button>
+              </div>
+            )}
+
+          {/* Active Challenger Card */}
+          {myPlayer.isChallenger && myPlayer.challengerCardId && (
+            <div className="rounded-sm border border-purple-500/40 bg-purple-500/10 p-3">
+              <p className="font-mono text-xs uppercase tracking-widest text-purple-300">
+                Active Challenger Card
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleScoreChallenger}
+                className="mt-2 bg-purple-600 text-white hover:bg-purple-700"
+              >
+                Complete Mission (+3 VP)
+              </Button>
+            </div>
+          )}
+
+          {/* Mission Info */}
+          <MissionInfo mission={currentMission} twist={currentTwist} />
+
+          {/* Stratagem Panel */}
+          <section className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowStratagems(!showStratagems)}
+              className="w-full justify-between font-mono uppercase tracking-widest"
+            >
+              <span className="flex items-center gap-2">
+                <Zap className="size-4" />
+                Stratagems ({availableStratagems.length} available)
+              </span>
+              {showStratagems ? (
+                <ChevronUp className="size-4" />
+              ) : (
+                <ChevronDown className="size-4" />
+              )}
+            </Button>
+            {showStratagems && (
+              <StratagemPanel
+                stratagems={availableStratagems}
+                currentCP={myPlayer.cp}
+                usedThisPhase={myPlayer.stratagemsUsedThisPhase ?? []}
+                onUse={handleUseStratagem}
               />
             )}
-          <PrimaryScoreHistory
-            scoredSlots={myPlayer.vpPrimaryScoredSlots ?? {}}
-            onUndo={handleUndoPrimaryScore}
-          />
-        </section>
-
-        {/* Opponent State */}
-        {opponent && (
-          <section className="bg-gray-800/50 rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-gray-400">
-              {opponent.username} — {opponent.factionName}
-            </h2>
-            <div className="flex gap-6 mt-2">
-              <span>CP: {opponent.cp}</span>
-              <span>VP: {opponentVP}</span>
-            </div>
           </section>
-        )}
 
-        {/* Secondary Missions */}
-        <SecondaryPanel
-          mode={myPlayer.secondaryMode}
-          activeSecondaries={myPlayer.activeSecondaries ?? []}
-          achievedSecondaries={myPlayer.achievedSecondaries ?? []}
-          discardedSecondaries={myPlayer.discardedSecondaries ?? []}
-          deckSize={myPlayer.tacticalDeck?.length ?? 0}
-          currentRound={gameState.currentRound}
-          currentPhase={gameState.currentPhase}
-          isMyTurn={isMyTurn}
-          currentCP={myPlayer.cp}
-          canGainCP={myPlayer.cpGainedThisRound < 1}
-          onAchieve={handleAchieveSecondary}
-          onDiscard={handleDiscardSecondary}
-          onNewOrders={handleNewOrders}
-          onReshuffle={handleReshuffleSecondary}
-          onDraw={handleDrawSecondary}
-          onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
-        />
-
-        {/* Challenger Card Banner — only during Command Phase */}
-        {opponent &&
-          gameState.currentPhase === "command" &&
-          totalVP + 6 <= opponentVP &&
-          !myPlayer.isChallenger && (
-            <div className="bg-amber-900/50 border border-amber-700 rounded-lg p-4 text-center">
-              <p className="text-sm text-amber-200 mb-2">
-                You are trailing by {opponentVP - totalVP} VP — eligible for a Challenger Card!
-              </p>
-              <button
-                onClick={handleDrawChallengerCard}
-                className="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
-              >
-                Draw Challenger Card
-              </button>
-            </div>
-          )}
-
-        {/* Active Challenger Card */}
-        {myPlayer.isChallenger && myPlayer.challengerCardId && (
-          <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-4">
-            <p className="text-sm text-purple-200 mb-2">Active Challenger Card</p>
-            <button
-              onClick={handleScoreChallenger}
-              className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+          {/* Game Log */}
+          <section className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowLog(!showLog)}
+              className="w-full justify-between font-mono uppercase tracking-widest"
             >
-              Complete Mission (+3 VP)
-            </button>
-          </div>
-        )}
-
-        {/* Mission Info */}
-        <MissionInfo mission={currentMission} twist={currentTwist} />
-
-        {/* Stratagem Panel (collapsible) */}
-        <section>
-          <button
-            onClick={() => setShowStratagems(!showStratagems)}
-            className="w-full bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg px-4 py-3 text-left flex justify-between items-center"
-          >
-            <span className="font-semibold">
-              Stratagems ({availableStratagems.length} available)
-            </span>
-            <span className="text-gray-400">{showStratagems ? "▲" : "▼"}</span>
-          </button>
-          {showStratagems && (
-            <StratagemPanel
-              stratagems={availableStratagems}
-              currentCP={myPlayer.cp}
-              usedThisPhase={myPlayer.stratagemsUsedThisPhase ?? []}
-              onUse={handleUseStratagem}
-            />
-          )}
-        </section>
-
-        {/* Game Log (collapsible) */}
-        <section>
-          <button
-            onClick={() => setShowLog(!showLog)}
-            className="w-full bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg px-4 py-3 text-left flex justify-between items-center"
-          >
-            <span className="font-semibold">Game Log</span>
-            <span className="text-gray-400">{showLog ? "▲" : "▼"}</span>
-          </button>
-          {showLog && <GameLog events={events} />}
-        </section>
+              <span className="flex items-center gap-2">
+                <ScrollText className="size-4" />
+                Game Log
+              </span>
+              {showLog ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+            </Button>
+            {showLog && <GameLog events={events} />}
+          </section>
+        </div>
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="p-4 border-t border-gray-800 flex gap-3">
+      <div className="relative z-10 flex flex-wrap gap-2 border-t border-border/60 bg-background/60 p-3 backdrop-blur-sm">
         {isMyTurn && (
           <>
-            <button
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => setShowRevertModal(true)}
-              className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold px-4 py-3 rounded-lg transition-colors"
               title="Step back one phase"
+              className="font-mono uppercase tracking-widest"
             >
               ← Revert
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
               onClick={handleAdvancePhase}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors"
+              className="flex-1 gap-2 font-mono uppercase tracking-widest"
             >
+              <Forward className="size-4" />
               Advance Phase
-            </button>
+            </Button>
           </>
         )}
-        <button
+        <Button
+          type="button"
+          variant="destructive"
           onClick={() => setShowConcedeModal(true)}
-          className="bg-red-900 hover:bg-red-800 text-red-200 font-semibold px-4 py-3 rounded-lg transition-colors"
+          className="gap-1 font-mono uppercase tracking-widest"
         >
+          <Flag className="size-4" />
           Concede
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => setShowAbandonModal(true)}
-          className="bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold px-4 py-3 rounded-lg transition-colors"
+          className="gap-1 font-mono uppercase tracking-widest"
         >
+          <Handshake className="size-4" />
           Abandon
-        </button>
+        </Button>
       </div>
 
-      {/* Revert Phase Confirmation Modal */}
+      {/* Revert Phase Confirmation */}
       {showRevertModal && (
         <ConfirmModal
           title="Revert Phase"
@@ -520,7 +582,7 @@ export function GamePage() {
         />
       )}
 
-      {/* Concede Confirmation Modal */}
+      {/* Concede Confirmation */}
       {showConcedeModal && (
         <ConfirmModal
           title="Concede Game"
@@ -533,7 +595,7 @@ export function GamePage() {
         />
       )}
 
-      {/* Abandon Request Modal */}
+      {/* Abandon Request */}
       {showAbandonModal && (
         <ConfirmModal
           title="Abandon Game"
@@ -546,7 +608,7 @@ export function GamePage() {
         />
       )}
 
-      {/* Abandon Request Received Modal */}
+      {/* Abandon Request Received */}
       {gameState.abandonRequestedBy != null &&
         gameState.abandonRequestedBy !== myPlayer.playerNumber && (
           <ConfirmModal
@@ -560,7 +622,7 @@ export function GamePage() {
           />
         )}
 
-      {/* Scoring Prompt Modal */}
+      {/* Scoring Prompt */}
       {scoringPromptItems && (
         <ScoringPrompt
           items={scoringPromptItems}
@@ -575,7 +637,7 @@ export function GamePage() {
         />
       )}
 
-      {/* Draw Prompt Modal */}
+      {/* Draw Prompt */}
       {showDrawPrompt && (
         <ReminderPrompt
           title="Command Phase Reminder"

@@ -95,9 +95,7 @@ export function VPBreakdownTable({
       </TableBody>
       <TableFooter className="bg-transparent">
         <TableRow className="hover:bg-transparent">
-          <TableCell className="font-mono uppercase tracking-widest text-primary">
-            Total
-          </TableCell>
+          <TableCell className="font-mono uppercase tracking-widest text-primary">Total</TableCell>
           <TableCell
             colSpan={3}
             className="text-center border-l border-border/50 text-lg font-bold text-primary"
