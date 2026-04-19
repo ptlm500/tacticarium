@@ -1,5 +1,9 @@
+import { Shuffle } from "lucide-react";
 import { Secondary } from "../../types/mission";
 import { ActiveSecondary } from "../../types/game";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   mode: string;
@@ -60,26 +64,24 @@ export function SecondaryModePicker({
     onInitDeck(deck);
   };
 
+  const modeBtn = (active: boolean) =>
+    cn(
+      "flex-1 rounded-sm border px-4 py-2 text-sm font-mono uppercase tracking-widest transition-colors",
+      active
+        ? "border-primary bg-primary/10 text-primary shadow-[0_0_8px_var(--primary)]"
+        : "border-border/60 bg-background/40 text-muted-foreground hover:border-primary/50 hover:text-foreground",
+    );
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <button
-          onClick={() => onModeChange("fixed")}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            mode === "fixed"
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-800 text-gray-400 hover:bg-gray-750 border border-gray-700"
-          }`}
-        >
+        <button type="button" onClick={() => onModeChange("fixed")} className={modeBtn(mode === "fixed")}>
           Fixed
         </button>
         <button
+          type="button"
           onClick={() => onModeChange("tactical")}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            mode === "tactical"
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-800 text-gray-400 hover:bg-gray-750 border border-gray-700"
-          }`}
+          className={modeBtn(mode === "tactical")}
         >
           Tactical
         </button>
@@ -87,24 +89,28 @@ export function SecondaryModePicker({
 
       {mode === "fixed" && (
         <div className="space-y-2">
-          <p className="text-sm text-gray-400">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Select exactly 2 fixed secondary missions ({selectedFixedIds.length}/2)
           </p>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
             {fixedSecondaries.map((s) => {
-              const isSelected = selectedFixedIds.includes(s.id);
+              const active = selectedFixedIds.includes(s.id);
               return (
                 <button
                   key={s.id}
+                  type="button"
                   onClick={() => handleFixedToggle(s)}
-                  className={`w-full p-3 rounded-lg text-left text-sm transition-colors ${
-                    isSelected
-                      ? "bg-indigo-600 text-white border-2 border-indigo-400"
-                      : "bg-gray-800 hover:bg-gray-750 border border-gray-700 text-gray-300"
-                  }`}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-2 rounded-sm border p-3 text-left text-sm transition-colors",
+                    active
+                      ? "border-primary bg-primary/10 text-primary shadow-[0_0_8px_var(--primary)]"
+                      : "border-border/60 bg-background/40 text-foreground hover:border-primary/50 hover:bg-primary/5",
+                  )}
                 >
                   <span className="font-medium">{s.name}</span>
-                  <span className="text-xs ml-2 opacity-70">({s.maxVp} VP)</span>
+                  <Badge variant="outline" className="font-mono uppercase tracking-widest">
+                    {s.maxVp} VP
+                  </Badge>
                 </button>
               );
             })}
@@ -114,19 +120,22 @@ export function SecondaryModePicker({
 
       {mode === "tactical" && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-400">
-            Your deck of {tacticalSecondaries.length} tactical secondary missions will be shuffled.
-            You'll draw 2 at the start of each command phase.
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Deck of {tacticalSecondaries.length} tactical missions · Draw 2 each command phase
           </p>
           {!deckInitialized ? (
-            <button
+            <Button
+              type="button"
               onClick={handleInitDeck}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="w-full gap-2 font-mono uppercase tracking-widest"
             >
-              Shuffle & Initialize Deck
-            </button>
+              <Shuffle className="size-4" />
+              Shuffle &amp; Initialize Deck
+            </Button>
           ) : (
-            <p className="text-sm text-green-400">Deck initialized and ready.</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-emerald-400">
+              Deck initialized and ready
+            </p>
           )}
         </div>
       )}
