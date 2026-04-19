@@ -58,6 +58,23 @@ The `NextPhase()` function (`rules.go:26-37`) determines what happens:
 - **End of second player's turn** (after Fight phase): Advances to the next battle round, resets phase to Command, sets `currentTurn = 1`, switches active player back.
 - **After round 5, turn 2, Fight phase**: The game ends (see [Scoring — Win Conditions](scoring.md#win-conditions)).
 
+## Phase Reversion
+
+Mistakes happen — a player may accidentally advance the phase before finishing an action, or realise mid-phase that they needed to undo the last transition. The `revert_phase` action (`engine.go`, `applyRevertPhase`) lets the **active player** step the game back by one phase.
+
+Rules:
+
+- Only the active player can revert (same constraint as `advance_phase`).
+- Reverting from `command` crosses a turn (and possibly round) boundary:
+  - From `currentTurn = 2, command` → `currentTurn = 1, fight` (same round, active player flips back to `firstTurnPlayer`).
+  - From `currentTurn = 1, command` (round ≥ 2) → previous round's `currentTurn = 2, fight` (active player flips to the non-first-turn player, `currentRound` decrements).
+- Reverting is **blocked** at round 1, turn 1, command phase — there is nothing earlier to step back into.
+- When the revert crosses a turn boundary, the 1 CP each player auto-gained on entering that Command phase is revoked (both players lose 1 CP, clamped to 0 — a player who already spent the CP on a stratagem is not pushed negative). A `cp_adjust` event is emitted per player with `reason: "phase_revert"`.
+- `StratagemsUsedThisPhase` is cleared for both players (matching the behaviour of `advance_phase`).
+- **Not reverted**: scored VP, stratagems already used (CP already spent), secondary draws/achievements/discards, gambit declarations, and the `CPGainedThisRound` counter. Players can use `adjust_cp` / `undo_primary_score` / `adjust_vp_manual` to correct these if needed.
+
+A `phase_revert` event is emitted with `{from, to}` data for the game log.
+
 ## Active Player
 
 The `activePlayer` field tracks who currently has control (1 or 2). It toggles via `3 - activePlayer` when turns switch.

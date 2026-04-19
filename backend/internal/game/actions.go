@@ -4,6 +4,7 @@ type ActionType string
 
 const (
 	ActionAdvancePhase     ActionType = "advance_phase"
+	ActionRevertPhase      ActionType = "revert_phase"
 	ActionAdjustCP         ActionType = "adjust_cp"
 	ActionScoreVP          ActionType = "score_vp"
 	ActionUseStratagem     ActionType = "use_stratagem"
@@ -46,6 +47,7 @@ type EventType string
 
 const (
 	EventPhaseAdvance      EventType = "phase_advance"
+	EventPhaseRevert       EventType = "phase_revert"
 	EventCPGain            EventType = "cp_gain"
 	EventCPSpend           EventType = "cp_spend"
 	EventCPAdjust          EventType = "cp_adjust"

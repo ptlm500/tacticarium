@@ -36,6 +36,18 @@ func NextPhase(current Phase) (Phase, bool) {
 	return PhaseCommand, true
 }
 
+// PrevPhase returns the previous phase within a single player turn. It is
+// only meaningful when current is not PhaseCommand; callers must handle the
+// cross-turn rollback separately.
+func PrevPhase(current Phase) Phase {
+	for i, p := range PhaseOrder {
+		if p == current && i > 0 {
+			return PhaseOrder[i-1]
+		}
+	}
+	return PhaseCommand
+}
+
 // Primary scoring slots. These match the mission rule `scoringTiming` values
 // used by the frontend.
 const (
