@@ -5,6 +5,9 @@ import { AuthContext, useAuthProvider, useAuth } from "./hooks/useAuth";
 import { createQueryClient } from "./queryClient";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { QueryErrorBoundary } from "./components/QueryErrorBoundary";
+import { ThemeProvider } from "./components/ThemeProvider";
+import { Toaster } from "./components/ui/sonner";
+import { Spinner } from "./components/ui/spinner";
 import { LoginPage } from "./pages/LoginPage";
 import { LobbyPage } from "./pages/LobbyPage";
 import { GameSetupPage } from "./pages/GameSetupPage";
@@ -21,8 +24,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <Spinner className="text-primary" />
       </div>
     );
   }
@@ -39,6 +42,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <ThemeProvider>
       <AuthContext.Provider value={auth}>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
@@ -105,9 +109,11 @@ function App() {
               />
             </Routes>
           </BrowserRouter>
+          <Toaster position="top-right" />
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </AuthContext.Provider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

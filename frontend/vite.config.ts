@@ -1,7 +1,11 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { playwright } from "vite-plus/test/browser/providers/playwright";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -1259,6 +1263,11 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setupTests.ts"],
     include: ["./src/**/*.test.{ts,tsx}"],
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
   },
   plugins: [react(), tailwindcss()],
 });
