@@ -394,7 +394,9 @@ Import endpoints accept `multipart/form-data` with a `file` field and reuse the 
 | `set_ready` | `{ready: bool}` | Setup only |
 | `advance_phase` | (none) | Active, active player only |
 | `adjust_cp` | `{delta: int}` | Active |
-| `score_vp` | `{category: "primary"\|"secondary"\|"gambit", delta: int}` | Active |
+| `score_vp` | `{category: "primary"\|"secondary"\|"gambit", delta: int, scoringSlot?: string}` (primary requires `scoringSlot`) | Active |
+| `undo_primary_score` | `{round: int, scoringSlot: string}` | Active |
+| `adjust_vp_manual` | `{category: "primary"\|"secondary"\|"gambit", delta: int}` | Active |
 | `use_stratagem` | `{stratagemId, stratagemName, cpCost}` | Active |
 | `declare_gambit` | `{gambitId}` | Active, round ≥ 3 |
 | `concede` | (none) | Active |

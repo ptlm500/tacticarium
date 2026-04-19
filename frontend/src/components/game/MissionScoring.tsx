@@ -1,12 +1,32 @@
 import { ScoringAction } from "../../types/mission";
+import { PrimaryScoringSlot } from "../../types/scoring";
 
 interface Props {
   scoringRules: ScoringAction[];
   currentRound: number;
-  onScore: (vp: number) => void;
+  missionScoringTiming: string;
+  onScore: (vp: number, scoringSlot: PrimaryScoringSlot) => void;
 }
 
-export function MissionScoring({ scoringRules, currentRound, onScore }: Props) {
+function resolveSlot(actionTiming: string | undefined, missionTiming: string): PrimaryScoringSlot {
+  const timing = actionTiming || missionTiming;
+  if (
+    timing === "end_of_command_phase" ||
+    timing === "end_of_battle_round" ||
+    timing === "end_of_turn"
+  ) {
+    return timing;
+  }
+  // Fall back to the most common slot if the mission timing is unrecognised.
+  return "end_of_command_phase";
+}
+
+export function MissionScoring({
+  scoringRules,
+  currentRound,
+  missionScoringTiming,
+  onScore,
+}: Props) {
   if (scoringRules.length === 0) return null;
 
   return (
@@ -15,10 +35,11 @@ export function MissionScoring({ scoringRules, currentRound, onScore }: Props) {
       <div className="flex flex-wrap gap-2">
         {scoringRules.map((action: ScoringAction, i: number) => {
           const locked = action.minRound != null && currentRound < action.minRound;
+          const slot = resolveSlot(action.scoringTiming, missionScoringTiming);
           return (
             <button
               key={i}
-              onClick={() => onScore(action.vp)}
+              onClick={() => onScore(action.vp, slot)}
               disabled={locked}
               className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs px-3 py-2 rounded transition-colors"
               title={

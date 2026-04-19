@@ -36,6 +36,24 @@ func NextPhase(current Phase) (Phase, bool) {
 	return PhaseCommand, true
 }
 
+// Primary scoring slots. These match the mission rule `scoringTiming` values
+// used by the frontend.
+const (
+	ScoringSlotEndOfCommandPhase = "end_of_command_phase"
+	ScoringSlotEndOfBattleRound  = "end_of_battle_round"
+	ScoringSlotEndOfTurn         = "end_of_turn"
+)
+
+func IsValidPrimaryScoringSlot(slot string) bool {
+	switch slot {
+	case ScoringSlotEndOfCommandPhase,
+		ScoringSlotEndOfBattleRound,
+		ScoringSlotEndOfTurn:
+		return true
+	}
+	return false
+}
+
 func ClampVP(value, max int) int {
 	if value < 0 {
 		return 0

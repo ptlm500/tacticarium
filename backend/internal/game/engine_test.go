@@ -1530,11 +1530,12 @@ func TestScoreVP(t *testing.T) {
 	tests := []struct {
 		category string
 		delta    int
+		data     map[string]any
 		checkFn  func() int
 	}{
-		{"primary", 10, func() int { return state.Players[0].VPPrimary }},
-		{"secondary", 5, func() int { return state.Players[0].VPSecondary }},
-		{"gambit", 3, func() int { return state.Players[0].VPGambit }},
+		{"primary", 10, map[string]any{"category": "primary", "delta": 10, "scoringSlot": ScoringSlotEndOfCommandPhase}, func() int { return state.Players[0].VPPrimary }},
+		{"secondary", 5, map[string]any{"category": "secondary", "delta": 5}, func() int { return state.Players[0].VPSecondary }},
+		{"gambit", 3, map[string]any{"category": "gambit", "delta": 3}, func() int { return state.Players[0].VPGambit }},
 	}
 
 	for _, tt := range tests {
@@ -1542,7 +1543,7 @@ func TestScoreVP(t *testing.T) {
 			_, err := e.Apply(context.Background(), GameAction{
 				Type:         ActionScoreVP,
 				PlayerNumber: 1,
-				Data:         map[string]any{"category": tt.category, "delta": tt.delta},
+				Data:         tt.data,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -1551,6 +1552,277 @@ func TestScoreVP(t *testing.T) {
 				t.Fatalf("expected %d VP, got %d", tt.delta, tt.checkFn())
 			}
 		})
+	}
+}
+
+func TestScoreVP_Primary_RequiresValidSlot(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	// Missing slot
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5},
+	})
+	if err == nil {
+		t.Fatal("expected error when scoringSlot is missing")
+	}
+
+	// Invalid slot
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": "bogus"},
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid scoringSlot")
+	}
+}
+
+func TestScoreVP_Primary_RejectsDuplicateSlotSameRound(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err == nil {
+		t.Fatal("expected duplicate-slot error")
+	}
+
+	if state.Players[0].VPPrimary != 5 {
+		t.Fatalf("expected VPPrimary=5 (second score rejected), got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestScoreVP_Primary_AllowsDifferentSlotsSameRound(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	for _, slot := range []string{ScoringSlotEndOfCommandPhase, ScoringSlotEndOfTurn, ScoringSlotEndOfBattleRound} {
+		_, err := e.Apply(context.Background(), GameAction{
+			Type:         ActionScoreVP,
+			PlayerNumber: 1,
+			Data:         map[string]any{"category": "primary", "delta": 3, "scoringSlot": slot},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error for slot %s: %v", slot, err)
+		}
+	}
+
+	if state.Players[0].VPPrimary != 9 {
+		t.Fatalf("expected VPPrimary=9, got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestScoreVP_Primary_SlotTrackedPerRound(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Simulate round advance
+	state.CurrentRound = 2
+
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatalf("expected same slot to be reusable in a new round, got: %v", err)
+	}
+
+	if state.Players[0].VPPrimary != 10 {
+		t.Fatalf("expected VPPrimary=10, got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestScoreVP_Primary_AppliedDeltaOnClamp(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].VPPrimary = 48
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 10, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if state.Players[0].VPPrimary != MaxVPPrimary {
+		t.Fatalf("expected VPPrimary clamped to %d, got %d", MaxVPPrimary, state.Players[0].VPPrimary)
+	}
+	applied, _ := events[0].Data["appliedDelta"].(int)
+	if applied != 2 {
+		t.Fatalf("expected appliedDelta=2 after clamp, got %v", events[0].Data["appliedDelta"])
+	}
+}
+
+func TestUndoPrimaryScore_FreesSlotAndReverses(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 7, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUndoPrimaryScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"round": 1, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if state.Players[0].VPPrimary != 0 {
+		t.Fatalf("expected VPPrimary=0 after undo, got %d", state.Players[0].VPPrimary)
+	}
+	if events[0].Type != EventVPPrimaryScoreReverted {
+		t.Fatalf("expected %s event, got %s", EventVPPrimaryScoreReverted, events[0].Type)
+	}
+	if _, exists := state.Players[0].VPPrimaryScoredSlots[1][ScoringSlotEndOfCommandPhase]; exists {
+		t.Fatal("expected slot to be freed after undo")
+	}
+
+	// Can re-score the slot after undo
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 4, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatalf("expected slot to be reusable after undo, got: %v", err)
+	}
+	if state.Players[0].VPPrimary != 4 {
+		t.Fatalf("expected VPPrimary=4, got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestUndoPrimaryScore_PriorRound(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 6, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	state.CurrentRound = 3
+
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionUndoPrimaryScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"round": 1, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatalf("expected undo of prior round to succeed, got: %v", err)
+	}
+	if state.Players[0].VPPrimary != 0 {
+		t.Fatalf("expected VPPrimary=0 after undo, got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestUndoPrimaryScore_NoMatch(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUndoPrimaryScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"round": 1, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err == nil {
+		t.Fatal("expected error when no matching score exists")
+	}
+}
+
+func TestAdjustVPManual_BypassesSlots(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	// Use the rule-based slot
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Manual adjustment should work regardless of slot usage
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionAdjustVPManual,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 3},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if state.Players[0].VPPrimary != 8 {
+		t.Fatalf("expected VPPrimary=8, got %d", state.Players[0].VPPrimary)
+	}
+	if events[0].Type != EventVPManualAdjust {
+		t.Fatalf("expected %s event, got %s", EventVPManualAdjust, events[0].Type)
+	}
+	applied, _ := events[0].Data["appliedDelta"].(int)
+	if applied != 3 {
+		t.Fatalf("expected appliedDelta=3, got %v", events[0].Data["appliedDelta"])
+	}
+}
+
+func TestAdjustVPManual_ClampsToMax(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].VPPrimary = 48
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionAdjustVPManual,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 10},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].VPPrimary != MaxVPPrimary {
+		t.Fatalf("expected clamp to %d, got %d", MaxVPPrimary, state.Players[0].VPPrimary)
+	}
+	applied, _ := events[0].Data["appliedDelta"].(int)
+	if applied != 2 {
+		t.Fatalf("expected appliedDelta=2, got %v", events[0].Data["appliedDelta"])
 	}
 }
 

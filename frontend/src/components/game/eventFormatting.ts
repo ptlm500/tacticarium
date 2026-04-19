@@ -64,8 +64,20 @@ export function formatEvent(event: NormalizedEvent): string {
     }
     case "vp_primary_score":
     case "vp_secondary_score":
-    case "vp_gambit_score":
-      return `${player} scored ${event.data?.delta} ${event.data?.category} VP`;
+    case "vp_gambit_score": {
+      const applied = event.data?.appliedDelta ?? event.data?.delta;
+      const slot = event.data?.scoringSlot;
+      const slotSuffix = typeof slot === "string" ? ` — ${slot.replace(/_/g, " ")}` : "";
+      return `${player} scored ${applied} ${event.data?.category} VP${slotSuffix}`;
+    }
+    case "vp_primary_score_reverted":
+      return `${player} undid primary score (R${event.data?.revertedRound} ${String(
+        event.data?.scoringSlot ?? "",
+      ).replace(/_/g, " ")}, -${event.data?.revertedDelta} VP)`;
+    case "vp_manual_adjust":
+      return `📝 ${player} manually adjusted ${event.data?.category} VP by ${
+        event.data?.appliedDelta ?? event.data?.delta
+      }`;
     case "secondary_achieved":
       return `${player} achieved ${event.data?.secondaryName} (+${event.data?.vpScored} VP)`;
     case "secondary_reshuffled": {
@@ -93,6 +105,8 @@ export const HIGHLIGHT_EVENT_TYPES = new Set([
   "vp_primary_score",
   "vp_secondary_score",
   "vp_gambit_score",
+  "vp_primary_score_reverted",
+  "vp_manual_adjust",
   "secondary_achieved",
   "challenger_scored",
   "stratagem_used",
