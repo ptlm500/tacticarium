@@ -32,12 +32,9 @@ export function LoginPage() {
         <HUDFrame label="Identity Required" className="w-full max-w-md">
           <div className="space-y-6 py-4 text-center">
             <div className="space-y-1">
-              <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary">
-                // Tacticarium
+              <div className="font-mono text-[24px] uppercase tracking-[0.3em] text-primary">
+                Tacticarium
               </div>
-              <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">
-                Enter the Grid
-              </h1>
               <p className="text-sm text-muted-foreground">
                 Warhammer 40K 10th Edition · Turn Tracker
               </p>

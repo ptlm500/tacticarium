@@ -1,5 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { History, LogOut, Plus, Swords, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { HUDFrame } from "@/components/ui/hud-frame";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { useAuth } from "../hooks/useAuth";
 import { GameSummary } from "../types/game";
 import { ConfirmModal } from "../components/game/ConfirmModal";
@@ -46,120 +54,161 @@ export function LobbyPage() {
     });
   };
 
+  const statusVariant = (status: string) => {
+    if (status === "active") return "default" as const;
+    if (status === "setup") return "secondary" as const;
+    return "outline" as const;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="flex items-center justify-between p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold">Tacticarium</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400">{user?.username}</span>
-          <button
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--background)_85%)]"
+      />
+
+      <header className="relative z-10 flex items-center justify-between border-b border-border/50 bg-background/60 px-6 py-3 backdrop-blur-sm">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-base uppercase tracking-[0.3em] text-primary">
+            Tacticarium
+          </span>
+          <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70 sm:inline">
+            Command Lobby
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {user && (
+            <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">
+              {user.username}
+            </span>
+          )}
+          <ThemeSwitcher />
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate("/history")}
-            className="text-gray-400 hover:text-white text-sm"
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-widest"
           >
+            <History className="size-3.5" />
             History
-          </button>
-          <button onClick={logout} className="text-gray-400 hover:text-white text-sm">
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-widest"
+          >
+            <LogOut className="size-3.5" />
             Logout
-          </button>
+          </Button>
         </div>
       </header>
 
-      <main className="max-w-md mx-auto p-6 space-y-8">
-        {error && (
-          <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded">
-            {error}
-          </div>
-        )}
+      <main className="relative z-0 mx-auto max-w-2xl space-y-6 px-4 py-8">
+        {error && <ErrorBanner message={error} />}
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">New Game</h2>
-          <button
-            onClick={handleCreate}
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors"
-          >
-            Create Game
-          </button>
-        </section>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <HUDFrame label="New Engagement">
+            <div className="space-y-4 py-2">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Deploy a new battlefield
+              </p>
+              <Button
+                onClick={handleCreate}
+                disabled={loading}
+                className="w-full gap-2 font-mono uppercase tracking-widest"
+              >
+                <Plus className="size-4" />
+                Create Game
+              </Button>
+            </div>
+          </HUDFrame>
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Join Game</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Enter invite code"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
-              maxLength={6}
-            />
-            <button
-              onClick={handleJoin}
-              disabled={loading || !joinCode.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
-            >
-              Join
-            </button>
-          </div>
-        </section>
+          <HUDFrame label="Join Engagement">
+            <div className="space-y-4 py-2">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Enter 6-character invite
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="ABC123"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleJoin();
+                  }}
+                  maxLength={6}
+                  className="font-mono uppercase tracking-[0.3em]"
+                />
+                <Button
+                  onClick={handleJoin}
+                  disabled={loading || !joinCode.trim()}
+                  className="gap-2 font-mono uppercase tracking-widest"
+                >
+                  <Swords className="size-4" />
+                  Join
+                </Button>
+              </div>
+            </div>
+          </HUDFrame>
+        </div>
 
         {games.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold">Your Games</h2>
-            <div className="space-y-2">
-              {games.map((game) => (
-                <div key={game.id} className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      navigate(
-                        game.status === "setup" ? `/game/${game.id}/setup` : `/game/${game.id}`,
-                      )
-                    }
-                    className="flex-1 bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-4 text-left transition-colors"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">
-                        {game.missionName || "No mission selected"}
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          game.status === "active"
-                            ? "bg-green-900 text-green-300"
-                            : game.status === "setup"
-                              ? "bg-yellow-900 text-yellow-300"
-                              : "bg-gray-700 text-gray-400"
-                        }`}
-                      >
-                        {game.status}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-400 mt-1">
-                      {(game.players ?? []).map((p) => p.username).join(" vs ")}
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setGameToRemove(game)}
-                    className="self-center px-3 py-2 text-gray-500 hover:text-red-400 transition-colors"
-                    aria-label="Remove game"
-                    title="Remove game"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
+          <HUDFrame label="Active Theatres">
+            <div className="space-y-3 py-2">
+              {games.map((game, i) => (
+                <div key={game.id}>
+                  {i > 0 && <Separator className="mb-3" />}
+                  <div className="flex items-stretch gap-2">
+                    <button
+                      onClick={() =>
+                        navigate(
+                          game.status === "setup" ? `/game/${game.id}/setup` : `/game/${game.id}`,
+                        )
+                      }
+                      className="flex-1 rounded-sm border border-border/50 bg-background/40 p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/5"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground">
+                          {game.missionName || "No mission selected"}
+                        </span>
+                        <Badge
+                          variant={statusVariant(game.status)}
+                          className="font-mono uppercase tracking-widest"
+                        >
+                          {game.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 font-mono text-xs text-muted-foreground">
+                        {(game.players ?? []).map((p) => p.username).join(" vs ") ||
+                          "Awaiting opponent"}
+                      </div>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setGameToRemove(game)}
+                      aria-label="Remove game"
+                      title="Remove game"
+                      className="self-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
-          </section>
+          </HUDFrame>
         )}
       </main>
 
