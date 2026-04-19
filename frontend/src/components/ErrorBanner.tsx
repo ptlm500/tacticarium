@@ -1,3 +1,7 @@
+import { X } from "lucide-react";
+import { AlertBanner } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+
 interface ErrorBannerProps {
   message: string;
   onDismiss?: () => void;
@@ -5,16 +9,18 @@ interface ErrorBannerProps {
 
 export function ErrorBanner({ message, onDismiss }: ErrorBannerProps) {
   return (
-    <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded flex items-center justify-between">
-      <span>{message}</span>
+    <div className="relative">
+      <AlertBanner variant="danger" subtitle="Error" title={message} />
       {onDismiss && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onDismiss}
-          className="text-red-400 hover:text-red-200 ml-4 text-lg leading-none"
           aria-label="Dismiss"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-destructive hover:bg-destructive/20"
         >
-          ×
-        </button>
+          <X className="size-4" />
+        </Button>
       )}
     </div>
   );

@@ -1,3 +1,13 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import type { PlayerSummaryStats } from "./vpUtils";
 
 interface Props {
@@ -15,81 +25,95 @@ export function VPBreakdownTable({
   opponentUsername,
   rounds,
 }: Props) {
+  const headClass = "text-center font-mono text-[10px] uppercase tracking-widest text-primary";
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-700">
-            <th className="text-left py-2 text-gray-400 font-medium">Round</th>
-            <th className="text-center py-2 text-gray-400 font-medium" colSpan={3}>
-              {myUsername}
-            </th>
-            {opponentStats && (
-              <th className="text-center py-2 text-gray-400 font-medium" colSpan={3}>
-                {opponentUsername}
-              </th>
-            )}
-          </tr>
-          <tr className="border-b border-gray-600 text-xs text-gray-500">
-            <th></th>
-            <th className="py-1">Pri</th>
-            <th className="py-1">Sec</th>
-            <th className="py-1">Gam</th>
-            {opponentStats && (
-              <>
-                <th className="py-1">Pri</th>
-                <th className="py-1">Sec</th>
-                <th className="py-1">Gam</th>
-              </>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {rounds.map((r) => {
-            const my = myStats.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
-            const opp = opponentStats?.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
-            return (
-              <tr key={r} className="border-b border-gray-700/50">
-                <td className="py-2 text-gray-400">R{r}</td>
-                <td className="py-2 text-center">{my.primary || "-"}</td>
-                <td className="py-2 text-center">{my.secondary || "-"}</td>
-                <td className="py-2 text-center">{my.gambit || "-"}</td>
-                {opponentStats && (
-                  <>
-                    <td className="py-2 text-center">{opp.primary || "-"}</td>
-                    <td className="py-2 text-center">{opp.secondary || "-"}</td>
-                    <td className="py-2 text-center">{opp.gambit || "-"}</td>
-                  </>
-                )}
-              </tr>
-            );
-          })}
-          {/* Paint row */}
-          <tr className="border-b border-gray-700/50">
-            <td className="py-2 text-gray-400">Paint</td>
-            <td className="py-2 text-center" colSpan={3}>
-              {myStats.paint}
-            </td>
-            {opponentStats && (
-              <td className="py-2 text-center" colSpan={3}>
-                {opponentStats.paint}
-              </td>
-            )}
-          </tr>
-          {/* Total row */}
-          <tr className="font-bold text-base">
-            <td className="py-2 text-gray-300">Total</td>
-            <td className="py-2 text-center" colSpan={3}>
-              {myStats.totalVP} VP
-            </td>
-            {opponentStats && (
-              <td className="py-2 text-center" colSpan={3}>
-                {opponentStats.totalVP} VP
-              </td>
-            )}
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest">
+            Round
+          </TableHead>
+          <TableHead colSpan={3} className={cn(headClass, "border-l border-border/50")}>
+            {myUsername}
+          </TableHead>
+          {opponentStats && (
+            <TableHead colSpan={3} className={cn(headClass, "border-l border-border/50")}>
+              {opponentUsername}
+            </TableHead>
+          )}
+        </TableRow>
+        <TableRow className="hover:bg-transparent">
+          <TableHead />
+          <TableHead className={cn(headClass, "border-l border-border/50")}>Pri</TableHead>
+          <TableHead className={headClass}>Sec</TableHead>
+          <TableHead className={headClass}>Gam</TableHead>
+          {opponentStats && (
+            <>
+              <TableHead className={cn(headClass, "border-l border-border/50")}>Pri</TableHead>
+              <TableHead className={headClass}>Sec</TableHead>
+              <TableHead className={headClass}>Gam</TableHead>
+            </>
+          )}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rounds.map((r) => {
+          const my = myStats.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
+          const opp = opponentStats?.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
+          return (
+            <TableRow key={r}>
+              <TableCell className="text-muted-foreground font-mono">R{r}</TableCell>
+              <TableCell className="text-center border-l border-border/50">
+                {my.primary || "-"}
+              </TableCell>
+              <TableCell className="text-center">{my.secondary || "-"}</TableCell>
+              <TableCell className="text-center">{my.gambit || "-"}</TableCell>
+              {opponentStats && (
+                <>
+                  <TableCell className="text-center border-l border-border/50">
+                    {opp.primary || "-"}
+                  </TableCell>
+                  <TableCell className="text-center">{opp.secondary || "-"}</TableCell>
+                  <TableCell className="text-center">{opp.gambit || "-"}</TableCell>
+                </>
+              )}
+            </TableRow>
+          );
+        })}
+        <TableRow>
+          <TableCell className="text-muted-foreground font-mono">Paint</TableCell>
+          <TableCell colSpan={3} className="text-center border-l border-border/50">
+            {myStats.paint}
+          </TableCell>
+          {opponentStats && (
+            <TableCell colSpan={3} className="text-center border-l border-border/50">
+              {opponentStats.paint}
+            </TableCell>
+          )}
+        </TableRow>
+      </TableBody>
+      <TableFooter className="bg-transparent">
+        <TableRow className="hover:bg-transparent">
+          <TableCell className="font-mono uppercase tracking-widest text-primary">
+            Total
+          </TableCell>
+          <TableCell
+            colSpan={3}
+            className="text-center border-l border-border/50 text-lg font-bold text-primary"
+          >
+            {myStats.totalVP} VP
+          </TableCell>
+          {opponentStats && (
+            <TableCell
+              colSpan={3}
+              className="text-center border-l border-border/50 text-lg font-bold"
+            >
+              {opponentStats.totalVP} VP
+            </TableCell>
+          )}
+        </TableRow>
+      </TableFooter>
+    </Table>
   );
 }
