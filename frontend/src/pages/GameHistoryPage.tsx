@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, X } from "lucide-react";
 import { GameSummary } from "../types/game";
 import { useAuth } from "../hooks/useAuth";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { useGameHistory, useUserStats } from "../hooks/queries/useHistoryQueries";
 import { useFactions } from "../hooks/queries/useFactionQueries";
 import { useHideGame } from "../hooks/queries/useGameMutations";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { HUDFrame } from "@/components/ui/hud-frame";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { ErrorBanner } from "../components/ErrorBanner";
 
 export function GameHistoryPage() {
   const navigate = useNavigate();
@@ -34,53 +42,142 @@ export function GameHistoryPage() {
     });
   };
 
+  const resultBadge = (game: GameSummary) => {
+    const isWinner = game.winnerId === user?.id;
+    const isDraw = !game.winnerId && game.status === "completed";
+    const isAbandoned = game.status === "abandoned";
+    if (isAbandoned) {
+      return (
+        <Badge
+          variant="outline"
+          className="border-amber-500/40 bg-amber-500/10 font-mono uppercase tracking-widest text-amber-300"
+        >
+          Abandoned
+        </Badge>
+      );
+    }
+    if (isDraw) {
+      return (
+        <Badge variant="outline" className="font-mono uppercase tracking-widest">
+          Draw
+        </Badge>
+      );
+    }
+    if (isWinner) {
+      return (
+        <Badge
+          variant="outline"
+          className="border-emerald-500/40 bg-emerald-500/10 font-mono uppercase tracking-widest text-emerald-300"
+        >
+          Won
+        </Badge>
+      );
+    }
+    return (
+      <Badge
+        variant="outline"
+        className="border-destructive/40 bg-destructive/10 font-mono uppercase tracking-widest text-destructive"
+      >
+        Lost
+      </Badge>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="flex items-center justify-between p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold">Game History</h1>
-        <button onClick={() => navigate("/")} className="text-gray-400 hover:text-white">
-          Back
-        </button>
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--background)_85%)]"
+      />
+
+      <header className="relative z-10 flex items-center justify-between border-b border-border/50 bg-background/60 px-6 py-3 backdrop-blur-sm">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-base uppercase tracking-[0.3em] text-primary">
+            Tacticarium
+          </span>
+          <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70 sm:inline">
+            Battle Archive
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-widest"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back
+          </Button>
+        </div>
       </header>
 
-      <main className="max-w-md mx-auto p-6 space-y-6">
-        {/* Stats Summary */}
+      <main className="relative z-0 mx-auto max-w-2xl space-y-6 px-4 py-8">
+        {error && <ErrorBanner message={error} />}
+
         {stats && (
-          <section className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
-            <div className="flex flex-wrap gap-3 justify-center">
-              <span className="text-xs px-2 py-1 rounded font-semibold bg-green-900 text-green-300">
-                {stats.wins}W
-              </span>
-              <span className="text-xs px-2 py-1 rounded font-semibold bg-red-900 text-red-300">
-                {stats.losses}L
-              </span>
-              <span className="text-xs px-2 py-1 rounded font-semibold bg-gray-700 text-gray-300">
-                {stats.draws}D
-              </span>
-              {stats.abandoned > 0 && (
-                <span className="text-xs px-2 py-1 rounded font-semibold bg-yellow-900 text-yellow-300">
-                  {stats.abandoned} Abandoned
-                </span>
+          <HUDFrame label="Campaign Stats">
+            <div className="space-y-3 py-1">
+              <div className="flex flex-wrap justify-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/40 bg-emerald-500/10 font-mono uppercase tracking-widest text-emerald-300"
+                >
+                  {stats.wins}W
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="border-destructive/40 bg-destructive/10 font-mono uppercase tracking-widest text-destructive"
+                >
+                  {stats.losses}L
+                </Badge>
+                <Badge variant="outline" className="font-mono uppercase tracking-widest">
+                  {stats.draws}D
+                </Badge>
+                {stats.abandoned > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/40 bg-amber-500/10 font-mono uppercase tracking-widest text-amber-300"
+                  >
+                    {stats.abandoned} Abandoned
+                  </Badge>
+                )}
+              </div>
+              <div className="text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                Avg VP:{" "}
+                <span className="text-foreground tabular-nums">{stats.averageVp.toFixed(1)}</span>
+              </div>
+              {(stats.factionStats ?? []).length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-1">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Most played
+                    </p>
+                    {(stats.factionStats ?? []).slice(0, 3).map((fs) => (
+                      <div key={fs.factionName} className="flex justify-between font-mono text-xs">
+                        <span className="text-foreground">{fs.factionName}</span>
+                        <span className="text-muted-foreground">
+                          {fs.gamesPlayed} game{fs.gamesPlayed !== 1 ? "s" : ""}, {fs.wins} win
+                          {fs.wins !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
-            <div className="text-center text-sm text-gray-400">
-              Avg VP: <span className="text-white">{stats.averageVp.toFixed(1)}</span>
-            </div>
-            {(stats.factionStats ?? []).length > 0 && (
-              <div className="text-xs text-gray-400 space-y-1">
-                <p className="font-medium text-gray-500">Most played:</p>
-                {(stats.factionStats ?? []).slice(0, 3).map((fs) => (
-                  <div key={fs.factionName} className="flex justify-between">
-                    <span>{fs.factionName}</span>
-                    <span>
-                      {fs.gamesPlayed} game{fs.gamesPlayed !== 1 ? "s" : ""}, {fs.wins} win
-                      {fs.wins !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          </HUDFrame>
         )}
 
         {/* Filters */}
@@ -88,7 +185,7 @@ export function GameHistoryPage() {
           <select
             value={myFaction}
             onChange={(e) => setMyFaction(e.target.value)}
-            className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 text-sm px-3 py-2 rounded-lg"
+            className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs text-foreground focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
           >
             <option value="">My Faction (all)</option>
             {factions.map((f) => (
@@ -100,7 +197,7 @@ export function GameHistoryPage() {
           <select
             value={opponentFaction}
             onChange={(e) => setOpponentFaction(e.target.value)}
-            className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 text-sm px-3 py-2 rounded-lg"
+            className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs text-foreground focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
           >
             <option value="">Opponent (all)</option>
             {factions.map((f) => (
@@ -112,86 +209,67 @@ export function GameHistoryPage() {
         </div>
 
         {/* Game List */}
-        {error ? (
-          <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded text-center">
-            {error}
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="flex items-center gap-2">
+              <Spinner />
+              <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                Loading
+              </span>
+            </div>
           </div>
-        ) : loading ? (
-          <p className="text-gray-500 text-center">Loading...</p>
         ) : games.length === 0 ? (
-          <p className="text-gray-500 text-center">No completed games yet.</p>
+          <p className="text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            No completed games yet.
+          </p>
         ) : (
           <div className="space-y-3">
-            {games.map((game) => {
-              const isWinner = game.winnerId === user?.id;
-              const isDraw = !game.winnerId && game.status === "completed";
-              const isAbandoned = game.status === "abandoned";
-              return (
-                <div key={game.id} className="flex gap-2">
-                  <button
-                    onClick={() => navigate(`/history/${game.id}`)}
-                    className="flex-1 text-left bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{game.missionName || "Unknown Mission"}</span>
-                      <span
-                        className={`text-xs px-2 py-1 rounded font-semibold ${
-                          isAbandoned
-                            ? "bg-yellow-900 text-yellow-300"
-                            : isDraw
-                              ? "bg-gray-700 text-gray-300"
-                              : isWinner
-                                ? "bg-green-900 text-green-300"
-                                : "bg-red-900 text-red-300"
+            {games.map((game) => (
+              <div key={game.id} className="flex items-stretch gap-2">
+                <button
+                  onClick={() => navigate(`/history/${game.id}`)}
+                  className="flex-1 rounded-sm border border-border/50 bg-background/40 p-4 text-left transition-colors hover:border-primary/50 hover:bg-primary/5"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="font-medium text-foreground">
+                      {game.missionName || "Unknown Mission"}
+                    </span>
+                    {resultBadge(game)}
+                  </div>
+                  <div className="space-y-1 font-mono text-xs">
+                    {(game.players ?? []).map((p) => (
+                      <div
+                        key={p.userId}
+                        className={`flex justify-between ${
+                          p.userId === user?.id ? "text-foreground" : "text-muted-foreground"
                         }`}
                       >
-                        {isAbandoned ? "Abandoned" : isDraw ? "Draw" : isWinner ? "Won" : "Lost"}
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      {(game.players ?? []).map((p) => (
-                        <div
-                          key={p.userId}
-                          className={`flex justify-between ${
-                            p.userId === user?.id ? "text-white" : "text-gray-400"
-                          }`}
-                        >
-                          <span>
-                            {p.username}
-                            {p.factionName && ` (${p.factionName})`}
-                          </span>
-                          <span>{p.totalVp} VP</span>
-                        </div>
-                      ))}
-                    </div>
-                    {game.completedAt && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        {new Date(game.completedAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setGameToRemove(game)}
-                    className="self-center px-3 py-2 text-gray-500 hover:text-red-400 transition-colors"
-                    aria-label="Remove game"
-                    title="Remove game"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              );
-            })}
+                        <span>
+                          {p.username}
+                          {p.factionName && ` (${p.factionName})`}
+                        </span>
+                        <span className="tabular-nums">{p.totalVp} VP</span>
+                      </div>
+                    ))}
+                  </div>
+                  {game.completedAt && (
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {new Date(game.completedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setGameToRemove(game)}
+                  aria-label="Remove game"
+                  title="Remove game"
+                  className="self-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ))}
           </div>
         )}
       </main>

@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Handshake, Skull, Swords, Trophy } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import {
   type RestGameEvent,
@@ -11,6 +12,10 @@ import { VPProgressionChart } from "../components/game/VPProgressionChart";
 import { EventTimeline } from "../components/game/EventTimeline";
 import { normalizeRestEvent } from "../components/game/eventFormatting";
 import { useGame, useGameEvents } from "../hooks/queries/useGamesQueries";
+import { Button } from "@/components/ui/button";
+import { HUDFrame } from "@/components/ui/hud-frame";
+import { Spinner } from "@/components/ui/spinner";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 export function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,23 +27,33 @@ export function GameDetailPage() {
 
   if (gameLoading || eventsLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="flex items-center gap-2">
+          <Spinner />
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            Loading
+          </span>
+        </div>
       </div>
     );
   }
 
   if (!gameState || !events) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-red-400">Game not found</p>
-          <button
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="space-y-4 text-center">
+          <p className="font-mono text-sm uppercase tracking-widest text-destructive">
+            Game not found
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => navigate("/history")}
-            className="text-indigo-400 hover:text-indigo-300"
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-widest"
           >
+            <ArrowLeft className="size-3.5" />
             Back to History
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -49,8 +64,10 @@ export function GameDetailPage() {
 
   if (!myPlayer) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p className="text-gray-400">You were not a player in this game.</p>
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          You were not a player in this game.
+        </p>
       </div>
     );
   }
@@ -67,22 +84,27 @@ export function GameDetailPage() {
 
   const isAbandoned = gameState.status === "abandoned";
   const isWinner = gameState.winnerId === user?.id;
+
   let heading: string;
+  let HeadingIcon: typeof Trophy;
+  let headingColor: string;
   if (isAbandoned) {
     heading = "Game Abandoned";
+    HeadingIcon = Handshake;
+    headingColor = "text-muted-foreground";
   } else if (!gameState.winnerId) {
     heading = "Draw";
+    HeadingIcon = Swords;
+    headingColor = "text-amber-400";
+  } else if (isWinner) {
+    heading = "Victory!";
+    HeadingIcon = Trophy;
+    headingColor = "text-emerald-400";
   } else {
-    heading = isWinner ? "Victory!" : "Defeat";
+    heading = "Defeat";
+    HeadingIcon = Skull;
+    headingColor = "text-destructive";
   }
-
-  const headingColor = isAbandoned
-    ? "text-gray-400"
-    : !gameState.winnerId
-      ? "text-yellow-400"
-      : isWinner
-        ? "text-green-400"
-        : "text-red-400";
 
   const reasonLabel =
     endReason === "concede"
@@ -96,74 +118,112 @@ export function GameDetailPage() {
   const normalizedEvents = typedEvents.map(normalizeRestEvent);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="flex items-center justify-between p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold">Game Details</h1>
-        <button onClick={() => navigate("/history")} className="text-gray-400 hover:text-white">
-          Back
-        </button>
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--background)_85%)]"
+      />
+
+      <header className="relative z-10 flex items-center justify-between border-b border-border/50 bg-background/60 px-6 py-3 backdrop-blur-sm">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-base uppercase tracking-[0.3em] text-primary">
+            Tacticarium
+          </span>
+          <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70 sm:inline">
+            Battle Report
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/history")}
+            className="gap-1.5 font-mono text-[10px] uppercase tracking-widest"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back
+          </Button>
+        </div>
       </header>
 
-      <main className="max-w-2xl mx-auto p-6 space-y-6">
-        {/* Result Header */}
-        <div className="text-center">
-          <h2 className={`text-2xl font-bold ${headingColor}`}>{heading}</h2>
-          {reasonLabel && <p className="text-sm text-gray-400 mt-1">{reasonLabel}</p>}
-          {gameState.missionName && (
-            <p className="text-sm text-gray-500 mt-1">{gameState.missionName}</p>
-          )}
-          <p className="text-xs text-gray-600 mt-1">
-            {myPlayer.factionName} vs {opponent?.factionName ?? "Unknown"}
-          </p>
-        </div>
+      <main className="relative z-0 mx-auto max-w-3xl space-y-6 px-4 py-8">
+        <HUDFrame label="Outcome">
+          <div className="py-1 text-center">
+            <HeadingIcon className={`mx-auto size-8 ${headingColor}`} />
+            <h2 className={`mt-2 font-mono text-2xl uppercase tracking-[0.3em] ${headingColor}`}>
+              {heading}
+            </h2>
+            {reasonLabel && (
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {reasonLabel}
+              </p>
+            )}
+            {gameState.missionName && (
+              <p className="mt-2 font-mono text-xs text-foreground/80">{gameState.missionName}</p>
+            )}
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              {myPlayer.factionName} vs {opponent?.factionName ?? "Unknown"}
+            </p>
+          </div>
+        </HUDFrame>
 
-        {/* VP Breakdown Table */}
-        <section className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-gray-400 mb-3">VP Breakdown</h3>
-          <VPBreakdownTable
-            myStats={myStats}
-            opponentStats={opponentStats}
-            myUsername={myPlayer.username}
-            opponentUsername={opponent?.username ?? null}
-            rounds={rounds}
-          />
-        </section>
-
-        {/* VP Progression Chart */}
-        {rounds.length > 0 && (
-          <section className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-gray-400 mb-3">VP Progression</h3>
-            <VPProgressionChart
+        <HUDFrame label="VP Breakdown">
+          <div className="py-1">
+            <VPBreakdownTable
               myStats={myStats}
               opponentStats={opponentStats}
               myUsername={myPlayer.username}
               opponentUsername={opponent?.username ?? null}
               rounds={rounds}
             />
-          </section>
+          </div>
+        </HUDFrame>
+
+        {rounds.length > 0 && (
+          <HUDFrame label="VP Progression">
+            <div className="py-1">
+              <VPProgressionChart
+                myStats={myStats}
+                opponentStats={opponentStats}
+                myUsername={myPlayer.username}
+                opponentUsername={opponent?.username ?? null}
+                rounds={rounds}
+              />
+            </div>
+          </HUDFrame>
         )}
 
-        {/* Stats */}
-        <div className="flex flex-wrap gap-6 text-sm text-gray-400">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-xs text-muted-foreground">
           <div>
-            Rounds played: <span className="text-white">{roundsPlayed}</span>
+            Rounds played: <span className="text-foreground tabular-nums">{roundsPlayed}</span>
           </div>
           <div>
             {myPlayer.username} stratagems:{" "}
-            <span className="text-white">{myStats.stratagemsUsed}</span>
+            <span className="text-foreground tabular-nums">{myStats.stratagemsUsed}</span>
           </div>
           {opponentStats && (
             <div>
               {opponent!.username} stratagems:{" "}
-              <span className="text-white">{opponentStats.stratagemsUsed}</span>
+              <span className="text-foreground tabular-nums">{opponentStats.stratagemsUsed}</span>
             </div>
           )}
         </div>
 
-        {/* Event Timeline */}
-        <section className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-          <EventTimeline events={normalizedEvents} defaultFilter="highlights" />
-        </section>
+        <HUDFrame label="Event Timeline">
+          <div className="py-1">
+            <EventTimeline events={normalizedEvents} defaultFilter="highlights" />
+          </div>
+        </HUDFrame>
       </main>
     </div>
   );
