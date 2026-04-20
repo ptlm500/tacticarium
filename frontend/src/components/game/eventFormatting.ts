@@ -43,26 +43,33 @@ export function normalizeRestEvent(e: RestGameEvent): NormalizedEvent {
   };
 }
 
+function s(value: unknown, fallback = ""): string {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return value.toString();
+  return JSON.stringify(value);
+}
+
 export function formatEvent(event: NormalizedEvent): string {
   const player = event.playerNumber ? `P${event.playerNumber}` : "";
 
   switch (event.eventType) {
     case "phase_advance":
-      return `${player} advanced to ${event.data?.to || "next"} phase`;
+      return `${player} advanced to ${s(event.data?.to, "next")} phase`;
     case "phase_revert":
-      return `${player} reverted to ${event.data?.to || "previous"} phase`;
+      return `${player} reverted to ${s(event.data?.to, "previous")} phase`;
     case "cp_gain":
-      return `${player} gained ${event.data?.amount || 1} CP`;
+      return `${player} gained ${s(event.data?.amount, "1")} CP`;
     case "cp_adjust":
-      return `${player} adjusted CP by ${event.data?.delta}`;
+      return `${player} adjusted CP by ${s(event.data?.delta)}`;
     case "stratagem_used": {
       const spent = event.data?.cpSpent;
       const original = event.data?.originalCpCost;
       const suffix =
         typeof original === "number" && typeof spent === "number" && spent !== original
           ? `${spent} CP, was ${original}`
-          : `${spent} CP`;
-      return `${player} used ${event.data?.stratagemName} (${suffix})`;
+          : `${s(spent)} CP`;
+      return `${player} used ${s(event.data?.stratagemName)} (${suffix})`;
     }
     case "vp_primary_score":
     case "vp_secondary_score":
@@ -70,28 +77,28 @@ export function formatEvent(event: NormalizedEvent): string {
       const applied = event.data?.appliedDelta ?? event.data?.delta;
       const slot = event.data?.scoringSlot;
       const slotSuffix = typeof slot === "string" ? ` — ${slot.replace(/_/g, " ")}` : "";
-      return `${player} scored ${applied} ${event.data?.category} VP${slotSuffix}`;
+      return `${player} scored ${s(applied)} ${s(event.data?.category)} VP${slotSuffix}`;
     }
     case "vp_primary_score_reverted":
-      return `${player} undid primary score (R${event.data?.revertedRound} ${String(
-        event.data?.scoringSlot ?? "",
-      ).replace(/_/g, " ")}, -${event.data?.revertedDelta} VP)`;
+      return `${player} undid primary score (R${s(event.data?.revertedRound)} ${s(
+        event.data?.scoringSlot,
+      ).replace(/_/g, " ")}, -${s(event.data?.revertedDelta)} VP)`;
     case "vp_manual_adjust":
-      return `📝 ${player} manually adjusted ${event.data?.category} VP by ${
-        event.data?.appliedDelta ?? event.data?.delta
-      }`;
+      return `📝 ${player} manually adjusted ${s(event.data?.category)} VP by ${s(
+        event.data?.appliedDelta ?? event.data?.delta,
+      )}`;
     case "secondary_achieved":
-      return `${player} achieved ${event.data?.secondaryName} (+${event.data?.vpScored} VP)`;
+      return `${player} achieved ${s(event.data?.secondaryName)} (+${s(event.data?.vpScored)} VP)`;
     case "secondary_reshuffled": {
       const reason = event.data?.reason === "mandatory" ? "must shuffle back" : "shuffled back";
-      return `${player} ${reason}: ${event.data?.secondaryName}`;
+      return `${player} ${reason}: ${s(event.data?.secondaryName)}`;
     }
     case "challenger_scored":
-      return `${player} completed challenger mission (+${event.data?.vpScored} VP)`;
+      return `${player} completed challenger mission (+${s(event.data?.vpScored)} VP)`;
     case "game_start":
       return "Game started!";
     case "game_end":
-      return `Game ended (${event.data?.reason})`;
+      return `Game ended (${s(event.data?.reason)})`;
     case "player_concede":
       return `${player} conceded`;
     case "abandon_requested":

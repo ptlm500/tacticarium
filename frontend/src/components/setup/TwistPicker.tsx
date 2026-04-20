@@ -1,7 +1,13 @@
 import { Shuffle } from "lucide-react";
 import { MissionRule } from "../../types/mission";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   rules: MissionRule[];
@@ -16,26 +22,24 @@ export function TwistPicker({ rules, selectedId, onSelect, onDrawRandom }: Props
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <select
+        <Select
           value={selectedId}
-          onChange={(e) => {
-            const r = rules.find((r) => r.id === e.target.value);
+          onValueChange={(value) => {
+            const r = rules.find((r) => r.id === value);
             if (r) onSelect(r);
           }}
-          className={cn(
-            "flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm",
-            "shadow-xs transition-[color,box-shadow] outline-none",
-            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-            "dark:bg-input/30",
-          )}
         >
-          <option value="">Select a twist...</option>
-          {rules.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Select a twist..." />
+          </SelectTrigger>
+          <SelectContent>
+            {rules.map((r) => (
+              <SelectItem key={r.id} value={r.id}>
+                {r.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           variant="outline"
