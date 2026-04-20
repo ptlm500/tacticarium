@@ -11,6 +11,32 @@ React application for playing Tacticarium games.
 - React Router v7
 - TanStack Query v5 (REST API data fetching + caching)
 - Zustand (real-time game state via WebSocket)
+- shadcn/ui + [thegridcn](https://thegridcn.com) (Tron: Ares themed HUD primitives) for components
+- lucide-react for icons
+
+## UI Components
+
+Components are installed via the shadcn CLI from two registries, configured in `components.json`:
+
+- **default** shadcn registry — base primitives (`button`, `badge`, `dialog`, `dropdown-menu`, `input`, `label`, `scroll-area`, `separator`, `table`, etc.)
+- **`@thegridcn`** — HUD-styled primitives (e.g. `hud-frame`, `spinner`, `alert`, the animated `scan` scanline)
+
+All primitives live in `src/components/ui/` and are imported via the `@/` alias (e.g. `import { Button } from "@/components/ui/button"`). Do not edit these files by hand for theming — restyle via the CSS variables in `src/index.css`.
+
+### Adding components
+
+```bash
+vp dlx shadcn@latest add button              # default registry
+vp dlx shadcn@latest add @thegridcn/hud-frame # gridcn registry
+```
+
+Only add what you will actually use — the registries pull in transitive Radix peer deps. Prune unused primitives (and their Radix deps) when removing features.
+
+### Theming
+
+The app is dark-only. The base palette and six theme variants (`tron`, `ares`, `clu`, `athena`, `aphrodite`, `poseidon`) live in `src/index.css` as `[data-theme="..."]` overrides of `--primary`, `--ring`, `--accent`, and `--chart-{1..5}`. The active theme is controlled by `ThemeSwitcher` (in the page header), which sets `data-theme` on `<html>`.
+
+When adding a new page, follow the established header pattern: grid background + radial fade overlay, `ThemeSwitcher` + back `Button` in the top bar, `HUDFrame` for content panels, and `font-mono uppercase tracking-widest` for labels.
 
 ## Data Fetching
 
