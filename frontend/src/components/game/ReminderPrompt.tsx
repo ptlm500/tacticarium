@@ -1,4 +1,13 @@
 import { ReactNode } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   title: string;
@@ -20,30 +29,31 @@ export function ReminderPrompt({
   children,
 }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="bg-gray-800 border border-gray-600 rounded-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto">
-        <div className="px-5 py-4 border-b border-gray-700">
-          <h2 className="text-lg font-bold text-white">{title}</h2>
-          <p className="text-sm text-gray-400 mt-1">{description}</p>
-        </div>
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next) onCancel();
+      }}
+    >
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-mono uppercase tracking-widest text-primary">
+            {title}
+          </DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
 
-        <div className="px-5 py-4 space-y-4">{children}</div>
+        <div className="space-y-4 py-2">{children}</div>
 
-        <div className="px-5 py-4 border-t border-gray-700 flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
             {cancelLabel}
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
+          </Button>
+          <Button type="button" onClick={onConfirm} className="flex-1">
             {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

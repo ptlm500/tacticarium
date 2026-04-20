@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { ActiveSecondary, ScoringOption } from "../../types/game";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function filterOptions(options: ScoringOption[] | null | undefined, mode: string): ScoringOption[] {
   if (!options || options.length === 0) return [];
@@ -52,52 +55,66 @@ export function SecondaryPanel({
   return (
     <section>
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg px-4 py-3 text-left flex justify-between items-center"
+        className="flex w-full items-center justify-between rounded-sm border border-border/60 bg-background/40 px-4 py-3 text-left transition-colors hover:border-primary/50"
       >
-        <span className="font-semibold">
+        <span className="font-mono text-sm uppercase tracking-widest text-primary">
           Secondary Missions ({mode === "tactical" ? "Tactical" : "Fixed"})
         </span>
-        <span className="text-gray-400">{expanded ? "\u25B2" : "\u25BC"}</span>
+        {expanded ? (
+          <ChevronUp className="size-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="size-4 text-muted-foreground" />
+        )}
       </button>
 
       {expanded && (
         <div className="mt-2 space-y-3">
-          {/* Active Secondaries */}
           {activeSecondaries.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase">Active</h3>
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Active
+              </h3>
               {activeSecondaries.map((s) => (
-                <div key={s.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium text-sm">{s.name}</span>
-                    <span className="text-xs text-gray-400">{s.maxVp} VP max</span>
+                <div key={s.id} className="rounded-sm border border-border/60 bg-background/40 p-3">
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground">{s.name}</span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {s.maxVp} VP max
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-400 mb-3 line-clamp-2">{s.description}</p>
+                  <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>
 
                   {mode === "tactical" ? (
                     <div className="flex flex-wrap gap-2">
                       {filterOptions(s.scoringOptions, "tactical").map((opt, i) => (
-                        <button
+                        <Button
                           key={i}
+                          type="button"
+                          size="sm"
                           onClick={() => onAchieve(s.id, opt.vp)}
-                          className="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded transition-colors"
                           title={opt.label}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
                           {opt.label} +{opt.vp}VP
-                        </button>
+                        </Button>
                       ))}
-                      <button
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
                         onClick={() => onDiscard(s.id, true)}
-                        className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-3 py-1 rounded transition-colors"
                       >
                         Discard
-                      </button>
+                      </Button>
                       {showCPDiscard && currentRound < 5 && (
-                        <button
+                        <Button
+                          type="button"
+                          size="sm"
                           onClick={() => onDiscard(s.id, false)}
                           disabled={!canGainCP}
-                          className="bg-teal-800 hover:bg-teal-700 disabled:opacity-50 text-white text-xs px-3 py-1 rounded transition-colors"
+                          className="bg-teal-700 text-white hover:bg-teal-800"
                           title={
                             canGainCP
                               ? "End-of-turn discard: gain 1 CP"
@@ -105,41 +122,47 @@ export function SecondaryPanel({
                           }
                         >
                           {canGainCP ? "Discard +1CP" : "Discard (CP capped)"}
-                        </button>
+                        </Button>
                       )}
                       {showNewOrders && (
-                        <button
+                        <Button
+                          type="button"
+                          size="sm"
                           onClick={() => onNewOrders(s.id)}
                           disabled={currentCP < 1}
-                          className="bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-white text-xs px-3 py-1 rounded transition-colors"
+                          className="bg-amber-700 text-white hover:bg-amber-800"
                           title="Spend 1 CP to discard and draw a new secondary"
                         >
                           New Orders
-                        </button>
+                        </Button>
                       )}
                       {s.drawRestriction &&
                         s.drawRestriction.mode === "optional" &&
                         s.drawRestriction.round === currentRound && (
-                          <button
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
                             onClick={() => onReshuffle(s.id)}
-                            className="bg-indigo-800 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded transition-colors"
                             title="When Drawn: shuffle this card back into your deck and draw a replacement"
                           >
                             Shuffle Back
-                          </button>
+                          </Button>
                         )}
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {filterOptions(s.scoringOptions, "fixed").map((opt, i) => (
-                        <button
+                        <Button
                           key={i}
+                          type="button"
+                          size="sm"
                           onClick={() => onScoreFixedVP(opt.vp)}
-                          className="bg-green-700 hover:bg-green-600 text-white text-xs px-3 py-1 rounded transition-colors"
                           title={opt.label}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
                           {opt.label} +{opt.vp}VP
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   )}
@@ -148,35 +171,38 @@ export function SecondaryPanel({
             </div>
           )}
 
-          {/* Tactical-mode draw button */}
           {mode === "tactical" && activeSecondaries.length < 2 && deckSize > 0 && (
-            <button
+            <Button
+              type="button"
               onClick={onDraw}
               disabled={!isMyTurn}
               title={isMyTurn ? undefined : "Only the active player can draw secondaries"}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm py-2 rounded-lg transition-colors"
+              className="w-full font-mono uppercase tracking-widest"
             >
               Draw Secondaries ({deckSize} remaining)
-            </button>
+            </Button>
           )}
 
-          {/* Deck info for tactical */}
           {mode === "tactical" && (
-            <div className="text-xs text-gray-500">
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Deck: {deckSize} | Achieved: {achievedSecondaries.length} | Discarded:{" "}
               {discardedSecondaries.length}
             </div>
           )}
 
-          {/* Achieved list */}
           {achievedSecondaries.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Achieved</h3>
+              <h3 className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Achieved
+              </h3>
               <div className="space-y-1">
                 {achievedSecondaries.map((s, i) => (
                   <div
                     key={`${s.id}-${i}`}
-                    className="text-xs text-green-400 bg-green-900/20 rounded px-2 py-1"
+                    className={cn(
+                      "rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-1",
+                      "text-xs text-emerald-400",
+                    )}
                   >
                     {s.name}
                   </div>

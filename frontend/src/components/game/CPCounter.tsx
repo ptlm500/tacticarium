@@ -1,3 +1,6 @@
+import { Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 interface Props {
   cp: number;
   canGainCP: boolean;
@@ -7,26 +10,40 @@ interface Props {
 export function CPCounter({ cp, canGainCP, onAdjust }: Props) {
   return (
     <div className="text-center">
-      <p className="text-xs text-gray-400 mb-1">Command Points</p>
-      <div className="flex items-center justify-center gap-3">
-        <button
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        Command Points
+      </p>
+      <div className="mt-1 flex items-center justify-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
           onClick={() => onAdjust(-1)}
           disabled={cp <= 0}
-          className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-xl font-bold transition-colors"
+          aria-label="Decrease CP"
         >
-          -
-        </button>
-        <span className="text-3xl font-bold w-12 text-center">{cp}</span>
-        <button
+          <Minus className="size-4" />
+        </Button>
+        <span className="w-12 text-center font-mono text-3xl font-bold text-primary tabular-nums">
+          {cp}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
           onClick={() => onAdjust(1)}
           disabled={!canGainCP}
-          className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-xl font-bold transition-colors"
+          aria-label="Increase CP"
           title={!canGainCP ? "CP gain cap reached this battle round" : "Gain 1 CP"}
         >
-          +
-        </button>
+          <Plus className="size-4" />
+        </Button>
       </div>
-      {!canGainCP && <p className="text-xs text-amber-400 mt-1">CP gain cap reached</p>}
+      {!canGainCP && (
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-amber-400">
+          CP gain cap reached
+        </p>
+      )}
     </div>
   );
 }

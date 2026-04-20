@@ -1,4 +1,7 @@
+import { Shuffle } from "lucide-react";
 import { Mission } from "../../types/mission";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   missions: Mission[];
@@ -19,7 +22,12 @@ export function MissionPicker({ missions, selectedId, onSelect, onDrawRandom }: 
             const m = missions.find((m) => m.id === e.target.value);
             if (m) onSelect(m);
           }}
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
+          className={cn(
+            "flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+            "shadow-xs transition-[color,box-shadow] outline-none",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+            "dark:bg-input/30",
+          )}
         >
           <option value="">Select a mission...</option>
           {missions.map((m) => (
@@ -28,16 +36,19 @@ export function MissionPicker({ missions, selectedId, onSelect, onDrawRandom }: 
             </option>
           ))}
         </select>
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={onDrawRandom}
-          className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+          className="gap-2 font-mono uppercase tracking-widest"
         >
+          <Shuffle className="size-4" />
           Random
-        </button>
+        </Button>
       </div>
       {selected && (
-        <div className="bg-gray-800 rounded-lg p-3 text-sm text-gray-300">
-          {selected.lore && <p className="italic text-gray-400 mb-2">{selected.lore}</p>}
+        <div className="rounded-sm border border-border/60 bg-background/40 p-3 text-sm text-foreground/90">
+          {selected.lore && <p className="mb-2 italic text-muted-foreground">{selected.lore}</p>}
           <p className="whitespace-pre-wrap">{selected.description}</p>
         </div>
       )}

@@ -1,11 +1,11 @@
+import { Dices } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 interface Props {
-  /** The current viewer's player number (1 or 2). */
   myPlayerNumber: number;
-  /** Username shown for "me". */
   myUsername: string;
-  /** Username of the opponent, if they have joined. */
   opponentUsername?: string;
-  /** Currently selected first-turn player (0 = not yet chosen). */
   selected: number;
   onSelect: (playerNumber: 1 | 2) => void;
   onRandom: () => void;
@@ -23,9 +23,14 @@ export function FirstPlayerPicker({
   const selectedMe = selected === myPlayerNumber;
   const selectedOpponent = selected !== 0 && selected === opponentPlayerNumber;
 
-  const baseBtn = "flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors";
-  const idle = "bg-gray-800 border-gray-700 hover:bg-gray-700 text-white";
-  const active = "bg-indigo-600 border-indigo-500 text-white";
+  const choiceClass = (active: boolean) =>
+    cn(
+      "flex-1 rounded-sm border px-3 py-2 text-sm font-medium transition-colors",
+      active
+        ? "border-primary bg-primary/10 text-primary shadow-[0_0_8px_var(--primary)]"
+        : "border-border/60 bg-background/40 text-foreground hover:border-primary/50 hover:bg-primary/5",
+      "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border/60 disabled:hover:bg-background/40",
+    );
 
   return (
     <div className="space-y-2">
@@ -33,7 +38,7 @@ export function FirstPlayerPicker({
         <button
           type="button"
           onClick={() => onSelect(myPlayerNumber as 1 | 2)}
-          className={`${baseBtn} ${selectedMe ? active : idle}`}
+          className={choiceClass(selectedMe)}
         >
           {myUsername} (you)
         </button>
@@ -41,23 +46,25 @@ export function FirstPlayerPicker({
           type="button"
           onClick={() => onSelect(opponentPlayerNumber)}
           disabled={!opponentUsername}
-          className={`${baseBtn} ${
-            selectedOpponent ? active : idle
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+          className={choiceClass(selectedOpponent)}
         >
           {opponentUsername ?? "Opponent"}
         </button>
       </div>
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={onRandom}
         disabled={!opponentUsername}
-        className="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full gap-2 font-mono uppercase tracking-widest"
       >
+        <Dices className="size-4" />
         Random
-      </button>
+      </Button>
       {selected === 0 && (
-        <p className="text-xs text-yellow-400">Pick who goes first before readying up.</p>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-amber-400">
+          Pick who goes first before readying up.
+        </p>
       )}
     </div>
   );

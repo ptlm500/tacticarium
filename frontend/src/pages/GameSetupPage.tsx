@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Check, Copy, Swords } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
@@ -15,6 +16,12 @@ import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { HUDFrame } from "@/components/ui/hud-frame";
+import { Spinner } from "@/components/ui/spinner";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { cn } from "@/lib/utils";
 
 const PACK_ID = "chapter-approved-2025-26";
 
@@ -44,7 +51,6 @@ export function GameSetupPage() {
   const fixedSecondaries = secondaries.filter((s) => s.isFixed);
   const tacticalSecondaries = secondaries.filter((s) => !s.isFixed);
 
-  // Navigate to game when it starts
   useEffect(() => {
     if (gameState?.status === "active") {
       navigate(`/game/${gameId}`);
@@ -163,8 +169,13 @@ export function GameSetupPage() {
 
   if (!gameState) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p>{connected ? "Loading game..." : "Connecting..."}</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Spinner size="lg" className="text-primary" />
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary">
+            {connected ? "Loading game" : "Connecting"}
+          </p>
+        </div>
       </div>
     );
   }
@@ -189,75 +200,97 @@ export function GameSetupPage() {
     hasSecondaries;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="p-4 border-b border-gray-800">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Game Setup</h1>
-          <button
-            onClick={copyInviteCode}
-            className="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-4 py-2 rounded-lg text-sm transition-colors"
-          >
-            {copied ? "Copied!" : `Invite: ${gameState.inviteCode}`}
-          </button>
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+
+      <header className="relative z-10 border-b border-border/50 bg-background/60 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+          <div className="flex items-baseline gap-3">
+            <span className="font-mono text-base uppercase tracking-[0.3em] text-primary">
+              Game Setup
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={copyInviteCode}
+              className="gap-2 font-mono uppercase tracking-widest"
+            >
+              {copied ? (
+                <>
+                  <Check className="size-3.5" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="size-3.5" />
+                  Invite: {gameState.inviteCode}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         {!opponent && (
-          <p className="text-yellow-400 text-sm mt-2">Waiting for opponent to join...</p>
+          <p className="border-t border-border/50 bg-amber-500/5 px-4 py-2 text-center font-mono text-[10px] uppercase tracking-widest text-amber-400">
+            Waiting for opponent to join...
+          </p>
         )}
       </header>
 
-      <main className="max-w-md mx-auto p-6 space-y-6">
-        {/* Faction Selection */}
-        <section>
-          <h2 className="text-lg font-semibold mb-3">Your Faction</h2>
+      <main className="relative z-0 mx-auto max-w-2xl space-y-5 px-4 py-6">
+        <HUDFrame label="Your Faction">
           <FactionPicker
             factions={factions}
             selectedId={myPlayer?.factionId || ""}
             onSelect={handleSelectFaction}
           />
-        </section>
+        </HUDFrame>
 
-        {/* Detachment Selection */}
         {hasFaction && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Detachment</h2>
+          <HUDFrame label="Detachment">
             <DetachmentPicker
               detachments={detachments}
               selectedId={myPlayer?.detachmentId || ""}
               onSelect={handleSelectDetachment}
             />
-          </section>
+          </HUDFrame>
         )}
 
-        {/* Primary Mission */}
         {hasDetachment && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Primary Mission</h2>
+          <HUDFrame label="Primary Mission">
             <MissionPicker
               missions={missions}
               selectedId={gameState.missionId || ""}
               onSelect={handleSelectMission}
               onDrawRandom={handleRandomMission}
             />
-          </section>
+          </HUDFrame>
         )}
 
-        {/* Twist / Mission Rule */}
         {hasMission && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Twist</h2>
+          <HUDFrame label="Twist">
             <TwistPicker
               rules={rules}
               selectedId={gameState.twistId || ""}
               onSelect={handleSelectTwist}
               onDrawRandom={handleRandomTwist}
             />
-          </section>
+          </HUDFrame>
         )}
 
-        {/* First Turn Player */}
         {hasTwist && myPlayer && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Who Goes First?</h2>
+          <HUDFrame label="Who Goes First?">
             <FirstPlayerPicker
               myPlayerNumber={myPlayer.playerNumber}
               myUsername={myPlayer.username}
@@ -266,13 +299,11 @@ export function GameSetupPage() {
               onSelect={handleSelectFirstPlayer}
               onRandom={handleRandomFirstPlayer}
             />
-          </section>
+          </HUDFrame>
         )}
 
-        {/* Secondary Mission Mode */}
         {hasFirstPlayer && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Secondary Missions</h2>
+          <HUDFrame label="Secondary Missions">
             <SecondaryModePicker
               mode={myPlayer?.secondaryMode || ""}
               onModeChange={handleModeChange}
@@ -283,41 +314,45 @@ export function GameSetupPage() {
               deckInitialized={(myPlayer?.tacticalDeck?.length ?? 0) > 0}
               onInitDeck={handleInitDeck}
             />
-          </section>
+          </HUDFrame>
         )}
 
-        {/* Opponent Status */}
         {opponent && (
-          <section className="bg-gray-800 rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-gray-400 mb-2">
-              Opponent: {opponent.username}
-            </h2>
-            <p className="text-sm">
-              {opponent.factionName || "Selecting faction..."}
-              {opponent.detachmentName && ` - ${opponent.detachmentName}`}
-            </p>
-            <p className="text-sm mt-1">
-              {opponent.ready ? (
-                <span className="text-green-400">Ready</span>
-              ) : (
-                <span className="text-yellow-400">Not ready</span>
-              )}
-            </p>
-          </section>
+          <HUDFrame label={`Opponent: ${opponent.username}`}>
+            <div className="space-y-1 py-1">
+              <p className="text-sm text-foreground/90">
+                {opponent.factionName || "Selecting faction..."}
+                {opponent.detachmentName && ` - ${opponent.detachmentName}`}
+              </p>
+              <Badge
+                variant={opponent.ready ? "default" : "outline"}
+                className={cn(
+                  "font-mono uppercase tracking-widest",
+                  opponent.ready
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                    : "border-amber-500/50 text-amber-400",
+                )}
+              >
+                {opponent.ready ? "Ready" : "Not ready"}
+              </Badge>
+            </div>
+          </HUDFrame>
         )}
 
-        {/* Ready Button */}
-        <button
+        <Button
+          type="button"
           onClick={handleReady}
           disabled={!canReady}
-          className={`w-full font-semibold py-3 rounded-lg transition-colors ${
-            myPlayer?.ready
-              ? "bg-green-700 hover:bg-green-800 text-white"
-              : "bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white"
-          }`}
+          size="lg"
+          className={cn(
+            "w-full gap-2 font-mono uppercase tracking-widest",
+            myPlayer?.ready &&
+              "bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500/30",
+          )}
         >
+          <Swords className="size-4" />
           {myPlayer?.ready ? "Ready! (click to unready)" : "Ready Up"}
-        </button>
+        </Button>
       </main>
     </div>
   );

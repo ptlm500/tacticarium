@@ -2,6 +2,7 @@ import { ScoringAction } from "../../types/mission";
 import { ActiveSecondary } from "../../types/game";
 import { PrimaryScoringSlot } from "../../types/scoring";
 import { ReminderPrompt } from "./ReminderPrompt";
+import { Button } from "@/components/ui/button";
 
 export type ScoringPromptItem =
   | {
@@ -58,11 +59,11 @@ export function ScoringPrompt({
             />
           )}
           {item.kind === "end_of_round_primary" && (
-            <div className="bg-indigo-900/40 border border-indigo-700 rounded-lg p-3">
-              <h3 className="text-sm font-semibold text-indigo-200">
+            <div className="rounded-sm border border-primary/40 bg-primary/10 p-3">
+              <h3 className="font-mono text-sm uppercase tracking-widest text-primary">
                 Primary Mission — {item.missionName}
               </h3>
-              <p className="text-xs text-indigo-300 mt-1">{item.note}</p>
+              <p className="mt-1 text-xs text-foreground/80">{item.note}</p>
             </div>
           )}
           {item.kind === "fixed_secondary" && (
@@ -94,17 +95,21 @@ function PrimaryReminder({
   onScore: (vp: number) => void;
 }) {
   return (
-    <div className="bg-indigo-900/40 border border-indigo-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-indigo-200">Score Primary — {missionName}</h3>
-      <div className="flex flex-wrap gap-2 mt-2">
+    <div className="rounded-sm border border-primary/40 bg-primary/10 p-3">
+      <h3 className="font-mono text-sm uppercase tracking-widest text-primary">
+        Score Primary — {missionName}
+      </h3>
+      <div className="mt-2 flex flex-wrap gap-2">
         {scoringRules.map((action, i) => {
           const locked = action.minRound != null && currentRound < action.minRound;
           return (
-            <button
+            <Button
               key={i}
+              type="button"
+              size="sm"
+              data-testid="scoring-prompt-primary-btn"
               onClick={() => onScore(action.vp)}
               disabled={locked}
-              className="bg-indigo-800 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs px-3 py-2 rounded transition-colors"
               title={
                 locked
                   ? `Available from round ${action.minRound}`
@@ -112,8 +117,12 @@ function PrimaryReminder({
               }
             >
               {action.label} (+{action.vp})
-              {locked && <span className="ml-1 text-yellow-400">R{action.minRound}+</span>}
-            </button>
+              {locked && (
+                <span className="ml-1 font-mono text-[10px] text-amber-400">
+                  R{action.minRound}+
+                </span>
+              )}
+            </Button>
           );
         })}
       </div>
@@ -133,41 +142,49 @@ function SecondaryReminder({
   canGainCP: boolean;
 }) {
   return (
-    <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-emerald-200">Score / Discard Secondaries</h3>
+    <div className="rounded-sm border border-emerald-500/40 bg-emerald-500/10 p-3">
+      <h3 className="font-mono text-sm uppercase tracking-widest text-emerald-400">
+        Score / Discard Secondaries
+      </h3>
       {activeSecondaries.length === 0 ? (
-        <p className="text-xs text-emerald-300 mt-1">No active secondary missions.</p>
+        <p className="mt-1 text-xs text-foreground/80">No active secondary missions.</p>
       ) : (
-        <div className="space-y-3 mt-2">
+        <div className="mt-2 space-y-3">
           {activeSecondaries.map((s) => {
             const opts = (s.scoringOptions ?? []).filter((o) => !o.mode || o.mode === "tactical");
             return (
               <div key={s.id}>
-                <span className="text-xs text-white font-medium">{s.name}</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <span className="text-xs font-medium text-foreground">{s.name}</span>
+                <div className="mt-1 flex flex-wrap gap-1">
                   {opts.map((opt, i) => (
-                    <button
+                    <Button
                       key={i}
+                      type="button"
+                      size="sm"
                       onClick={() => onAchieve(s.id, opt.vp)}
-                      className="bg-green-700 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors"
                       title={opt.label}
+                      className="bg-emerald-600 text-white hover:bg-emerald-700"
                     >
                       {opt.label} +{opt.vp}
-                    </button>
+                    </Button>
                   ))}
-                  <button
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
                     onClick={() => onDiscard(s.id, true)}
-                    className="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded transition-colors"
                   >
                     Discard
-                  </button>
+                  </Button>
                   {canGainCP && (
-                    <button
+                    <Button
+                      type="button"
+                      size="sm"
                       onClick={() => onDiscard(s.id, false)}
-                      className="bg-teal-800 hover:bg-teal-700 text-white text-xs px-2 py-1 rounded transition-colors"
+                      className="bg-teal-700 text-white hover:bg-teal-800"
                     >
                       +1CP
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -187,27 +204,31 @@ function FixedSecondaryReminder({
   onScore: (vp: number) => void;
 }) {
   return (
-    <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-emerald-200">Score Fixed Secondaries</h3>
-      <div className="space-y-3 mt-2">
+    <div className="rounded-sm border border-emerald-500/40 bg-emerald-500/10 p-3">
+      <h3 className="font-mono text-sm uppercase tracking-widest text-emerald-400">
+        Score Fixed Secondaries
+      </h3>
+      <div className="mt-2 space-y-3">
         {secondaries.map((s) => {
           const opts = (s.scoringOptions ?? []).filter((o) => !o.mode || o.mode === "fixed");
           return (
             <div key={s.id}>
-              <p className="text-xs text-white font-medium">{s.name}</p>
-              <div className="flex flex-wrap gap-1 mt-1">
+              <p className="text-xs font-medium text-foreground">{s.name}</p>
+              <div className="mt-1 flex flex-wrap gap-1">
                 {opts.map((opt, i) => (
-                  <button
+                  <Button
                     key={i}
+                    type="button"
+                    size="sm"
                     onClick={() => onScore(opt.vp)}
-                    className="bg-green-700 hover:bg-green-600 text-white text-xs px-2 py-1 rounded transition-colors"
                     title={opt.label}
+                    className="bg-emerald-600 text-white hover:bg-emerald-700"
                   >
                     {opt.label} +{opt.vp}VP
-                  </button>
+                  </Button>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 mt-1">max {s.maxVp} VP total</p>
+              <p className="mt-1 text-xs text-muted-foreground">max {s.maxVp} VP total</p>
             </div>
           );
         })}

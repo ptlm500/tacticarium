@@ -1,4 +1,5 @@
 import { Phase, PHASE_LABELS } from "../../types/game";
+import { cn } from "@/lib/utils";
 
 interface Props {
   currentPhase: Phase;
@@ -13,15 +14,23 @@ export function PhaseTracker({ currentPhase, phases }: Props) {
         const isPast = phases.indexOf(currentPhase) > i;
         return (
           <div key={phase} className="flex items-center">
-            {i > 0 && <div className={`w-4 h-0.5 ${isPast ? "bg-indigo-500" : "bg-gray-700"}`} />}
+            {i > 0 && (
+              <div
+                className={cn(
+                  "h-0.5 w-4 transition-colors",
+                  isPast || isActive ? "bg-primary" : "bg-border/60",
+                )}
+              />
+            )}
             <span
-              className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
+              className={cn(
+                "whitespace-nowrap rounded-sm border px-2 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors",
                 isActive
-                  ? "bg-indigo-600 text-white font-semibold"
+                  ? "border-primary bg-primary/20 text-primary shadow-[0_0_6px_var(--primary)]"
                   : isPast
-                    ? "text-indigo-400"
-                    : "text-gray-500"
-              }`}
+                    ? "border-primary/40 text-primary/80"
+                    : "border-border/40 text-muted-foreground",
+              )}
             >
               {PHASE_LABELS[phase]}
             </span>

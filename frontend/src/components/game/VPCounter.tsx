@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   vpPrimary: number;
@@ -14,14 +16,22 @@ export function VPCounter({ vpPrimary, vpSecondary, vpGambit, vpPaint, onAdjust 
 
   return (
     <div className="text-center">
-      <p className="text-xs text-gray-400 mb-1">Victory Points</p>
-      <button onClick={() => setExpanded(!expanded)} className="text-3xl font-bold">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        Victory Points
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="font-mono text-3xl font-bold text-primary tabular-nums hover:text-primary/80"
+      >
         {total}
       </button>
 
       {expanded && (
         <div className="mt-3 space-y-2 text-sm">
-          <p className="text-xs text-gray-500 italic">Manual adjust (bypasses mission rules)</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Manual adjust (bypasses mission rules)
+          </p>
           <VPRow
             label="Primary"
             value={vpPrimary}
@@ -37,9 +47,9 @@ export function VPCounter({ vpPrimary, vpSecondary, vpGambit, vpPaint, onAdjust 
             onAdjust={onAdjust}
           />
           <VPRow label="Gambit" value={vpGambit} max={12} category="gambit" onAdjust={onAdjust} />
-          <div className="flex items-center justify-between text-gray-400">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span>Paint</span>
-            <span>{vpPaint}/10</span>
+            <span className="tabular-nums">{vpPaint}/10</span>
           </div>
         </div>
       )}
@@ -62,25 +72,31 @@ function VPRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-gray-400">{label}</span>
+      <span className="text-muted-foreground">{label}</span>
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
           onClick={() => onAdjust(category, -1)}
           disabled={value <= 0}
-          className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-xs"
+          aria-label={`Decrease ${label} VP`}
         >
-          -
-        </button>
-        <span className="w-10 text-center">
+          <Minus className="size-3" />
+        </Button>
+        <span className="w-12 text-center font-mono tabular-nums">
           {value}/{max}
         </span>
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
           onClick={() => onAdjust(category, 1)}
           disabled={value >= max}
-          className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-xs"
+          aria-label={`Increase ${label} VP`}
         >
-          +
-        </button>
+          <Plus className="size-3" />
+        </Button>
       </div>
     </div>
   );
