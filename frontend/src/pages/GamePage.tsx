@@ -54,6 +54,7 @@ export function GamePage() {
   const [showConcedeModal, setShowConcedeModal] = useState(false);
   const [showAbandonModal, setShowAbandonModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
+  const [showCPCapOverride, setShowCPCapOverride] = useState(false);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
@@ -188,10 +189,19 @@ export function GamePage() {
 
   const handleAdjustCP = useCallback(
     (delta: number) => {
+      if (delta > 0 && (myPlayer?.cpGainedThisRound ?? 0) >= 1) {
+        setShowCPCapOverride(true);
+        return;
+      }
       sendAction("adjust_cp", { delta });
     },
-    [sendAction],
+    [sendAction, myPlayer?.cpGainedThisRound],
   );
+
+  const handleConfirmCPCapOverride = useCallback(() => {
+    sendAction("adjust_cp", { delta: 1, force: true });
+    setShowCPCapOverride(false);
+  }, [sendAction]);
 
   const handleScoreVP = useCallback(
     (category: string, delta: number, scoringSlot?: PrimaryScoringSlot) => {
@@ -645,6 +655,18 @@ export function GamePage() {
             onCancel={() => handleRespondAbandon(false)}
           />
         )}
+
+      {showCPCapOverride && (
+        <ConfirmModal
+          title="CP Gain Cap Reached"
+          message="You have already gained your bonus CP this battle round. Increase CP beyond the cap?"
+          confirmLabel="Increase CP"
+          cancelLabel="Cancel"
+          variant="default"
+          onConfirm={handleConfirmCPCapOverride}
+          onCancel={() => setShowCPCapOverride(false)}
+        />
+      )}
 
       {/* Scoring Prompt */}
       {scoringPromptItems && (

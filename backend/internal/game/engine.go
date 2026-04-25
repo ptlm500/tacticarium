@@ -507,8 +507,10 @@ func (e *Engine) applyAdjustCP(action GameAction) ([]GameEvent, error) {
 	}
 
 	delta := intFromData(action.Data, "delta")
-	// Positive adjustments are subject to the per-round CP gain cap
-	if delta > 0 && player.CPGainedThisRound >= 1 {
+	force, _ := action.Data["force"].(bool)
+	// Positive adjustments are subject to the per-round CP gain cap unless the
+	// client explicitly opts out via force=true (player has confirmed override).
+	if delta > 0 && player.CPGainedThisRound >= 1 && !force {
 		return nil, fmt.Errorf("cannot gain more than 1 additional CP per battle round")
 	}
 	newCP := player.CP + delta
