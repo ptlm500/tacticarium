@@ -437,13 +437,13 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	var completedAt *time.Time
 
 	err := h.db.QueryRow(ctx,
-		`SELECT g.id, g.invite_code, g.status, g.current_round, g.current_phase,
+		`SELECT g.id, g.invite_code, g.status, g.current_round, g.current_turn, g.current_phase,
 		        g.active_player, g.first_turn_player, g.mission_pack_id, g.mission_id,
 		        g.mission_name, g.twist_id, g.twist_name,
 		        g.created_at, g.completed_at, g.winner_id
 		 FROM games g
 		 WHERE g.id = $1`, gameID,
-	).Scan(&state.GameID, &state.InviteCode, &state.Status, &state.CurrentRound,
+	).Scan(&state.GameID, &state.InviteCode, &state.Status, &state.CurrentRound, &state.CurrentTurn,
 		&state.CurrentPhase, &state.ActivePlayer, &firstTurnPlayer,
 		&missionPackID, &missionID, &missionName, &twistID, &twistName,
 		&state.CreatedAt, &completedAt, &winnerID)
@@ -540,13 +540,13 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 	ctx := context.Background()
 
 	_, err := h.db.Exec(ctx,
-		`UPDATE games SET status = $1, current_round = $2, current_phase = $3,
-		 active_player = $4, first_turn_player = $5, mission_pack_id = NULLIF($6, ''),
-		 mission_id = NULLIF($7, ''), mission_name = NULLIF($8, ''),
-		 twist_id = NULLIF($9, ''), twist_name = NULLIF($10, ''),
-		 completed_at = $11, winner_id = NULLIF($12::text, '')::uuid
-		 WHERE id = $13`,
-		state.Status, state.CurrentRound, state.CurrentPhase,
+		`UPDATE games SET status = $1, current_round = $2, current_turn = $3, current_phase = $4,
+		 active_player = $5, first_turn_player = $6, mission_pack_id = NULLIF($7, ''),
+		 mission_id = NULLIF($8, ''), mission_name = NULLIF($9, ''),
+		 twist_id = NULLIF($10, ''), twist_name = NULLIF($11, ''),
+		 completed_at = $12, winner_id = NULLIF($13::text, '')::uuid
+		 WHERE id = $14`,
+		state.Status, state.CurrentRound, state.CurrentTurn, state.CurrentPhase,
 		state.ActivePlayer, state.FirstTurnPlayer, state.MissionPackID,
 		state.MissionID, state.MissionName, state.TwistID, state.TwistName,
 		state.CompletedAt, state.WinnerID, state.GameID)
