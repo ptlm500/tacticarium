@@ -16,7 +16,7 @@
 
 - [ ] There's no escape hatch for the CP gain cap (maybe add positive friction)
 
-- [ ] I can't see your strategems
+- [x] I can't see your secondaries
 
 - [x] Defend stronghold doesn't trigger re-draw
 
