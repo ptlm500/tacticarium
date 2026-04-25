@@ -1,0 +1,69 @@
+# Local-only overlay: brings up the full stack (backend + frontend + dev-auth)
+# alongside the postgres service from docker-compose.yml. Lets testers exercise
+# the app without Discord OAuth credentials.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#   # then open http://localhost:8090 to mint a session and land in the app
+#
+# First run only — seed reference data (factions, missions, etc.) from the host:
+#   make seed
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/tacticarium?sslmode=disable
+      JWT_SECRET: dev-shared-secret
+      FRONTEND_URL: http://localhost:5173
+      PORT: "8080"
+      # Discord creds intentionally left blank — the real OAuth flow won't work
+      # in this stack; use http://localhost:8090 (dev-auth) to log in.
+      DISCORD_CLIENT_ID: ""
+      DISCORD_CLIENT_SECRET: ""
+      DISCORD_REDIRECT_URI: http://localhost:8080/api/auth/discord/callback
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    restart: on-failure
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_WS_URL: ws://localhost:8080
+      # File-event propagation across the docker bind mount is unreliable
+      # (especially on Windows/macOS); polling is the universal fallback.
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app/frontend
+      - ./shared:/app/shared
+      - frontend_node_modules:/app/frontend/node_modules
+    depends_on:
+      - backend
+
+  dev-auth:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev-auth
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/tacticarium?sslmode=disable
+      JWT_SECRET: dev-shared-secret
+      FRONTEND_URL: http://localhost:5173
+      DEV_AUTH_PORT: "8090"
+    ports:
+      - "8090:8090"
+    depends_on:
+      - backend
+    restart: on-failure
+
+volumes:
+  frontend_node_modules:
