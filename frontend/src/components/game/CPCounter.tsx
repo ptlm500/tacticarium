@@ -32,9 +32,8 @@ export function CPCounter({ cp, canGainCP, onAdjust }: Props) {
           variant="outline"
           size="icon"
           onClick={() => onAdjust(1)}
-          disabled={!canGainCP}
           aria-label="Increase CP"
-          title={!canGainCP ? "CP gain cap reached this battle round" : "Gain 1 CP"}
+          title={!canGainCP ? "CP gain cap reached — confirmation required" : "Gain 1 CP"}
         >
           <Plus className="size-4" />
         </Button>

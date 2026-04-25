@@ -679,4 +679,185 @@ describe("GamePage", () => {
       });
     });
   });
+
+  describe("CP gain cap override", () => {
+    function setupCappedGame() {
+      const wsMessages: string[] = [];
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      const gs = makeGameState({
+        activePlayer: 1,
+        currentPhase: "command",
+        players: [
+          makePlayerState({ cp: 5, cpGainedThisRound: 1 }),
+          makePlayerState({
+            userId: "user-2",
+            username: "Opponent",
+            playerNumber: 2,
+          }),
+        ],
+      });
+
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.addEventListener("message", (event) => {
+            wsMessages.push(typeof event.data === "string" ? event.data : "");
+          });
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+        }),
+      );
+
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      return { wsMessages };
+    }
+
+    it("opens confirmation modal when increasing CP past the cap", async () => {
+      setupCappedGame();
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      await vi.waitFor(() => {
+        expect(screen.getByLabelText("Increase CP")).toBeTruthy();
+      });
+
+      await user.click(screen.getByLabelText("Increase CP"));
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("CP Gain Cap Reached")).toBeTruthy();
+      });
+    });
+
+    it("sends adjust_cp with force=true when override is confirmed", async () => {
+      const { wsMessages } = setupCappedGame();
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      await vi.waitFor(() => {
+        expect(screen.getByLabelText("Increase CP")).toBeTruthy();
+      });
+
+      await user.click(screen.getByLabelText("Increase CP"));
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Increase CP")).toBeTruthy();
+      });
+      await user.click(screen.getByText("Increase CP"));
+
+      await vi.waitFor(() => {
+        const msg = wsMessages.find((m) => m.includes("adjust_cp"));
+        expect(msg).toBeTruthy();
+        const parsed = JSON.parse(msg!);
+        expect(parsed.type).toBe("action");
+        expect(parsed.data.type).toBe("adjust_cp");
+        expect(parsed.data.delta).toBe(1);
+        expect(parsed.data.force).toBe(true);
+      });
+    });
+
+    it("does not send adjust_cp when override is cancelled", async () => {
+      const { wsMessages } = setupCappedGame();
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      await vi.waitFor(() => {
+        expect(screen.getByLabelText("Increase CP")).toBeTruthy();
+      });
+
+      await user.click(screen.getByLabelText("Increase CP"));
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("CP Gain Cap Reached")).toBeTruthy();
+      });
+      await user.click(screen.getByText("Cancel"));
+
+      await vi.waitFor(() => {
+        expect(screen.queryByText("CP Gain Cap Reached")).toBeNull();
+      });
+      expect(wsMessages.find((m) => m.includes("adjust_cp"))).toBeUndefined();
+    });
+
+    it("sends adjust_cp without force when within cap", async () => {
+      const wsMessages: string[] = [];
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      const gs = makeGameState({
+        activePlayer: 1,
+        currentPhase: "command",
+        players: [
+          makePlayerState({ cp: 5, cpGainedThisRound: 0 }),
+          makePlayerState({
+            userId: "user-2",
+            username: "Opponent",
+            playerNumber: 2,
+          }),
+        ],
+      });
+
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.addEventListener("message", (event) => {
+            wsMessages.push(typeof event.data === "string" ? event.data : "");
+          });
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+        }),
+      );
+
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      const user = userEvent.setup();
+
+      await vi.waitFor(() => {
+        expect(screen.getByLabelText("Increase CP")).toBeTruthy();
+      });
+
+      await user.click(screen.getByLabelText("Increase CP"));
+
+      await vi.waitFor(() => {
+        const msg = wsMessages.find((m) => m.includes("adjust_cp"));
+        expect(msg).toBeTruthy();
+        const parsed = JSON.parse(msg!);
+        expect(parsed.data.delta).toBe(1);
+        expect(parsed.data.force).toBeUndefined();
+      });
+      // Modal should not have appeared
+      expect(screen.queryByText("CP Gain Cap Reached")).toBeNull();
+    });
+  });
 });

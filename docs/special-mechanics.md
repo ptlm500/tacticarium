@@ -47,9 +47,13 @@ Players are limited to gaining **at most 1 additional CP per battle round** beyo
 - Positive `adjust_cp` calls increment `CPGainedThisRound`
 - Discarding a tactical secondary (non-free) also increments it
 - The counter resets to 0 at the start of each new round
-- If `CPGainedThisRound >= 1`, further positive CP adjustments are rejected
+- If `CPGainedThisRound >= 1`, further positive CP adjustments are rejected by default
 
 This mirrors the Warhammer 40K 10th Edition rule that limits bonus CP generation to prevent runaway resource accumulation.
+
+#### Overriding the cap
+
+The cap is positive friction, not a hard rule — some in-game effects can legitimately push CP higher. A positive `adjust_cp` may set `force: true` to bypass the cap; the frontend asks the player to confirm before sending this. The override still increments `CPGainedThisRound`, so each additional gain past the cap requires its own confirmation.
 
 ## Gambits
 

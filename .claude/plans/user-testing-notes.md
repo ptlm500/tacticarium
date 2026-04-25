@@ -14,7 +14,7 @@
 
 - [x] Challenger strategic ploy strats show up
 
-- [ ] There's no escape hatch for the CP gain cap (maybe add positive friction)
+- [x] There's no escape hatch for the CP gain cap (maybe add positive friction)
 
 - [x] I can't see your secondaries
 
@@ -40,6 +40,7 @@
 
 - [x] I want to delete games
 - [ ] Enhance the game event log with more info about why things have been scored (e.g. scored based on secondary/primary mission etc)
+  - [ ] The game log should load all previous events in the game
 - [x] Quick score / VP tweaking control
 - [x] Clicking command point gain fires the event, did increase the score
 - [ ] Other player game history not showing?

@@ -2785,6 +2785,51 @@ func TestAdjustCP_PositiveCountsTowardCap(t *testing.T) {
 	}
 }
 
+func TestAdjustCP_PositiveCapBypassedByForce(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].CP = 4
+	state.Players[0].CPGainedThisRound = 1 // cap already reached
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": 1, "force": true},
+	})
+	if err != nil {
+		t.Fatalf("expected force=true to bypass cap, got error: %v", err)
+	}
+	if state.Players[0].CP != 5 {
+		t.Fatalf("expected CP=5 after forced gain, got %d", state.Players[0].CP)
+	}
+	if state.Players[0].CPGainedThisRound != 2 {
+		t.Fatalf("expected CPGainedThisRound=2 after forced gain, got %d", state.Players[0].CPGainedThisRound)
+	}
+
+	// Subsequent forced gain still works (each click is its own confirmation)
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": 1, "force": true},
+	})
+	if err != nil {
+		t.Fatalf("expected second forced gain to succeed, got error: %v", err)
+	}
+	if state.Players[0].CP != 6 {
+		t.Fatalf("expected CP=6 after second forced gain, got %d", state.Players[0].CP)
+	}
+
+	// And without force the cap still rejects
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionAdjustCP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"delta": 1},
+	})
+	if err == nil {
+		t.Fatal("expected unforced positive adjust to still be rejected")
+	}
+}
+
 func TestCPGainedThisRound_DoesNotResetOnTurnSwitch(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].CP = 5
