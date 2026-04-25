@@ -34,7 +34,7 @@ Only add what you will actually use — the registries pull in transitive Radix 
 
 ### Theming
 
-The app is dark-only. The base palette and six theme variants (`tron`, `ares`, `clu`, `athena`, `aphrodite`, `poseidon`) live in `src/index.css` as `[data-theme="..."]` overrides of `--primary`, `--ring`, `--accent`, and `--chart-{1..5}`. The active theme is controlled by `ThemeSwitcher` (in the page header), which sets `data-theme` on `<html>`.
+The app is dark-only. The base palette and four theme variants (`scorpion` (default), `spacewolf`, `blood`, `badmoon`) live in `src/index.css` as `[data-theme="..."]` overrides of `--primary`, `--ring`, `--accent`, and `--chart-{1..5}`. The active theme is controlled by `ThemeSwitcher` (in the page header), which sets `data-theme` on `<html>`.
 
 When adding a new page, follow the established header pattern: grid background + radial fade overlay, `ThemeSwitcher` + back `Button` in the top bar, `HUDFrame` for content panels, and `font-mono uppercase tracking-widest` for labels.
 

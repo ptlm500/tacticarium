@@ -11,9 +11,9 @@ interface UseWebSocketOptions {
 
 export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimer = useRef<number>();
+  const reconnectTimer = useRef<number | undefined>(undefined);
   const reconnectDelay = useRef(1000);
-  const pingInterval = useRef<number>();
+  const pingInterval = useRef<number | undefined>(undefined);
   const mountedRef = useRef(false);
   const [connected, setConnected] = useState(false);
 
