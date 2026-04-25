@@ -147,6 +147,31 @@ func TestGetGame(t *testing.T) {
 	assert.Len(t, players, 2)
 }
 
+func TestGetGame_PersistsCurrentTurn(t *testing.T) {
+	env := testutil.SharedEnv
+	testutil.CleanDatabase(t, env.Pool)
+
+	user1ID := testutil.CreateTestUser(t, env.Pool, "discord-1", "player1")
+	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
+	gameID, _ := testutil.CreateTestGame(t, env.Pool, user1ID)
+	testutil.JoinTestGame(t, env.Pool, gameID, user2ID)
+
+	_, err := env.Pool.Exec(context.Background(),
+		`UPDATE games SET status = 'active', current_round = 2, current_turn = 2,
+		 current_phase = 'movement' WHERE id = $1`, gameID)
+	require.NoError(t, err)
+
+	token := testutil.GenerateToken(t, user1ID, "player1")
+	resp := testutil.DoRequest(t, env, "GET", "/api/games/"+gameID, nil, testutil.AuthHeader(token))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var body map[string]interface{}
+	testutil.ReadJSON(t, resp, &body)
+
+	assert.EqualValues(t, 2, body["currentRound"])
+	assert.EqualValues(t, 2, body["currentTurn"])
+}
+
 func TestGetGame_NotFound(t *testing.T) {
 	env := testutil.SharedEnv
 	testutil.CleanDatabase(t, env.Pool)
