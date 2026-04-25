@@ -18,7 +18,7 @@ class QueryErrorBoundaryInner extends Component<Props & { queryClient: QueryClie
   }
 
   handleRetry = () => {
-    this.props.queryClient.resetQueries();
+    void this.props.queryClient.resetQueries();
     this.setState({ hasError: false, error: null });
   };
 

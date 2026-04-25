@@ -9,6 +9,7 @@ import {
   mockUser,
   mockStratagems,
   mockActiveSecondary,
+  mockFixedSecondary,
 } from "../test/fixtures";
 import { ws, http, HttpResponse } from "msw";
 import { worker } from "../mocks/browser";
@@ -263,6 +264,108 @@ describe("GamePage", () => {
 
       // Modal should close; no revert_phase message sent
       expect(wsMessages.find((m) => m.includes("revert_phase"))).toBeUndefined();
+    });
+  });
+
+  describe("opponent active secondaries", () => {
+    it("renders opponent's active tactical secondaries with name, description, and max VP", async () => {
+      await act(async () => {
+        renderGame({
+          players: [
+            makePlayerState(),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+              secondaryMode: "tactical",
+              activeSecondaries: [mockActiveSecondary],
+            }),
+          ],
+        });
+      });
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Active Secondaries (Tactical)")).toBeTruthy();
+        expect(screen.getByText("Score VP for units in enemy deployment zone")).toBeTruthy();
+        // Opponent name appears in the header; the secondary name appears in the opponent block.
+        expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
+        expect(screen.getByText("5 VP max")).toBeTruthy();
+      });
+    });
+
+    it("renders opponent's active fixed secondaries", async () => {
+      await act(async () => {
+        renderGame({
+          players: [
+            makePlayerState(),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+              secondaryMode: "fixed",
+              activeSecondaries: [mockFixedSecondary],
+            }),
+          ],
+        });
+      });
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Active Secondaries (Fixed)")).toBeTruthy();
+        expect(screen.getByText("Assassination")).toBeTruthy();
+      });
+    });
+
+    it("does not render an opponent secondaries section when they have none", async () => {
+      await act(async () => {
+        renderGame({
+          players: [
+            makePlayerState(),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+              factionName: "Chaos Space Marines",
+              secondaryMode: "tactical",
+              activeSecondaries: [],
+            }),
+          ],
+        });
+      });
+
+      await vi.waitFor(() => {
+        // Opponent block (with faction) is rendered, but no Active Secondaries header.
+        expect(screen.getByText(/Chaos Space Marines/)).toBeTruthy();
+      });
+      expect(screen.queryByText(/Active Secondaries \(/)).toBeNull();
+    });
+
+    it("does not render any action buttons on opponent's secondaries", async () => {
+      await act(async () => {
+        renderGame({
+          activePlayer: 1,
+          currentPhase: "command",
+          players: [
+            makePlayerState(),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+              secondaryMode: "tactical",
+              activeSecondaries: [mockActiveSecondary],
+            }),
+          ],
+        });
+      });
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Active Secondaries (Tactical)")).toBeTruthy();
+      });
+
+      // The opponent's secondary card should expose no Achieve / Discard / New Orders buttons.
+      // The user has no active secondaries of their own, so these labels should not appear at all.
+      expect(screen.queryByText("New Orders")).toBeNull();
+      expect(screen.queryByText("Discard")).toBeNull();
+      expect(screen.queryByText(/Discard \+1CP/)).toBeNull();
     });
   });
 

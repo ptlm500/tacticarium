@@ -411,6 +411,30 @@ export function GamePage() {
                   <span className="text-muted-foreground">VP:</span> {opponentVP}
                 </span>
               </div>
+              {(opponent.activeSecondaries ?? []).length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Active Secondaries (
+                    {opponent.secondaryMode === "tactical" ? "Tactical" : "Fixed"})
+                  </h3>
+                  {(opponent.activeSecondaries ?? []).map((s) => (
+                    <div
+                      key={s.id}
+                      className="rounded-sm border border-border/60 bg-background/40 p-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-sm font-medium text-foreground">{s.name}</span>
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {s.maxVp} VP max
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                        {s.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

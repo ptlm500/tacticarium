@@ -53,7 +53,7 @@ export function GameSetupPage() {
 
   useEffect(() => {
     if (gameState?.status === "active") {
-      navigate(`/game/${gameId}`);
+      void navigate(`/game/${gameId}`);
     }
   }, [gameState?.status, gameId, navigate]);
 
@@ -161,7 +161,7 @@ export function GameSetupPage() {
 
   const copyInviteCode = () => {
     if (gameState?.inviteCode) {
-      navigator.clipboard.writeText(gameState.inviteCode);
+      void navigator.clipboard.writeText(gameState.inviteCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

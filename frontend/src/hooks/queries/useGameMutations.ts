@@ -26,7 +26,7 @@ export function useHideGame() {
       queryClient.setQueryData(queryKeys.history.list(), (old: GameSummary[] | undefined) =>
         old?.filter((g) => g.id !== id),
       );
-      queryClient.invalidateQueries({ queryKey: queryKeys.history.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.history.all });
     },
   });
 }
