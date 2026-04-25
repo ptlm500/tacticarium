@@ -18,7 +18,12 @@ export type ScoringPromptItem =
 
 interface Props {
   items: ScoringPromptItem[];
-  onScore: (category: string, delta: number, scoringSlot?: PrimaryScoringSlot) => void;
+  onScore: (
+    category: string,
+    delta: number,
+    scoringSlot?: PrimaryScoringSlot,
+    scoringRuleLabel?: string,
+  ) => void;
   activeSecondaries: ActiveSecondary[];
   onAchieveSecondary: (id: string, vp: number) => void;
   onDiscardSecondary: (id: string, free: boolean) => void;
@@ -55,7 +60,7 @@ export function ScoringPrompt({
               missionName={item.missionName}
               scoringRules={item.scoringRules}
               currentRound={item.currentRound}
-              onScore={(vp) => onScore("primary", vp, item.scoringSlot)}
+              onScore={(vp, label) => onScore("primary", vp, item.scoringSlot, label)}
             />
           )}
           {item.kind === "end_of_round_primary" && (
@@ -92,7 +97,7 @@ function PrimaryReminder({
   missionName: string;
   scoringRules: ScoringAction[];
   currentRound: number;
-  onScore: (vp: number) => void;
+  onScore: (vp: number, ruleLabel: string) => void;
 }) {
   return (
     <div className="rounded-sm border border-primary/40 bg-primary/10 p-3">
@@ -108,7 +113,7 @@ function PrimaryReminder({
               type="button"
               size="sm"
               data-testid="scoring-prompt-primary-btn"
-              onClick={() => onScore(action.vp)}
+              onClick={() => onScore(action.vp, action.label)}
               disabled={locked}
               title={
                 locked

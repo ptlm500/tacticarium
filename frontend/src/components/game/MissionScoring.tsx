@@ -6,7 +6,7 @@ interface Props {
   scoringRules: ScoringAction[];
   currentRound: number;
   missionScoringTiming: string;
-  onScore: (vp: number, scoringSlot: PrimaryScoringSlot) => void;
+  onScore: (vp: number, scoringSlot: PrimaryScoringSlot, ruleLabel: string) => void;
 }
 
 function resolveSlot(actionTiming: string | undefined, missionTiming: string): PrimaryScoringSlot {
@@ -44,7 +44,7 @@ export function MissionScoring({
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => onScore(action.vp, slot)}
+              onClick={() => onScore(action.vp, slot, action.label)}
               disabled={locked}
               title={
                 locked

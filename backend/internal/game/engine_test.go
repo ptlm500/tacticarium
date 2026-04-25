@@ -1865,6 +1865,49 @@ func TestScoreVP_Primary_AppliedDeltaOnClamp(t *testing.T) {
 	}
 }
 
+func TestScoreVP_Primary_IncludesScoringRuleLabel(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"category":         "primary",
+			"delta":            5,
+			"scoringSlot":      ScoringSlotEndOfCommandPhase,
+			"scoringRuleLabel": "Hold the most",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	label, _ := events[0].Data["scoringRuleLabel"].(string)
+	if label != "Hold the most" {
+		t.Fatalf("expected scoringRuleLabel=%q in event data, got %v", "Hold the most", events[0].Data["scoringRuleLabel"])
+	}
+}
+
+func TestScoreVP_Primary_OmitsScoringRuleLabelWhenAbsent(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data:         map[string]any{"category": "primary", "delta": 5, "scoringSlot": ScoringSlotEndOfCommandPhase},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := events[0].Data["scoringRuleLabel"]; ok {
+		t.Fatalf("expected no scoringRuleLabel key when not provided, got %v", events[0].Data["scoringRuleLabel"])
+	}
+}
+
 func TestUndoPrimaryScore_FreesSlotAndReverses(t *testing.T) {
 	state := newActiveTestState()
 	e := NewEngine(state)

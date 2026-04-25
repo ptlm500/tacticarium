@@ -81,6 +81,11 @@ const (
 )
 
 type GameEvent struct {
+	// ID is the persisted game_events.id, assigned during PersistGameState.
+	// It's omitted on un-persisted events (e.g. before the broadcast in tests).
+	// Clients use this to dedupe events that arrive both via REST history and
+	// the live WebSocket feed.
+	ID           int64          `json:"id,omitempty"`
 	Type         EventType      `json:"eventType"`
 	PlayerNumber int            `json:"playerNumber,omitempty"`
 	Round        int            `json:"round,omitempty"`

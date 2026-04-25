@@ -581,12 +581,14 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 		}
 	}
 
-	for _, e := range events {
+	for i := range events {
+		e := &events[i]
 		eventData, _ := json.Marshal(e.Data)
-		_, err := h.db.Exec(ctx,
+		err := h.db.QueryRow(ctx,
 			`INSERT INTO game_events (game_id, player_number, event_type, event_data, round, phase)
-			 VALUES ($1, $2, $3, $4, $5, $6)`,
-			state.GameID, e.PlayerNumber, e.Type, eventData, e.Round, e.Phase)
+			 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+			state.GameID, e.PlayerNumber, e.Type, eventData, e.Round, e.Phase,
+		).Scan(&e.ID)
 		if err != nil {
 			slog.Error("Persist event error", "error", err)
 		}
