@@ -56,6 +56,9 @@ export interface GameState {
  * and a numeric `id` — see components["schemas"]["GameEvent"].
  */
 export interface GameEvent {
+  /** Persisted game_events.id assigned by the backend; used to dedupe between
+   * REST history and live WebSocket events. */
+  id?: number;
   eventType: string;
   playerNumber?: number;
   round?: number;

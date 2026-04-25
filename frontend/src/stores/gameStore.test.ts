@@ -36,6 +36,52 @@ describe("gameStore", () => {
       expect(useGameStore.getState().events).toHaveLength(2);
       expect(useGameStore.getState().events[1].eventType).toBe("cp_adjusted");
     });
+
+    it("dedupes events with the same id (e.g. WS event already in REST history)", () => {
+      const store = useGameStore.getState();
+      store.addEvent({ ...mockEvent, id: 7 });
+      store.addEvent({ ...mockEvent, id: 7 });
+      expect(useGameStore.getState().events).toHaveLength(1);
+    });
+
+    it("appends events that have no id without deduping", () => {
+      const store = useGameStore.getState();
+      store.addEvent({ ...mockEvent, id: undefined });
+      store.addEvent({ ...mockEvent, id: undefined });
+      expect(useGameStore.getState().events).toHaveLength(2);
+    });
+  });
+
+  describe("setEvents", () => {
+    it("seeds the log with historical events", () => {
+      const store = useGameStore.getState();
+      store.setEvents([
+        { ...mockEvent, id: 1 },
+        { ...mockEvent, id: 2 },
+      ]);
+      expect(useGameStore.getState().events.map((e) => e.id)).toEqual([1, 2]);
+    });
+
+    it("preserves live events that arrived before the history resolved", () => {
+      const store = useGameStore.getState();
+      store.addEvent({ ...mockEvent, id: 5, eventType: "stratagem_used" });
+      store.setEvents([
+        { ...mockEvent, id: 1 },
+        { ...mockEvent, id: 2 },
+      ]);
+      expect(useGameStore.getState().events.map((e) => e.id)).toEqual([1, 2, 5]);
+    });
+
+    it("drops live events that overlap with the history (deduped by id)", () => {
+      const store = useGameStore.getState();
+      store.addEvent({ ...mockEvent, id: 2 });
+      store.setEvents([
+        { ...mockEvent, id: 1 },
+        { ...mockEvent, id: 2 },
+        { ...mockEvent, id: 3 },
+      ]);
+      expect(useGameStore.getState().events.map((e) => e.id)).toEqual([1, 2, 3]);
+    });
   });
 
   describe("setError", () => {

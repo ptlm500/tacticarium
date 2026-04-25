@@ -59,7 +59,12 @@ describe("ScoringPrompt", () => {
       expect(screen.getByText("Score Primary — Supply Drop")).toBeTruthy();
 
       await user.click(screen.getByText("3+ objectives (+10)"));
-      expect(props.onScore).toHaveBeenCalledWith("primary", 10, "end_of_command_phase");
+      expect(props.onScore).toHaveBeenCalledWith(
+        "primary",
+        10,
+        "end_of_command_phase",
+        "3+ objectives",
+      );
     });
 
     it("disables scoring buttons locked by minRound", () => {

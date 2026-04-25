@@ -22,12 +22,16 @@ VP can be scored by **either player at any time** during an active game — it i
 
 ### Primary, Secondary, and Gambit VP
 
-- Action: `score_vp` with `{category, delta, scoringSlot?}`
+- Action: `score_vp` with `{category, delta, scoringSlot?, scoringRuleLabel?}`
 - `category`: `"primary"`, `"secondary"`, or `"gambit"`
 - `delta`: positive or negative integer (allows corrections)
 - Values are clamped between 0 and the category maximum
 - Events record both the requested `delta` and the `appliedDelta` (after clamp),
   so event-derived stats always reconcile with `game_players` stored values.
+- `scoringRuleLabel` (optional) — human-readable label of the mission scoring
+  rule that triggered the score (e.g. `"Hold the most"`). When present, the
+  game log surfaces it alongside the slot so the audit trail shows *why* the
+  player scored, not just how much.
 
 **Primary scoring slots.** For `category: "primary"`, the action requires
 `scoringSlot`, one of:

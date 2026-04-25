@@ -114,19 +114,20 @@ func (r *Room) processAction(action *game.GameAction) {
 		return
 	}
 
+	// Persist first so each event has its assigned DB id (used by clients to
+	// dedupe between live WS events and the REST history they fetch on load).
+	state := r.engine.State()
+	if r.OnStateChange != nil {
+		r.OnStateChange(state, events)
+	}
+
 	// Broadcast events
 	for _, event := range events {
 		r.broadcast(EventMsg(event))
 	}
 
 	// Broadcast updated state
-	state := r.engine.State()
 	r.broadcast(StateUpdateMsg(state))
-
-	// Persist
-	if r.OnStateChange != nil {
-		r.OnStateChange(state, events)
-	}
 }
 
 func (r *Room) broadcast(msg ServerMessage) {

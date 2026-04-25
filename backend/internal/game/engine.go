@@ -594,6 +594,9 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	if scoringSlot != "" {
 		data["scoringSlot"] = scoringSlot
 	}
+	if label, _ := action.Data["scoringRuleLabel"].(string); label != "" {
+		data["scoringRuleLabel"] = label
+	}
 
 	return []GameEvent{{
 		Type:         eventType,

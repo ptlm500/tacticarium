@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ChevronDown,
@@ -34,6 +34,9 @@ import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules } from "../hooks/queries/useMissionQueries";
+import { useGameEvents } from "../hooks/queries/useGamesQueries";
+import { type RestGameEvent } from "../components/game/eventFormatting";
+import type { GameEvent, Phase } from "../types/game";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,11 +46,29 @@ import { ErrorBanner } from "../components/ErrorBanner";
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { gameState, events, error } = useGameStore();
+  const { gameState, events, error, setEvents } = useGameStore();
 
   const token = getToken();
 
   const { connected, sendAction } = useGameConnection(gameId!, token);
+
+  // Seed the event log with the persisted history so the log isn't empty for
+  // players who refresh or join mid-game. Live WS events arriving in parallel
+  // are deduped by id in the store.
+  const { data: historicalEvents } = useGameEvents(gameId!);
+  useEffect(() => {
+    if (!historicalEvents) return;
+    const seeded: GameEvent[] = (historicalEvents as RestGameEvent[]).map((e) => ({
+      id: e.id,
+      eventType: e.eventType,
+      playerNumber: e.playerNumber ?? undefined,
+      round: e.round ?? undefined,
+      phase: (e.phase ?? undefined) as Phase | undefined,
+      data: e.eventData ?? undefined,
+      createdAt: e.createdAt,
+    }));
+    setEvents(seeded);
+  }, [historicalEvents, setEvents]);
 
   const [showStratagems, setShowStratagems] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -204,9 +225,15 @@ export function GamePage() {
   }, [sendAction]);
 
   const handleScoreVP = useCallback(
-    (category: string, delta: number, scoringSlot?: PrimaryScoringSlot) => {
+    (
+      category: string,
+      delta: number,
+      scoringSlot?: PrimaryScoringSlot,
+      scoringRuleLabel?: string,
+    ) => {
       const data: Record<string, unknown> = { category, delta };
       if (scoringSlot) data.scoringSlot = scoringSlot;
+      if (scoringRuleLabel) data.scoringRuleLabel = scoringRuleLabel;
       sendAction("score_vp", data);
     },
     [sendAction],
@@ -397,7 +424,7 @@ export function GamePage() {
                     scoringRules={currentMission.scoringRules ?? []}
                     currentRound={gameState.currentRound}
                     missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
-                    onScore={(vp, slot) => handleScoreVP("primary", vp, slot)}
+                    onScore={(vp, slot, label) => handleScoreVP("primary", vp, slot, label)}
                   />
                 )}
               <PrimaryScoreHistory

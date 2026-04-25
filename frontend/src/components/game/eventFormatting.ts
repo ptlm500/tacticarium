@@ -75,9 +75,16 @@ export function formatEvent(event: NormalizedEvent): string {
     case "vp_secondary_score":
     case "vp_gambit_score": {
       const applied = event.data?.appliedDelta ?? event.data?.delta;
+      const ruleLabel = event.data?.scoringRuleLabel;
       const slot = event.data?.scoringSlot;
-      const slotSuffix = typeof slot === "string" ? ` — ${slot.replace(/_/g, " ")}` : "";
-      return `${player} scored ${s(applied)} ${s(event.data?.category)} VP${slotSuffix}`;
+      const ruleSuffix = typeof ruleLabel === "string" && ruleLabel ? ` — ${ruleLabel}` : "";
+      const slotSuffix =
+        typeof slot === "string"
+          ? ruleSuffix
+            ? ` (${slot.replace(/_/g, " ")})`
+            : ` — ${slot.replace(/_/g, " ")}`
+          : "";
+      return `${player} scored ${s(applied)} ${s(event.data?.category)} VP${ruleSuffix}${slotSuffix}`;
     }
     case "vp_primary_score_reverted":
       return `${player} undid primary score (R${s(event.data?.revertedRound)} ${s(

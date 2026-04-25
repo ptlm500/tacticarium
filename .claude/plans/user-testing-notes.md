@@ -39,8 +39,8 @@
 - [x] Restrict strategem usage (e.g. once per turn)
 
 - [x] I want to delete games
-- [ ] Enhance the game event log with more info about why things have been scored (e.g. scored based on secondary/primary mission etc)
-  - [ ] The game log should load all previous events in the game
+- [x] Enhance the game event log with more info about why things have been scored (e.g. scored based on secondary/primary mission etc)
+  - [x] The game log should load all previous events in the game
 - [x] Quick score / VP tweaking control
 - [x] Clicking command point gain fires the event, did increase the score
 - [ ] Other player game history not showing?
