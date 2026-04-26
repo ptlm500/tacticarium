@@ -47,11 +47,11 @@ export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { gameState, events, error, setEvents } = useGameStore();
+  const { gameState, events, error, opponentConnected, setEvents } = useGameStore();
 
   const token = getToken();
 
-  const { connected, sendAction } = useGameConnection(gameId!, token);
+  const { connected, reconnecting, sendAction } = useGameConnection(gameId!, token);
 
   useEffect(() => {
     if (gameState?.gameId === gameId && gameState?.status === "setup") {
@@ -394,6 +394,17 @@ export function GamePage() {
         — {PHASE_LABELS[gameState.currentPhase]} Phase
       </div>
 
+      {reconnecting && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="relative z-10 flex items-center justify-center gap-2 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+        >
+          <Spinner className="text-amber-300" />
+          Reconnecting to server...
+        </div>
+      )}
+
       {error && (
         <div className="relative z-10 px-4 pt-2">
           <ErrorBanner message={error} />
@@ -450,9 +461,21 @@ export function GamePage() {
           {/* Opponent State */}
           {opponent && (
             <div className="rounded-sm border border-border/40 bg-background/40 p-3">
-              <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {opponent.username} — {opponent.factionName}
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {opponent.username} — {opponent.factionName}
+                </h2>
+                {!opponentConnected && (
+                  <Badge
+                    variant="outline"
+                    role="status"
+                    aria-label="Opponent disconnected"
+                    className="border-amber-500/50 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+                  >
+                    Disconnected
+                  </Badge>
+                )}
+              </div>
               <div className="mt-2 flex gap-6 font-mono text-sm tabular-nums">
                 <span>
                   <span className="text-muted-foreground">CP:</span> {opponent.cp}

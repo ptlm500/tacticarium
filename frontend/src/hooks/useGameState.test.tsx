@@ -69,6 +69,43 @@ describe("useGameConnection", () => {
     });
   });
 
+  it("sends sync_request after a reconnect", async () => {
+    let connectionCount = 0;
+    const sentMessages: string[] = [];
+
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        connectionCount += 1;
+        client.addEventListener("message", (event) => {
+          sentMessages.push(typeof event.data === "string" ? event.data : "");
+        });
+        if (connectionCount === 1) {
+          // Drop the first connection to force a reconnect.
+          setTimeout(() => client.close(), 10);
+        }
+      }),
+    );
+
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" />);
+    });
+
+    await vi.waitFor(
+      () => {
+        const syncMsg = sentMessages.find((m) => {
+          try {
+            return JSON.parse(m).type === "sync_request";
+          } catch {
+            return false;
+          }
+        });
+        expect(syncMsg).toBeTruthy();
+      },
+      { timeout: 5000 },
+    );
+  });
+
   it("routes player_connected/disconnected messages", async () => {
     const testLink = ws.link("ws://localhost:8080/ws/game/*");
     worker.use(

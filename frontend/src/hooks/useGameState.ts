@@ -1,7 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useGameStore } from "../stores/gameStore";
 import { useWebSocket } from "./useWebSocket";
-import { ServerMessage } from "../types/ws";
+import { ClientMessage, ServerMessage } from "../types/ws";
 import { GameState, GameEvent } from "../types/game";
 
 export function useGameConnection(gameId: string, token: string) {
@@ -33,11 +33,24 @@ export function useGameConnection(gameId: string, token: string) {
     [setGameState, addEvent, setError, setOpponentConnected],
   );
 
-  const { connected, sendAction } = useWebSocket({
+  // Indirection so the stable onReconnect callback can call the latest
+  // sendMessage without retriggering the useWebSocket hook every render.
+  const sendMessageRef = useRef<((msg: ClientMessage) => void) | null>(null);
+
+  const handleReconnect = useCallback(() => {
+    sendMessageRef.current?.({ type: "sync_request" });
+  }, []);
+
+  const { connected, reconnecting, sendAction, sendMessage } = useWebSocket({
     gameId,
     token,
     onMessage: handleMessage,
+    onReconnect: handleReconnect,
   });
 
-  return { connected, sendAction };
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
+
+  return { connected, reconnecting, sendAction };
 }

@@ -755,6 +755,62 @@ describe("GamePage", () => {
     });
   });
 
+  describe("connection status", () => {
+    it("shows the opponent-disconnected indicator when opponentConnected is false", async () => {
+      await act(async () => {
+        renderGame({
+          players: [
+            makePlayerState(),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+            }),
+          ],
+        });
+      });
+
+      // After connect, the WS sends state_update; player_disconnected isn't sent,
+      // so opponentConnected stays false (its default).
+      await vi.waitFor(() => {
+        expect(screen.getByLabelText("Opponent disconnected")).toBeTruthy();
+      });
+    });
+
+    it("hides the opponent-disconnected indicator after player_connected arrives", async () => {
+      const gs = makeGameState();
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+          client.send(
+            JSON.stringify({
+              type: "player_connected",
+              data: { playerNumber: 2, username: "Opponent" },
+            }),
+          );
+        }),
+      );
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      await vi.waitFor(() => {
+        expect(useGameStore.getState().opponentConnected).toBe(true);
+      });
+      expect(screen.queryByLabelText("Opponent disconnected")).toBeNull();
+    });
+  });
+
   describe("CP gain cap override", () => {
     function setupCappedGame() {
       const wsMessages: string[] = [];
