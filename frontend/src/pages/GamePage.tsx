@@ -95,7 +95,11 @@ export function GamePage() {
   const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
   const [showDrawPrompt, setShowDrawPrompt] = useState(false);
 
-  const { data: stratagems = [] } = useStratagems(myPlayer?.factionId);
+  const {
+    data: stratagems = [],
+    isError: stratagemsError,
+    refetch: refetchStratagems,
+  } = useStratagems(myPlayer?.factionId);
   const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
   const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
 
@@ -575,10 +579,13 @@ export function GamePage() {
               variant="outline"
               onClick={() => setShowStratagems(!showStratagems)}
               className="w-full justify-between font-mono uppercase tracking-widest"
+              disabled={stratagemsError}
             >
               <span className="flex items-center gap-2">
                 <Zap className="size-4" />
-                Stratagems ({availableStratagems.length} available)
+                {stratagemsError
+                  ? "Stratagems unavailable"
+                  : `Stratagems (${availableStratagems.length} available)`}
               </span>
               {showStratagems ? (
                 <ChevronUp className="size-4" />
@@ -586,7 +593,24 @@ export function GamePage() {
                 <ChevronDown className="size-4" />
               )}
             </Button>
-            {showStratagems && (
+            {stratagemsError && (
+              <div
+                role="alert"
+                className="flex items-center justify-between gap-2 rounded-sm border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+              >
+                <span>Stratagems failed to load.</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void refetchStratagems()}
+                  className="font-mono uppercase tracking-widest"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            {showStratagems && !stratagemsError && (
               <StratagemPanel
                 stratagems={availableStratagems}
                 currentCP={myPlayer.cp}

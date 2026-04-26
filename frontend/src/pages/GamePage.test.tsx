@@ -811,6 +811,36 @@ describe("GamePage", () => {
     });
   });
 
+  describe("stratagem graceful degradation", () => {
+    it("renders the page and shows a fallback when stratagems fail to load", async () => {
+      worker.use(
+        http.get(`${API_URL}/api/factions/:factionId/stratagems`, () => {
+          return HttpResponse.json({ error: "boom" }, { status: 500 });
+        }),
+      );
+
+      await act(async () => {
+        renderGame({ activePlayer: 1, currentPhase: "shooting" });
+      });
+
+      // Page still renders the rest of the UI.
+      await vi.waitFor(() => {
+        expect(screen.getByText(/Battle Round/)).toBeTruthy();
+      });
+
+      // Fallback message + retry button appear; the panel button is disabled.
+      // The retry chain takes ~1s (250ms + 750ms) before the query enters error state.
+      await vi.waitFor(
+        () => {
+          expect(screen.getByText("Stratagems failed to load.")).toBeTruthy();
+          expect(screen.getByText(/Stratagems unavailable/)).toBeTruthy();
+          expect(screen.getByText("Retry")).toBeTruthy();
+        },
+        { timeout: 5000 },
+      );
+    });
+  });
+
   describe("CP gain cap override", () => {
     function setupCappedGame() {
       const wsMessages: string[] = [];
