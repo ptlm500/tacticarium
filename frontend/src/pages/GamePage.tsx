@@ -41,13 +41,11 @@ import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { ErrorBanner } from "../components/ErrorBanner";
-
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { gameState, events, error, opponentConnected, setEvents } = useGameStore();
+  const { gameState, events, opponentConnected, setEvents } = useGameStore();
 
   const token = getToken();
 
@@ -402,12 +400,6 @@ export function GamePage() {
         >
           <Spinner className="text-amber-300" />
           Reconnecting to server...
-        </div>
-      )}
-
-      {error && (
-        <div className="relative z-10 px-4 pt-2">
-          <ErrorBanner message={error} />
         </div>
       )}
 

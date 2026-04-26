@@ -10,20 +10,17 @@ describe("gameStore", () => {
     const state = useGameStore.getState();
     expect(state.gameState).toBeNull();
     expect(state.events).toEqual([]);
-    expect(state.error).toBeNull();
     expect(state.opponentConnected).toBe(false);
   });
 
   describe("setGameState", () => {
-    it("sets game state and clears error", () => {
+    it("sets game state", () => {
       const store = useGameStore.getState();
-      store.setError("some error");
       const gs = makeGameState();
       store.setGameState(gs);
 
       const updated = useGameStore.getState();
       expect(updated.gameState).toEqual(gs);
-      expect(updated.error).toBeNull();
     });
   });
 
@@ -84,17 +81,6 @@ describe("gameStore", () => {
     });
   });
 
-  describe("setError", () => {
-    it("sets and clears error", () => {
-      const store = useGameStore.getState();
-      store.setError("oh no");
-      expect(useGameStore.getState().error).toBe("oh no");
-
-      store.setError(null);
-      expect(useGameStore.getState().error).toBeNull();
-    });
-  });
-
   describe("setOpponentConnected", () => {
     it("toggles opponent connection flag", () => {
       const store = useGameStore.getState();
@@ -111,7 +97,6 @@ describe("gameStore", () => {
       const store = useGameStore.getState();
       store.setGameState(makeGameState());
       store.addEvent(mockEvent);
-      store.setError("error");
       store.setOpponentConnected(true);
 
       store.reset();
@@ -119,7 +104,6 @@ describe("gameStore", () => {
       const reset = useGameStore.getState();
       expect(reset.gameState).toBeNull();
       expect(reset.events).toEqual([]);
-      expect(reset.error).toBeNull();
       expect(reset.opponentConnected).toBe(false);
     });
   });

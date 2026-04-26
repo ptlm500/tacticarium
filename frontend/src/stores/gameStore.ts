@@ -4,13 +4,11 @@ import { GameState, GameEvent } from "../types/game";
 interface GameStore {
   gameState: GameState | null;
   events: GameEvent[];
-  error: string | null;
   opponentConnected: boolean;
 
   setGameState: (state: GameState) => void;
   setEvents: (events: GameEvent[]) => void;
   addEvent: (event: GameEvent) => void;
-  setError: (error: string | null) => void;
   setOpponentConnected: (connected: boolean) => void;
   reset: () => void;
 }
@@ -18,10 +16,9 @@ interface GameStore {
 export const useGameStore = create<GameStore>((set) => ({
   gameState: null,
   events: [],
-  error: null,
   opponentConnected: false,
 
-  setGameState: (gameState) => set({ gameState, error: null }),
+  setGameState: (gameState) => set({ gameState }),
   setEvents: (events) =>
     set((s) => {
       // Preserve any live events the WS pushed before the REST history resolved.
@@ -44,13 +41,11 @@ export const useGameStore = create<GameStore>((set) => ({
       }
       return { events: [...s.events, event] };
     }),
-  setError: (error) => set({ error }),
   setOpponentConnected: (opponentConnected) => set({ opponentConnected }),
   reset: () =>
     set({
       gameState: null,
       events: [],
-      error: null,
       opponentConnected: false,
     }),
 }));

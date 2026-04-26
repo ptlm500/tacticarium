@@ -1,4 +1,5 @@
 import { render, act } from "@testing-library/react";
+import { toast } from "sonner";
 import { useGameConnection } from "./useGameState";
 import { useGameStore } from "../stores/gameStore";
 import { makeGameState, mockEvent } from "../test/fixtures";
@@ -52,7 +53,9 @@ describe("useGameConnection", () => {
     });
   });
 
-  it("routes error messages to the store and auto-clears", async () => {
+  it("surfaces error messages as toast notifications", async () => {
+    const toastError = vi.spyOn(toast, "error").mockImplementation(() => "id");
+
     const testLink = ws.link("ws://localhost:8080/ws/game/*");
     worker.use(
       testLink.addEventListener("connection", ({ client }) => {
@@ -65,8 +68,10 @@ describe("useGameConnection", () => {
     });
 
     await vi.waitFor(() => {
-      expect(useGameStore.getState().error).toBe("Bad move");
+      expect(toastError).toHaveBeenCalledWith("Bad move");
     });
+
+    toastError.mockRestore();
   });
 
   it("sends sync_request after a reconnect", async () => {

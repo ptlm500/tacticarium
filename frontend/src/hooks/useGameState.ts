@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { useGameStore } from "../stores/gameStore";
 import { useWebSocket } from "./useWebSocket";
 import { ClientMessage, ServerMessage } from "../types/ws";
 import { GameState, GameEvent } from "../types/game";
 
 export function useGameConnection(gameId: string, token: string) {
-  const { setGameState, addEvent, setError, setOpponentConnected } = useGameStore();
+  const { setGameState, addEvent, setOpponentConnected } = useGameStore();
 
   const handleMessage = useCallback(
     (msg: ServerMessage) => {
@@ -18,8 +19,7 @@ export function useGameConnection(gameId: string, token: string) {
           break;
         case "error": {
           const err = msg.data as { message: string };
-          setError(err.message);
-          setTimeout(() => setError(null), 3000);
+          toast.error(err.message);
           break;
         }
         case "player_connected":
@@ -30,7 +30,7 @@ export function useGameConnection(gameId: string, token: string) {
           break;
       }
     },
-    [setGameState, addEvent, setError, setOpponentConnected],
+    [setGameState, addEvent, setOpponentConnected],
   );
 
   // Indirection so the stable onReconnect callback can call the latest
