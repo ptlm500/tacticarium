@@ -41,7 +41,17 @@ func (r *Room) Run() {
 	for {
 		select {
 		case client := <-r.register:
+			// Snapshot peers BEFORE adding the new client, so we can replay
+			// player_connected events to the joiner for everyone already here.
 			r.mu.Lock()
+			type peer struct {
+				playerNumber int
+				username     string
+			}
+			peers := make([]peer, 0, len(r.clients))
+			for c := range r.clients {
+				peers = append(peers, peer{c.playerNumber, c.username})
+			}
 			r.clients[client] = true
 			r.mu.Unlock()
 
@@ -60,6 +70,13 @@ func (r *Room) Run() {
 			// Send current state to new client
 			state := r.engine.State()
 			client.Send(StateUpdateMsg(state))
+
+			// Inform the joiner about peers that were already connected, so
+			// the client knows the opponent is present without needing them
+			// to act first.
+			for _, p := range peers {
+				client.Send(PlayerConnectedMsg(p.playerNumber, p.username))
+			}
 
 		case client := <-r.unregister:
 			r.mu.Lock()

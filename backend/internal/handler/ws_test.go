@@ -134,6 +134,29 @@ func TestWSBothPlayersReceiveState(t *testing.T) {
 	assert.Equal(t, "player_connected", p1Msg["type"])
 }
 
+func TestWSJoinerLearnsAboutExistingPeers(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, token1, token2, gameID := setupGameWithTwoPlayers(t)
+
+	// Player 1 connects first; reads their own initial state.
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	msg1 := testutil.ReadWSMessage(t, conn1, 5*time.Second)
+	require.Equal(t, "state_update", msg1["type"])
+
+	// Player 2 joins after player 1 is already in the room. Player 2 should
+	// receive a state_update followed by a player_connected for player 1, so
+	// the joiner's UI knows the opponent is already present.
+	conn2 := testutil.DialWS(t, env, gameID, token2)
+	msg2 := testutil.ReadWSMessage(t, conn2, 5*time.Second)
+	assert.Equal(t, "state_update", msg2["type"])
+
+	peerMsg := testutil.ReadWSMessage(t, conn2, 5*time.Second)
+	assert.Equal(t, "player_connected", peerMsg["type"])
+	data, ok := peerMsg["data"].(map[string]interface{})
+	require.True(t, ok)
+	assert.EqualValues(t, 1, data["playerNumber"])
+}
+
 func TestWSPingPong(t *testing.T) {
 	env := testutil.SharedEnv
 	_, _, token1, _, gameID := setupGameWithTwoPlayers(t)
