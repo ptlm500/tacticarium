@@ -82,7 +82,7 @@ export function LobbyPage() {
             Tacticarium
           </span>
           <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70 sm:inline">
-            Command Lobby
+            Lobby
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -117,10 +117,10 @@ export function LobbyPage() {
         {error && <ErrorBanner message={error} />}
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <HUDFrame label="New Engagement">
+          <HUDFrame label="New Game">
             <div className="space-y-4 py-2">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Deploy a new battlefield
+                Set up a new game
               </p>
               <Button
                 onClick={handleCreate}
@@ -133,7 +133,7 @@ export function LobbyPage() {
             </div>
           </HUDFrame>
 
-          <HUDFrame label="Join Engagement">
+          <HUDFrame label="Join Game">
             <div className="space-y-4 py-2">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Enter 6-character invite
@@ -164,7 +164,7 @@ export function LobbyPage() {
         </div>
 
         {games.length > 0 && (
-          <HUDFrame label="Active Theatres">
+          <HUDFrame label="Active Games">
             <div className="space-y-3 py-2">
               {games.map((game, i) => (
                 <div key={game.id}>

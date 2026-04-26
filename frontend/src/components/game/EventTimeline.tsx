@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { type NormalizedEvent, formatEvent, isHighlightEvent } from "./eventFormatting";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   events: NormalizedEvent[];
@@ -18,14 +25,15 @@ export function EventTimeline({ events, defaultFilter = "highlights" }: Props) {
         <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Events
         </h3>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as "highlights" | "all")}
-          className="rounded-md border border-input bg-transparent px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
-        >
-          <option value="highlights">Highlights</option>
-          <option value="all">All Events</option>
-        </select>
+        <Select value={filter} onValueChange={(value) => setFilter(value as "highlights" | "all")}>
+          <SelectTrigger size="sm" className="font-mono text-[10px] uppercase tracking-widest">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="highlights">Highlights</SelectItem>
+            <SelectItem value="all">All Events</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <ScrollArea className="h-80 rounded-sm border border-border/60 bg-background/40 p-3">
         {filtered.length === 0 ? (

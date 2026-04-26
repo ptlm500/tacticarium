@@ -1,4 +1,5 @@
 import { screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../test/renderWithProviders";
 import { GameSetupPage } from "./GameSetupPage";
 import { useGameStore } from "../stores/gameStore";
@@ -323,9 +324,13 @@ describe("GameSetupPage", () => {
       expect(screen.getByText("Primary Mission")).toBeTruthy();
     });
 
+    const user = userEvent.setup();
+    const trigger = screen.getByRole("combobox");
+    await user.click(trigger);
+
     await vi.waitFor(() => {
-      expect(screen.getByText("Supply Drop")).toBeTruthy();
-      expect(screen.getByText("Scorched Earth")).toBeTruthy();
+      expect(screen.getByRole("option", { name: "Supply Drop" })).toBeTruthy();
+      expect(screen.getByRole("option", { name: "Scorched Earth" })).toBeTruthy();
     });
   });
 });

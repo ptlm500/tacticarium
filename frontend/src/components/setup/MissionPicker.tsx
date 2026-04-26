@@ -1,7 +1,13 @@
 import { Shuffle } from "lucide-react";
 import { Mission } from "../../types/mission";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   missions: Mission[];
@@ -16,26 +22,24 @@ export function MissionPicker({ missions, selectedId, onSelect, onDrawRandom }: 
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <select
+        <Select
           value={selectedId}
-          onChange={(e) => {
-            const m = missions.find((m) => m.id === e.target.value);
+          onValueChange={(value) => {
+            const m = missions.find((m) => m.id === value);
             if (m) onSelect(m);
           }}
-          className={cn(
-            "flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm",
-            "shadow-xs transition-[color,box-shadow] outline-none",
-            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-            "dark:bg-input/30",
-          )}
         >
-          <option value="">Select a mission...</option>
-          {missions.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Select a mission..." />
+          </SelectTrigger>
+          <SelectContent>
+            {missions.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           variant="outline"
