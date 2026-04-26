@@ -10,10 +10,19 @@ import { useHideGame } from "../hooks/queries/useGameMutations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ErrorBanner } from "../components/ErrorBanner";
+
+const ALL_FACTIONS = "__all__";
 
 export function GameHistoryPage() {
   const navigate = useNavigate();
@@ -182,30 +191,38 @@ export function GameHistoryPage() {
 
         {/* Filters */}
         <div className="flex gap-3">
-          <select
-            value={myFaction}
-            onChange={(e) => setMyFaction(e.target.value)}
-            className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs text-foreground focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+          <Select
+            value={myFaction || ALL_FACTIONS}
+            onValueChange={(value) => setMyFaction(value === ALL_FACTIONS ? "" : value)}
           >
-            <option value="">My Faction (all)</option>
-            {factions.map((f) => (
-              <option key={f.id} value={f.name}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={opponentFaction}
-            onChange={(e) => setOpponentFaction(e.target.value)}
-            className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs text-foreground focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+            <SelectTrigger className="flex-1 font-mono text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FACTIONS}>My Faction (all)</SelectItem>
+              {factions.map((f) => (
+                <SelectItem key={f.id} value={f.name}>
+                  {f.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={opponentFaction || ALL_FACTIONS}
+            onValueChange={(value) => setOpponentFaction(value === ALL_FACTIONS ? "" : value)}
           >
-            <option value="">Opponent (all)</option>
-            {factions.map((f) => (
-              <option key={f.id} value={f.name}>
-                {f.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="flex-1 font-mono text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FACTIONS}>Opponent (all)</SelectItem>
+              {factions.map((f) => (
+                <SelectItem key={f.id} value={f.name}>
+                  {f.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Game List */}

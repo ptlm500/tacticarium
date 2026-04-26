@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   children: ReactNode;
@@ -25,25 +26,23 @@ class QueryErrorBoundaryInner extends Component<Props & { queryClient: QueryClie
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-          <div className="text-center p-8 space-y-4 max-w-md">
-            <h1 className="text-2xl font-bold text-red-400">Something went wrong</h1>
-            <p className="text-gray-400">
+        <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+          <div className="max-w-md space-y-4 p-8 text-center">
+            <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
+            <p className="text-muted-foreground">
               {this.state.error?.message || "An unexpected error occurred."}
             </p>
-            <div className="flex gap-3 justify-center">
-              <button
+            <div className="flex justify-center gap-3">
+              <Button
+                type="button"
                 onClick={this.handleRetry}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                className="font-mono uppercase tracking-widest"
               >
                 Retry
-              </button>
-              <a
-                href="/"
-                className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors inline-block"
-              >
-                Back to Lobby
-              </a>
+              </Button>
+              <Button asChild variant="outline" className="font-mono uppercase tracking-widest">
+                <a href="/">Back to Lobby</a>
+              </Button>
             </div>
           </div>
         </div>

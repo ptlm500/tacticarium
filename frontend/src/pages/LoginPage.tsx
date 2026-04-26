@@ -50,10 +50,6 @@ export function LoginPage() {
               <LogIn className="size-4" />
               Sign in with Discord
             </Button>
-
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
-              Authenticate to deploy
-            </p>
           </div>
         </HUDFrame>
       </main>
