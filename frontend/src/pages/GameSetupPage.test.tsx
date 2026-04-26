@@ -284,6 +284,116 @@ describe("GameSetupPage", () => {
     expect(screen.queryByText("WRONG_GAME_PAGE")).toBeNull();
   });
 
+  it("shows the army-painted toggle once detachment is selected and reflects vpPaint state", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      missionId: "",
+      missionName: "",
+      twistId: "",
+      twistName: "",
+      players: [
+        makePlayerState({
+          detachmentId: "det-gladius",
+          detachmentName: "Gladius Task Force",
+          secondaryMode: "",
+          ready: false,
+          vpPaint: 10,
+        }),
+        null,
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("Army Painted")).toBeTruthy();
+    });
+
+    const toggle = screen.getByRole("switch");
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText("Painted")).toBeTruthy();
+    expect(screen.getByText("+10 VP")).toBeTruthy();
+  });
+
+  it("sends set_paint_score over the websocket when the toggle is clicked", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      missionId: "",
+      missionName: "",
+      twistId: "",
+      twistName: "",
+      players: [
+        makePlayerState({
+          detachmentId: "det-gladius",
+          detachmentName: "Gladius Task Force",
+          secondaryMode: "",
+          ready: false,
+          vpPaint: 10,
+        }),
+        null,
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const sentActions: Array<Record<string, unknown>> = [];
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+        client.addEventListener("message", (ev) => {
+          if (typeof ev.data !== "string") return;
+          try {
+            const parsed = JSON.parse(ev.data);
+            if (parsed?.type === "action" && parsed.data) {
+              sentActions.push(parsed.data as Record<string, unknown>);
+            }
+          } catch {
+            // ignore non-JSON frames (e.g. the client's pings)
+          }
+        });
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole("switch")).toBeTruthy();
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("switch"));
+
+    await vi.waitFor(() => {
+      const paintAction = sentActions.find((a) => a.type === "set_paint_score");
+      expect(paintAction).toBeTruthy();
+      expect(paintAction!.score).toBe(0);
+    });
+  });
+
   it("shows mission section when detachment is selected", async () => {
     const gs = makeGameState({
       status: "setup",

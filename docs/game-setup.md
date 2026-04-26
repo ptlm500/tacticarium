@@ -54,6 +54,15 @@ Either player can set which player takes the first turn each battle round (see `
 - Action: `select_first_turn_player` with `{firstTurnPlayer}` — must be `1` or `2`
 - Changing this resets both players' ready status
 
+### Army Painted
+
+Each player declares whether their army is fully painted, awarding the 10 VP painting bonus.
+Defaults to **painted (+10 VP)**; toggling off sets paint VP to 0.
+
+- Action: `set_paint_score` with `{score}` — `10` for painted, `0` for not painted (clamped to 0-10)
+- Setup-only — rejected once the game is `active`
+- Toggling resets the acting player's ready status
+
 ### Secondary Objective Mode
 
 Each player independently chooses how they will handle secondary objectives: **fixed** or **tactical** mode. See [Secondary Objectives](secondary-objectives.md) for full details.

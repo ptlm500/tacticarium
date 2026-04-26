@@ -14,6 +14,7 @@ import { MissionPicker } from "../components/setup/MissionPicker";
 import { TwistPicker } from "../components/setup/TwistPicker";
 import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
+import { ArmyPaintedToggle } from "../components/setup/ArmyPaintedToggle";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
 import { Badge } from "@/components/ui/badge";
@@ -161,6 +162,13 @@ export function GameSetupPage() {
     [sendAction],
   );
 
+  const handleTogglePainted = useCallback(
+    (painted: boolean) => {
+      sendAction("set_paint_score", { score: painted ? 10 : 0 });
+    },
+    [sendAction],
+  );
+
   const handleReady = useCallback(() => {
     sendAction("set_ready", { ready: !myPlayer?.ready });
   }, [sendAction, myPlayer?.ready]);
@@ -284,6 +292,15 @@ export function GameSetupPage() {
         )}
 
         {hasDetachment && (
+          <HUDFrame label="Army Painted">
+            <ArmyPaintedToggle
+              painted={(myPlayer?.vpPaint ?? 0) > 0}
+              onToggle={handleTogglePainted}
+            />
+          </HUDFrame>
+        )}
+
+        {hasDetachment && (
           <HUDFrame label="Primary Mission">
             <MissionPicker
               missions={missions}
@@ -339,6 +356,9 @@ export function GameSetupPage() {
               <p className="text-sm text-foreground/90">
                 {opponent.factionName || "Selecting faction..."}
                 {opponent.detachmentName && ` - ${opponent.detachmentName}`}
+              </p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Army: {(opponent.vpPaint ?? 0) > 0 ? "Painted (+10 VP)" : "Not painted"}
               </p>
               <Badge
                 variant={opponent.ready ? "default" : "outline"}

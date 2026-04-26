@@ -816,6 +816,10 @@ func (e *Engine) applyConcede(action GameAction) ([]GameEvent, error) {
 }
 
 func (e *Engine) applySetPaintScore(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusSetup {
+		return nil, fmt.Errorf("can only set paint score during setup")
+	}
+
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
@@ -823,6 +827,7 @@ func (e *Engine) applySetPaintScore(action GameAction) ([]GameEvent, error) {
 
 	score := intFromData(action.Data, "score")
 	player.VPPaint = ClampVP(score, MaxVPPaint)
+	player.Ready = false
 
 	return nil, nil
 }
