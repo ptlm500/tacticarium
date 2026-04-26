@@ -52,10 +52,16 @@ export function GameSetupPage() {
   const tacticalSecondaries = secondaries.filter((s) => !s.isFixed);
 
   useEffect(() => {
-    if (gameState?.status === "active") {
+    if (gameState?.gameId === gameId && gameState?.status === "active") {
       void navigate(`/game/${gameId}`);
     }
-  }, [gameState?.status, gameId, navigate]);
+  }, [gameState?.gameId, gameState?.status, gameId, navigate]);
+
+  useEffect(() => {
+    return () => {
+      useGameStore.getState().reset();
+    };
+  }, []);
 
   const handleSelectFaction = useCallback(
     (faction: Faction) => {
