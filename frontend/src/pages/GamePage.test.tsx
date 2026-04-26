@@ -43,6 +43,81 @@ describe("GamePage", () => {
     localStorage.clear();
   });
 
+  it("resets gameStore when unmounted", async () => {
+    let result!: ReturnType<typeof renderGame>;
+    await act(async () => {
+      result = renderGame();
+    });
+
+    await vi.waitFor(() => {
+      expect(useGameStore.getState().gameState).not.toBeNull();
+    });
+
+    await act(async () => {
+      result.unmount();
+    });
+
+    expect(useGameStore.getState().gameState).toBeNull();
+  });
+
+  it("redirects to /game/:id/setup when state is in setup phase for the current game", async () => {
+    const gs = makeGameState({ gameId: "game-1", status: "setup" });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id" element={<GamePage />} />
+          <Route path="/game/:id/setup" element={<div>SETUP_PAGE_REACHED</div>} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1" },
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("SETUP_PAGE_REACHED")).toBeTruthy();
+    });
+  });
+
+  it("does not redirect to /setup when stored state is from a different game", async () => {
+    // Stale state from a previously-open setup game.
+    useGameStore.getState().setGameState(makeGameState({ gameId: "game-OLD", status: "setup" }));
+    localStorage.setItem("token", "test-token");
+
+    // The new game we're navigating to is active.
+    const newGameState = makeGameState({ gameId: "game-NEW", status: "active" });
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: newGameState }));
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id" element={<GamePage />} />
+          <Route path="/game/:id/setup" element={<div>WRONG_SETUP_PAGE</div>} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-NEW" },
+      );
+    });
+
+    await vi.waitFor(() => {
+      // Active-game UI renders (turn banner appears once new state arrives).
+      expect(screen.getByText(/Battle Round/)).toBeTruthy();
+    });
+    expect(screen.queryByText("WRONG_SETUP_PAGE")).toBeNull();
+  });
+
   it("shows Victory when game is completed and player won", async () => {
     await act(async () => {
       renderGame({

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   ChevronUp,
@@ -45,12 +45,25 @@ import { ErrorBanner } from "../components/ErrorBanner";
 
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { gameState, events, error, setEvents } = useGameStore();
 
   const token = getToken();
 
   const { connected, sendAction } = useGameConnection(gameId!, token);
+
+  useEffect(() => {
+    if (gameState?.gameId === gameId && gameState?.status === "setup") {
+      void navigate(`/game/${gameId}/setup`);
+    }
+  }, [gameState?.gameId, gameState?.status, gameId, navigate]);
+
+  useEffect(() => {
+    return () => {
+      useGameStore.getState().reset();
+    };
+  }, []);
 
   // Seed the event log with the persisted history so the log isn't empty for
   // players who refresh or join mid-game. Live WS events arriving in parallel

@@ -212,6 +212,77 @@ describe("GameSetupPage", () => {
     expect(readyBtn.hasAttribute("disabled")).toBe(true);
   });
 
+  it("resets gameStore when unmounted", async () => {
+    let result!: ReturnType<typeof renderSetup>;
+    await act(async () => {
+      result = renderSetup();
+    });
+
+    await vi.waitFor(() => {
+      expect(useGameStore.getState().gameState).not.toBeNull();
+    });
+
+    await act(async () => {
+      result.unmount();
+    });
+
+    expect(useGameStore.getState().gameState).toBeNull();
+  });
+
+  it("does not redirect to /game/:id when stored state is from a different game", async () => {
+    // Stale state from a previously-open active game.
+    useGameStore.getState().setGameState(
+      makeGameState({
+        gameId: "game-OLD",
+        status: "active",
+      }),
+    );
+    localStorage.setItem("token", "test-token");
+
+    // The new game we're navigating to is in setup.
+    const newGameState = makeGameState({
+      gameId: "game-NEW",
+      status: "setup",
+      missionId: "",
+      missionName: "",
+      twistId: "",
+      twistName: "",
+      players: [
+        makePlayerState({
+          factionId: "",
+          factionName: "",
+          detachmentId: "",
+          detachmentName: "",
+          secondaryMode: "",
+          ready: false,
+        }),
+        null,
+      ],
+    });
+
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: newGameState }));
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+          <Route path="/game/:id" element={<div>WRONG_GAME_PAGE</div>} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-NEW/setup" },
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("Game Setup")).toBeTruthy();
+    });
+    expect(screen.queryByText("WRONG_GAME_PAGE")).toBeNull();
+  });
+
   it("shows mission section when detachment is selected", async () => {
     const gs = makeGameState({
       status: "setup",
