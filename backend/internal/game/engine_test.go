@@ -3119,3 +3119,96 @@ func TestAchieveSecondary_NoOptionsSkipsValidation(t *testing.T) {
 		t.Fatalf("expected no validation when scoring options are empty, got: %v", err)
 	}
 }
+
+// --- Set Paint Score (Army Painted toggle) ---
+
+func TestSetPaintScore_SetsValue(t *testing.T) {
+	e := NewEngine(newTestState())
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetPaintScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"score": 10},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.state.Players[0].VPPaint != 10 {
+		t.Fatalf("expected VPPaint=10, got %d", e.state.Players[0].VPPaint)
+	}
+
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionSetPaintScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"score": 0},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.state.Players[0].VPPaint != 0 {
+		t.Fatalf("expected VPPaint=0, got %d", e.state.Players[0].VPPaint)
+	}
+}
+
+func TestSetPaintScore_Clamps(t *testing.T) {
+	e := NewEngine(newTestState())
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetPaintScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"score": 99},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.state.Players[0].VPPaint != MaxVPPaint {
+		t.Fatalf("expected VPPaint clamped to %d, got %d", MaxVPPaint, e.state.Players[0].VPPaint)
+	}
+
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionSetPaintScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"score": -5},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.state.Players[0].VPPaint != 0 {
+		t.Fatalf("expected VPPaint clamped to 0, got %d", e.state.Players[0].VPPaint)
+	}
+}
+
+func TestSetPaintScore_RejectedWhenActive(t *testing.T) {
+	e := NewEngine(newActiveTestState())
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetPaintScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"score": 0},
+	})
+	if err == nil {
+		t.Fatal("expected error when game is active")
+	}
+}
+
+func TestSetPaintScore_ResetsReadiness(t *testing.T) {
+	state := newTestState()
+	state.Players[0].Ready = true
+	state.Players[1].Ready = true
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetPaintScore,
+		PlayerNumber: 1,
+		Data:         map[string]any{"score": 0},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].Ready {
+		t.Fatal("expected acting player's readiness to be reset")
+	}
+	if !state.Players[1].Ready {
+		t.Fatal("expected other player's readiness to be unchanged")
+	}
+}

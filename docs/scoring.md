@@ -66,7 +66,9 @@ not modelled by the engine):
 
 - Action: `set_paint_score` with `{score}`
 - Sets the paint VP directly (not a delta) — clamped to 0-10
-- Can be set during setup or active game (no status restriction)
+- Setup-only: rejected outside `setup` status. Toggling resets the acting player's ready flag.
+- New players default to `vpPaint = 10` (army-painted checkbox starts checked); the
+  setup UI exposes this as an "Army Painted" toggle that sends `score: 10` or `score: 0`.
 
 ### Total VP Calculation
 

@@ -10,7 +10,7 @@
 
 - [x] Non-active player has enabled draw secondaries button
 
-- [ ] is your army painted tickbox for vp
+- [x] is your army painted tickbox for vp
 
 - [x] Challenger strategic ploy strats show up
 

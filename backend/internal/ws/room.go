@@ -62,6 +62,7 @@ func (r *Room) Run() {
 				UserID:       client.userID,
 				Username:     client.username,
 				PlayerNumber: client.playerNumber,
+				VPPaint:      game.MaxVPPaint,
 			})
 
 			// Notify others
