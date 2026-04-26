@@ -33,7 +33,7 @@ export function GameSetupPage() {
 
   const token = getToken();
 
-  const { connected, sendAction } = useGameConnection(gameId!, token);
+  const { connected, reconnecting, sendAction } = useGameConnection(gameId!, token);
 
   const { data: factions = [] } = useFactions();
   const { data: missions = [] } = useMissions(PACK_ID);
@@ -251,6 +251,16 @@ export function GameSetupPage() {
           <p className="border-t border-border/50 bg-amber-500/5 px-4 py-2 text-center font-mono text-[10px] uppercase tracking-widest text-amber-400">
             Waiting for opponent to join...
           </p>
+        )}
+        {reconnecting && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center justify-center gap-2 border-t border-amber-500/40 bg-amber-500/10 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+          >
+            <Spinner className="text-amber-300" />
+            Reconnecting to server...
+          </div>
         )}
       </header>
 

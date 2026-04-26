@@ -22,5 +22,8 @@ export function useStratagems(factionId: string | undefined) {
     queryKey: queryKeys.factions.stratagems(factionId!),
     queryFn: () => factionsApi.getStratagems(factionId!),
     enabled: !!factionId,
+    // Stratagems are non-essential for the core game UI — degrade locally
+    // instead of bouncing the whole route to the QueryErrorBoundary.
+    throwOnError: false,
   });
 }

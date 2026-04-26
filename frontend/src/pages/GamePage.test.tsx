@@ -755,6 +755,92 @@ describe("GamePage", () => {
     });
   });
 
+  describe("connection status", () => {
+    it("shows the opponent-disconnected indicator when opponentConnected is false", async () => {
+      await act(async () => {
+        renderGame({
+          players: [
+            makePlayerState(),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+            }),
+          ],
+        });
+      });
+
+      // After connect, the WS sends state_update; player_disconnected isn't sent,
+      // so opponentConnected stays false (its default).
+      await vi.waitFor(() => {
+        expect(screen.getByLabelText("Opponent disconnected")).toBeTruthy();
+      });
+    });
+
+    it("hides the opponent-disconnected indicator after player_connected arrives", async () => {
+      const gs = makeGameState();
+      useGameStore.getState().setGameState(gs);
+      localStorage.setItem("token", "test-token");
+
+      const testLink = ws.link("ws://localhost:8080/ws/game/*");
+      worker.use(
+        testLink.addEventListener("connection", ({ client }) => {
+          client.send(JSON.stringify({ type: "state_update", data: gs }));
+          client.send(
+            JSON.stringify({
+              type: "player_connected",
+              data: { playerNumber: 2, username: "Opponent" },
+            }),
+          );
+        }),
+      );
+
+      await act(async () => {
+        renderWithProviders(
+          <Routes>
+            <Route path="/game/:id" element={<GamePage />} />
+          </Routes>,
+          { user: mockUser, route: "/game/game-1" },
+        );
+      });
+
+      await vi.waitFor(() => {
+        expect(useGameStore.getState().opponentConnected).toBe(true);
+      });
+      expect(screen.queryByLabelText("Opponent disconnected")).toBeNull();
+    });
+  });
+
+  describe("stratagem graceful degradation", () => {
+    it("renders the page and shows a fallback when stratagems fail to load", async () => {
+      worker.use(
+        http.get(`${API_URL}/api/factions/:factionId/stratagems`, () => {
+          return HttpResponse.json({ error: "boom" }, { status: 500 });
+        }),
+      );
+
+      await act(async () => {
+        renderGame({ activePlayer: 1, currentPhase: "shooting" });
+      });
+
+      // Page still renders the rest of the UI.
+      await vi.waitFor(() => {
+        expect(screen.getByText(/Battle Round/)).toBeTruthy();
+      });
+
+      // Fallback message + retry button appear; the panel button is disabled.
+      // The retry chain takes ~1s (250ms + 750ms) before the query enters error state.
+      await vi.waitFor(
+        () => {
+          expect(screen.getByText("Stratagems failed to load.")).toBeTruthy();
+          expect(screen.getByText(/Stratagems unavailable/)).toBeTruthy();
+          expect(screen.getByText("Retry")).toBeTruthy();
+        },
+        { timeout: 5000 },
+      );
+    });
+  });
+
   describe("CP gain cap override", () => {
     function setupCappedGame() {
       const wsMessages: string[] = [];

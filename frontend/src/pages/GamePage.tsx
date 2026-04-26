@@ -41,17 +41,15 @@ import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { ErrorBanner } from "../components/ErrorBanner";
-
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { gameState, events, error, setEvents } = useGameStore();
+  const { gameState, events, opponentConnected, setEvents } = useGameStore();
 
   const token = getToken();
 
-  const { connected, sendAction } = useGameConnection(gameId!, token);
+  const { connected, reconnecting, sendAction } = useGameConnection(gameId!, token);
 
   useEffect(() => {
     if (gameState?.gameId === gameId && gameState?.status === "setup") {
@@ -97,7 +95,11 @@ export function GamePage() {
   const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
   const [showDrawPrompt, setShowDrawPrompt] = useState(false);
 
-  const { data: stratagems = [] } = useStratagems(myPlayer?.factionId);
+  const {
+    data: stratagems = [],
+    isError: stratagemsError,
+    refetch: refetchStratagems,
+  } = useStratagems(myPlayer?.factionId);
   const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
   const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
 
@@ -394,9 +396,14 @@ export function GamePage() {
         — {PHASE_LABELS[gameState.currentPhase]} Phase
       </div>
 
-      {error && (
-        <div className="relative z-10 px-4 pt-2">
-          <ErrorBanner message={error} />
+      {reconnecting && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="relative z-10 flex items-center justify-center gap-2 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+        >
+          <Spinner className="text-amber-300" />
+          Reconnecting to server...
         </div>
       )}
 
@@ -450,9 +457,21 @@ export function GamePage() {
           {/* Opponent State */}
           {opponent && (
             <div className="rounded-sm border border-border/40 bg-background/40 p-3">
-              <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {opponent.username} — {opponent.factionName}
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {opponent.username} — {opponent.factionName}
+                </h2>
+                {!opponentConnected && (
+                  <Badge
+                    variant="outline"
+                    role="status"
+                    aria-label="Opponent disconnected"
+                    className="border-amber-500/50 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+                  >
+                    Disconnected
+                  </Badge>
+                )}
+              </div>
               <div className="mt-2 flex gap-6 font-mono text-sm tabular-nums">
                 <span>
                   <span className="text-muted-foreground">CP:</span> {opponent.cp}
@@ -560,10 +579,13 @@ export function GamePage() {
               variant="outline"
               onClick={() => setShowStratagems(!showStratagems)}
               className="w-full justify-between font-mono uppercase tracking-widest"
+              disabled={stratagemsError}
             >
               <span className="flex items-center gap-2">
                 <Zap className="size-4" />
-                Stratagems ({availableStratagems.length} available)
+                {stratagemsError
+                  ? "Stratagems unavailable"
+                  : `Stratagems (${availableStratagems.length} available)`}
               </span>
               {showStratagems ? (
                 <ChevronUp className="size-4" />
@@ -571,7 +593,24 @@ export function GamePage() {
                 <ChevronDown className="size-4" />
               )}
             </Button>
-            {showStratagems && (
+            {stratagemsError && (
+              <div
+                role="alert"
+                className="flex items-center justify-between gap-2 rounded-sm border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+              >
+                <span>Stratagems failed to load.</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void refetchStratagems()}
+                  className="font-mono uppercase tracking-widest"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            {showStratagems && !stratagemsError && (
               <StratagemPanel
                 stratagems={availableStratagems}
                 currentCP={myPlayer.cp}

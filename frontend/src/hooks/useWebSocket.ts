@@ -7,15 +7,23 @@ interface UseWebSocketOptions {
   gameId: string;
   token: string;
   onMessage: (msg: ServerMessage) => void;
+  onReconnect?: () => void;
 }
 
-export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) {
+export function useWebSocket({ gameId, token, onMessage, onReconnect }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<number | undefined>(undefined);
   const reconnectDelay = useRef(1000);
   const pingInterval = useRef<number | undefined>(undefined);
   const mountedRef = useRef(false);
+  const hasConnectedRef = useRef(false);
+  const onReconnectRef = useRef(onReconnect);
   const [connected, setConnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+
+  useEffect(() => {
+    onReconnectRef.current = onReconnect;
+  }, [onReconnect]);
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
@@ -26,7 +34,13 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
 
     ws.onopen = () => {
       setConnected(true);
+      setReconnecting(false);
       reconnectDelay.current = 1000;
+
+      if (hasConnectedRef.current) {
+        onReconnectRef.current?.();
+      }
+      hasConnectedRef.current = true;
 
       // Start ping interval
       pingInterval.current = window.setInterval(() => {
@@ -53,6 +67,9 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
 
       // Only reconnect if still mounted
       if (mountedRef.current) {
+        if (hasConnectedRef.current) {
+          setReconnecting(true);
+        }
         reconnectTimer.current = window.setTimeout(() => {
           reconnectDelay.current = Math.min(reconnectDelay.current * 2, 30000);
           connect();
@@ -90,5 +107,5 @@ export function useWebSocket({ gameId, token, onMessage }: UseWebSocketOptions) 
     [sendMessage],
   );
 
-  return { connected, sendAction, sendMessage };
+  return { connected, reconnecting, sendAction, sendMessage };
 }
