@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { ShareSpectateButton } from "../components/game/ShareSpectateButton";
 import { cn } from "@/lib/utils";
 
 const PACK_ID = "chapter-approved-2025-26";
@@ -234,6 +235,7 @@ export function GameSetupPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeSwitcher />
+            <ShareSpectateButton gameId={gameState.gameId} />
             <Button
               type="button"
               variant="outline"

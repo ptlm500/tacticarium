@@ -5,12 +5,19 @@ const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
 
 interface UseWebSocketOptions {
   gameId: string;
-  token: string;
+  token?: string;
+  spectator?: boolean;
   onMessage: (msg: ServerMessage) => void;
   onReconnect?: () => void;
 }
 
-export function useWebSocket({ gameId, token, onMessage, onReconnect }: UseWebSocketOptions) {
+export function useWebSocket({
+  gameId,
+  token,
+  spectator = false,
+  onMessage,
+  onReconnect,
+}: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<number | undefined>(undefined);
   const reconnectDelay = useRef(1000);
@@ -29,7 +36,10 @@ export function useWebSocket({ gameId, token, onMessage, onReconnect }: UseWebSo
     if (!mountedRef.current) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const ws = new WebSocket(`${WS_URL}/ws/game/${gameId}?token=${token}`);
+    const url = spectator
+      ? `${WS_URL}/ws/game/${gameId}/spectate`
+      : `${WS_URL}/ws/game/${gameId}?token=${token}`;
+    const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -80,7 +90,7 @@ export function useWebSocket({ gameId, token, onMessage, onReconnect }: UseWebSo
     ws.onerror = () => {
       ws.close();
     };
-  }, [gameId, token, onMessage]);
+  }, [gameId, token, spectator, onMessage]);
 
   useEffect(() => {
     mountedRef.current = true;

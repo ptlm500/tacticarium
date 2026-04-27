@@ -444,6 +444,27 @@ func DialWS(t *testing.T, env *TestEnv, gameID, token string) *websocket.Conn {
 	return conn
 }
 
+// DialSpectatorWS connects to the public spectator WebSocket endpoint for a game.
+func DialSpectatorWS(t *testing.T, env *TestEnv, gameID string) *websocket.Conn {
+	t.Helper()
+	wsURL := strings.Replace(env.Server.URL, "http://", "ws://", 1)
+	url := fmt.Sprintf("%s/ws/game/%s/spectate", wsURL, gameID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	conn, _, err := websocket.Dial(ctx, url, nil)
+	if err != nil {
+		t.Fatalf("Failed to dial spectator WebSocket: %v", err)
+	}
+
+	t.Cleanup(func() {
+		conn.Close(websocket.StatusNormalClosure, "test done")
+	})
+
+	return conn
+}
+
 // ReadWSMessage reads a single WebSocket message with a timeout.
 func ReadWSMessage(t *testing.T, conn *websocket.Conn, timeout time.Duration) map[string]interface{} {
 	t.Helper()

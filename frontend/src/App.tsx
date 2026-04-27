@@ -12,6 +12,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { LobbyPage } from "./pages/LobbyPage";
 import { GameSetupPage } from "./pages/GameSetupPage";
 import { GamePage } from "./pages/GamePage";
+import { SpectatorPage } from "./pages/SpectatorPage";
 import { GameHistoryPage } from "./pages/GameHistoryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
 import { JoinRedirect } from "./pages/JoinRedirect";
@@ -77,6 +78,14 @@ function App() {
                         <GamePage />
                       </QueryErrorBoundary>
                     </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/game/:id/spectate"
+                  element={
+                    <QueryErrorBoundary>
+                      <SpectatorPage />
+                    </QueryErrorBoundary>
                   }
                 />
                 <Route

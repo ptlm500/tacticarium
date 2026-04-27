@@ -429,6 +429,43 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	client.ReadPump(ctx)
 }
 
+// HandleSpectatorWebSocket accepts a public, read-only WebSocket connection.
+// Spectators do not authenticate and cannot send actions; they receive state
+// updates and events for the duration of an active game.
+func (h *GameHandler) HandleSpectatorWebSocket(w http.ResponseWriter, r *http.Request) {
+	gameID := chi.URLParam(r, "gameId")
+
+	state, err := h.loadGameState(r.Context(), gameID)
+	if err != nil {
+		http.Error(w, "game not found", http.StatusNotFound)
+		return
+	}
+
+	if state.Status != "active" {
+		http.Error(w, "game is not active", http.StatusForbidden)
+		return
+	}
+
+	engine := game.NewEngine(state)
+	engine.SetStratagemLookup(h.lookupStratagem)
+	room := h.hub.GetOrCreateRoom(gameID, engine)
+
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		OriginPatterns: []string{"*"},
+	})
+	if err != nil {
+		slog.ErrorContext(r.Context(), "Spectator WebSocket accept error", "error", err)
+		return
+	}
+
+	client := ws.NewSpectatorClient(conn, room)
+	room.Register(client)
+
+	ctx := r.Context()
+	go client.WritePump(ctx)
+	client.ReadPump(ctx)
+}
+
 func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.GameState, error) {
 	var state game.GameState
 	var missionPackID, missionID, missionName, twistID, twistName *string

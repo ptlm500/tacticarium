@@ -50,23 +50,29 @@ func (r *Room) Run() {
 			}
 			peers := make([]peer, 0, len(r.clients))
 			for c := range r.clients {
+				if c.isSpectator {
+					continue
+				}
 				peers = append(peers, peer{c.playerNumber, c.username})
 			}
 			r.clients[client] = true
 			r.mu.Unlock()
 
-			// Ensure the player exists in the engine state.
-			// This handles the case where player 2 joins after the room
-			// was created by player 1's connection.
-			r.engine.AddPlayer(&game.PlayerState{
-				UserID:       client.userID,
-				Username:     client.username,
-				PlayerNumber: client.playerNumber,
-				VPPaint:      game.MaxVPPaint,
-			})
+			if !client.isSpectator {
+				// Ensure the player exists in the engine state.
+				// This handles the case where player 2 joins after the room
+				// was created by player 1's connection.
+				r.engine.AddPlayer(&game.PlayerState{
+					UserID:       client.userID,
+					Username:     client.username,
+					PlayerNumber: client.playerNumber,
+					VPPaint:      game.MaxVPPaint,
+				})
 
-			// Notify others
-			r.broadcastExcept(PlayerConnectedMsg(client.playerNumber, client.username), client)
+				// Notify others. Spectators are silent — players are not told
+				// when one connects or leaves.
+				r.broadcastExcept(PlayerConnectedMsg(client.playerNumber, client.username), client)
+			}
 
 			// Send current state to new client
 			state := r.engine.State()
@@ -86,7 +92,9 @@ func (r *Room) Run() {
 			}
 			r.mu.Unlock()
 
-			r.broadcast(PlayerDisconnectedMsg(client.playerNumber))
+			if !client.isSpectator {
+				r.broadcast(PlayerDisconnectedMsg(client.playerNumber))
+			}
 
 		case action := <-r.actions:
 			r.processAction(action)
