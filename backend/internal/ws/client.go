@@ -18,6 +18,7 @@ type Client struct {
 	userID       string
 	username     string
 	playerNumber int
+	isSpectator  bool
 	send         chan ServerMessage
 	done         chan struct{}
 	once         sync.Once
@@ -32,6 +33,16 @@ func NewClient(conn *websocket.Conn, room *Room, userID, username string, player
 		playerNumber: playerNumber,
 		send:         make(chan ServerMessage, 64),
 		done:         make(chan struct{}),
+	}
+}
+
+func NewSpectatorClient(conn *websocket.Conn, room *Room) *Client {
+	return &Client{
+		conn:        conn,
+		room:        room,
+		isSpectator: true,
+		send:        make(chan ServerMessage, 64),
+		done:        make(chan struct{}),
 	}
 }
 
@@ -63,6 +74,10 @@ func (c *Client) ReadPump(ctx context.Context) {
 			state := c.room.engine.State()
 			c.Send(StateUpdateMsg(state))
 		case "action":
+			if c.isSpectator {
+				c.Send(ErrorMsg("spectators cannot send actions", "FORBIDDEN"))
+				continue
+			}
 			if msg.Data != nil {
 				var raw map[string]any
 				if err := json.Unmarshal(msg.Data, &raw); err != nil {

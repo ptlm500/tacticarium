@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { ShareSpectateButton } from "../components/game/ShareSpectateButton";
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -394,6 +395,9 @@ export function GamePage() {
       >
         Battle Round {gameState.currentRound} — {isMyTurn ? "Your" : `${opponent?.username}'s`} Turn
         — {PHASE_LABELS[gameState.currentPhase]} Phase
+        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <ShareSpectateButton gameId={gameState.gameId} size="icon" variant="ghost" />
+        </div>
       </div>
 
       {reconnecting && (

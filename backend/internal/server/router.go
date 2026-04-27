@@ -346,6 +346,8 @@ func NewRouter(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) http.Handler
 
 	// --- WebSocket (raw chi - auth via query param) ---
 	r.Get("/ws/game/{gameId}", h.Game.HandleWebSocket)
+	// Public read-only spectator WebSocket; no auth.
+	r.Get("/ws/game/{gameId}/spectate", h.Game.HandleSpectatorWebSocket)
 
 	// Wrap with OTEL HTTP instrumentation
 	return otelhttp.NewHandler(r, "tacticarium")

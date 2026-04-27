@@ -598,6 +598,141 @@ func TestWSLateJoin_Player1CanActAfterPlayer2Joins(t *testing.T) {
 	assert.Equal(t, "state_update", state2["type"])
 }
 
+func TestWSSpectator_ConnectActiveGame(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, _, _, gameID := setupActiveGame(t)
+
+	conn := testutil.DialSpectatorWS(t, env, gameID)
+	msg := testutil.ReadWSMessage(t, conn, 5*time.Second)
+	assert.Equal(t, "state_update", msg["type"])
+
+	data, ok := msg["data"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, gameID, data["gameId"])
+	assert.Equal(t, "active", data["status"])
+}
+
+func TestWSSpectator_RejectsSetupGame(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, _, _, gameID := setupGameWithTwoPlayers(t)
+
+	wsURL := strings.Replace(env.Server.URL, "http://", "ws://", 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, resp, err := websocket.Dial(ctx, fmt.Sprintf("%s/ws/game/%s/spectate", wsURL, gameID), nil)
+	require.Error(t, err)
+	if resp != nil {
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	}
+}
+
+func TestWSSpectator_UnknownGame(t *testing.T) {
+	env := testutil.SharedEnv
+
+	wsURL := strings.Replace(env.Server.URL, "http://", "ws://", 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, resp, err := websocket.Dial(ctx, fmt.Sprintf("%s/ws/game/%s/spectate", wsURL, "00000000-0000-0000-0000-000000000000"), nil)
+	require.Error(t, err)
+	if resp != nil {
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	}
+}
+
+func TestWSSpectator_ActionRejected(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, _, _, gameID := setupActiveGame(t)
+
+	conn := testutil.DialSpectatorWS(t, env, gameID)
+	testutil.ReadWSMessage(t, conn, 5*time.Second) // state_update
+
+	testutil.SendWSMessage(t, conn, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{"type": "advance_phase"},
+	})
+
+	msg := testutil.ReadWSMessage(t, conn, 5*time.Second)
+	assert.Equal(t, "error", msg["type"])
+	data, ok := msg["data"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "FORBIDDEN", data["code"])
+}
+
+func TestWSSpectator_ReceivesLiveStateUpdates(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, token1, _, gameID := setupActiveGame(t)
+
+	spectator := testutil.DialSpectatorWS(t, env, gameID)
+	testutil.ReadWSMessage(t, spectator, 5*time.Second) // initial state
+
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	testutil.ReadWSMessage(t, conn1, 5*time.Second)
+
+	testutil.SendWSMessage(t, conn1, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{
+			"type":        "score_vp",
+			"category":    "primary",
+			"delta":       5,
+			"scoringSlot": "end_of_command_phase",
+		},
+	})
+
+	state := testutil.DrainUntil(t, spectator, "state_update", 5*time.Second)
+	data := state["data"].(map[string]interface{})
+	players := data["players"].([]interface{})
+	p1 := players[0].(map[string]interface{})
+	assert.Equal(t, float64(5), p1["vpPrimary"])
+}
+
+func TestWSSpectator_DoesNotBroadcastPresenceToPlayers(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, token1, _, gameID := setupActiveGame(t)
+
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	testutil.ReadWSMessage(t, conn1, 5*time.Second) // initial state
+
+	// Spectator joins; players must NOT receive a player_connected event for them.
+	spectator := testutil.DialSpectatorWS(t, env, gameID)
+	testutil.ReadWSMessage(t, spectator, 5*time.Second)
+
+	// Trigger a real state-changing action so we have something to read.
+	testutil.SendWSMessage(t, conn1, map[string]interface{}{
+		"type": "action",
+		"data": map[string]interface{}{
+			"type":        "score_vp",
+			"category":    "primary",
+			"delta":       1,
+			"scoringSlot": "end_of_command_phase",
+		},
+	})
+
+	// The next non-pong message conn1 sees should be the event/state_update from
+	// the score action — not a player_connected for the spectator.
+	for i := 0; i < 5; i++ {
+		msg := testutil.ReadWSMessage(t, conn1, 5*time.Second)
+		require.NotEqual(t, "player_connected", msg["type"], "player must not see spectator presence")
+		if msg["type"] == "state_update" {
+			return
+		}
+	}
+	t.Fatal("did not see expected state_update on player connection")
+}
+
+func TestWSSpectator_PingPong(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, _, _, gameID := setupActiveGame(t)
+
+	conn := testutil.DialSpectatorWS(t, env, gameID)
+	testutil.ReadWSMessage(t, conn, 5*time.Second) // state_update
+
+	testutil.SendWSMessage(t, conn, map[string]string{"type": "ping"})
+	msg := testutil.ReadWSMessage(t, conn, 5*time.Second)
+	assert.Equal(t, "pong", msg["type"])
+}
+
 func TestWSPlayerDisconnect(t *testing.T) {
 	env := testutil.SharedEnv
 	_, _, token1, token2, gameID := setupGameWithTwoPlayers(t)
