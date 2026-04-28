@@ -44,3 +44,21 @@
 - [x] Quick score / VP tweaking control
 - [x] Clicking command point gain fires the event, did increase the score
 - [ ] Other player game history not showing?
+
+Bugs:
+
+- [ ] Draw secondaries trigger is enabled on the fight phase
+- [ ] Joining mid way through game setup, game mission doesn't load (only if you haven't selected your army)
+- [ ] Make the objective text more readable by breaking it up (battle round restrictions etc)
+- [ ] New orders doesn't restrict you to once per turn
+- [ ] The buttons should be fixed to the bottom
+- [ ] Strategems don't have a way to see the rule, only the "legend" flavour text
+- [ ] Error for primary already scored isn't using
+- [ ] Sabotage (for example) needs to only trigger at the end of the oponents turn
+- [ ] "Stratagems This Phase" in the spectate mode gives the ID?
+- [ ] Grid on grid on the battle report screen is a bit much, also spacing
+- [ ] Overall stats don't take into account discarded games
+
+Feature:
+- [ ] Manually select secondaries as an escape hatch
+- [ ] 2 v 2 mode
