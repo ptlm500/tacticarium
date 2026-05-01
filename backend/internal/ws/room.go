@@ -103,8 +103,7 @@ func (r *Room) Run() {
 }
 
 func (r *Room) processAction(action *game.GameAction) {
-	ctx, span := tracer.Start(context.Background(), "ws.processAction",
-	)
+	ctx, span := tracer.Start(context.Background(), "ws.processAction")
 	span.SetAttributes(
 		attribute.String("game.id", r.gameID),
 		attribute.Int("game.player_number", action.PlayerNumber),

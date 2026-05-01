@@ -1,0 +1,9 @@
+[tasks.install]
+description = "Install admin pnpm dependencies"
+run = "pnpm install"
+sources = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"]
+
+[tasks.check]
+description = "Run admin format/lint/typecheck"
+depends = [":install"]
+run = "pnpm exec vp check"

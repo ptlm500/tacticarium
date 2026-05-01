@@ -47,7 +47,7 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 	packs := map[string]packConfig{
 		"chapter-approved-2025-26": {packID: "chapter-approved-2025-26", packName: "Chapter Approved 2025-26"},
 		"pariah-nexus":             {packID: "pariah-nexus", packName: "Pariah Nexus"},
-		"leviathan":               {packID: "leviathan", packName: "Leviathan"},
+		"leviathan":                {packID: "leviathan", packName: "Leviathan"},
 	}
 
 	// Ensure mission packs exist
@@ -401,15 +401,15 @@ func secondaryScoringOptions() map[string][]scoringOption {
 func missionScoringTimings() map[string]string {
 	return map[string]string{
 		// Chapter Approved 2025-26
-		"mission-chapter-approved-2025-26-take-and-hold":          "end_of_command_phase",
-		"mission-chapter-approved-2025-26-scorched-earth":         "end_of_command_phase",
-		"mission-chapter-approved-2025-26-purge-the-foe":          "end_of_battle_round",
-		"mission-chapter-approved-2025-26-the-ritual":             "end_of_command_phase",
-		"mission-chapter-approved-2025-26-supply-drop":            "end_of_command_phase",
-		"mission-chapter-approved-2025-26-burden-of-trust":        "end_of_command_phase",
-		"mission-chapter-approved-2025-26-terraform":              "end_of_command_phase",
-		"mission-chapter-approved-2025-26-unexploded-ordinance":   "end_of_command_phase",
-		"mission-chapter-approved-2025-26-linchpin":               "end_of_command_phase",
-		"mission-chapter-approved-2025-26-hidden-supplies":        "end_of_command_phase",
+		"mission-chapter-approved-2025-26-take-and-hold":        "end_of_command_phase",
+		"mission-chapter-approved-2025-26-scorched-earth":       "end_of_command_phase",
+		"mission-chapter-approved-2025-26-purge-the-foe":        "end_of_battle_round",
+		"mission-chapter-approved-2025-26-the-ritual":           "end_of_command_phase",
+		"mission-chapter-approved-2025-26-supply-drop":          "end_of_command_phase",
+		"mission-chapter-approved-2025-26-burden-of-trust":      "end_of_command_phase",
+		"mission-chapter-approved-2025-26-terraform":            "end_of_command_phase",
+		"mission-chapter-approved-2025-26-unexploded-ordinance": "end_of_command_phase",
+		"mission-chapter-approved-2025-26-linchpin":             "end_of_command_phase",
+		"mission-chapter-approved-2025-26-hidden-supplies":      "end_of_command_phase",
 	}
 }

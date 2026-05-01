@@ -77,4 +77,3 @@ func SeedDetachments(ctx context.Context, pool *pgxpool.Pool, filePath string) (
 
 	return count, nil
 }
-

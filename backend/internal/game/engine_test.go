@@ -48,8 +48,8 @@ func makeDeck(count int) []ActiveSecondary {
 	deck := make([]ActiveSecondary, count)
 	for i := range deck {
 		deck[i] = ActiveSecondary{
-			ID:   fmt.Sprintf("sec-%d", i+1),
-			Name: fmt.Sprintf("Secondary %d", i+1),
+			ID:    fmt.Sprintf("sec-%d", i+1),
+			Name:  fmt.Sprintf("Secondary %d", i+1),
 			MaxVP: 5,
 		}
 	}

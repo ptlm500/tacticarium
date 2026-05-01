@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+public/mockServiceWorker.js
 *.local
 test-results
 .vitest-attachments

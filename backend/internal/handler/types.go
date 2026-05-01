@@ -124,13 +124,13 @@ type GameListOutput struct {
 }
 
 type GameEvent struct {
-	ID           int64            `json:"id"`
-	PlayerNumber *int             `json:"playerNumber"`
-	EventType    string           `json:"eventType"`
-	EventData    any              `json:"eventData"`
-	Round        *int             `json:"round"`
-	Phase        *string          `json:"phase"`
-	CreatedAt    time.Time        `json:"createdAt"`
+	ID           int64     `json:"id"`
+	PlayerNumber *int      `json:"playerNumber"`
+	EventType    string    `json:"eventType"`
+	EventData    any       `json:"eventData"`
+	Round        *int      `json:"round"`
+	Phase        *string   `json:"phase"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 type GameEventsOutput struct {
