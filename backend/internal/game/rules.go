@@ -1,5 +1,7 @@
 package game
 
+import "fmt"
+
 const (
 	MaxRounds      = 5
 	MaxVPPrimary   = 50
@@ -64,6 +66,16 @@ func IsValidPrimaryScoringSlot(slot string) bool {
 		return true
 	}
 	return false
+}
+
+// primaryScoreLocator formats the trailing clause of error messages that
+// reference a specific (slot, ruleLabel, round) entry, omitting the rule
+// portion when no label was supplied.
+func primaryScoreLocator(slot, ruleLabel string, round int) string {
+	if ruleLabel == "" {
+		return fmt.Sprintf("at %s in round %d", PrimaryScoringSlotLabel(slot), round)
+	}
+	return fmt.Sprintf("for %q at %s in round %d", ruleLabel, PrimaryScoringSlotLabel(slot), round)
 }
 
 // PrimaryScoringSlotLabel returns the human-readable name for a primary

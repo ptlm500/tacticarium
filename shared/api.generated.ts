@@ -999,7 +999,9 @@ export interface components {
             vpPrimary: number;
             vpPrimaryScoredSlots: {
                 [key: string]: {
-                    [key: string]: number;
+                    [key: string]: {
+                        [key: string]: number;
+                    };
                 };
             };
             /** Format: int64 */

@@ -58,6 +58,7 @@ Bugs:
 - [x] "Stratagems This Phase" in the spectate mode gives the ID?
 - [ ] Grid on grid on the battle report screen is a bit much, also spacing
 - [ ] Overall stats don't take into account discarded games
+- [x] Some missions, such as Purge The Foe allow for multiple scoring options per turn, so the restriction of only scoring 1 doesn't work
 
 Feature:
 

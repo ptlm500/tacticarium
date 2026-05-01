@@ -1895,6 +1895,7 @@ func TestScoreVP_Primary_RejectsDuplicateSlotSameRound(t *testing.T) {
 	state := newActiveTestState()
 	e := NewEngine(state)
 
+	// No rule label provided: same slot scored twice is treated as a duplicate.
 	_, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionScoreVP,
 		PlayerNumber: 1,
@@ -1915,6 +1916,79 @@ func TestScoreVP_Primary_RejectsDuplicateSlotSameRound(t *testing.T) {
 
 	if state.Players[0].VPPrimary != 5 {
 		t.Fatalf("expected VPPrimary=5 (second score rejected), got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestScoreVP_Primary_RejectsDuplicateRuleSameSlotRound(t *testing.T) {
+	state := newActiveTestState()
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"category":         "primary",
+			"delta":            4,
+			"scoringSlot":      ScoringSlotEndOfBattleRound,
+			"scoringRuleLabel": "Destroyed 1+ enemy unit",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"category":         "primary",
+			"delta":            4,
+			"scoringSlot":      ScoringSlotEndOfBattleRound,
+			"scoringRuleLabel": "Destroyed 1+ enemy unit",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected duplicate-rule error")
+	}
+	if state.Players[0].VPPrimary != 4 {
+		t.Fatalf("expected VPPrimary=4 (second score rejected), got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestScoreVP_Primary_AllowsMultipleRulesInSameSlotRound(t *testing.T) {
+	// Purge the Foe scenario: four distinct end_of_battle_round rules should
+	// all be scorable in the same battle round.
+	state := newActiveTestState()
+	state.CurrentRound = 2
+	e := NewEngine(state)
+
+	rules := []string{
+		"Destroyed 1+ enemy unit",
+		"Destroyed more than lost",
+		"Control 1+ objective",
+		"Control more objectives",
+	}
+	for _, label := range rules {
+		_, err := e.Apply(context.Background(), GameAction{
+			Type:         ActionScoreVP,
+			PlayerNumber: 1,
+			Data: map[string]any{
+				"category":         "primary",
+				"delta":            4,
+				"scoringSlot":      ScoringSlotEndOfBattleRound,
+				"scoringRuleLabel": label,
+			},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error scoring %q: %v", label, err)
+		}
+	}
+
+	if state.Players[0].VPPrimary != 16 {
+		t.Fatalf("expected VPPrimary=16 (4 rules x 4 VP), got %d", state.Players[0].VPPrimary)
+	}
+	if got := len(state.Players[0].VPPrimaryScoredSlots[2][ScoringSlotEndOfBattleRound]); got != 4 {
+		t.Fatalf("expected 4 rule entries, got %d", got)
 	}
 }
 
@@ -2105,6 +2179,72 @@ func TestUndoPrimaryScore_PriorRound(t *testing.T) {
 	}
 	if state.Players[0].VPPrimary != 0 {
 		t.Fatalf("expected VPPrimary=0 after undo, got %d", state.Players[0].VPPrimary)
+	}
+}
+
+func TestUndoPrimaryScore_TargetsSpecificRule(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentRound = 2
+	e := NewEngine(state)
+
+	for _, label := range []string{"Rule A", "Rule B"} {
+		_, err := e.Apply(context.Background(), GameAction{
+			Type:         ActionScoreVP,
+			PlayerNumber: 1,
+			Data: map[string]any{
+				"category":         "primary",
+				"delta":            4,
+				"scoringSlot":      ScoringSlotEndOfBattleRound,
+				"scoringRuleLabel": label,
+			},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error scoring %q: %v", label, err)
+		}
+	}
+	if state.Players[0].VPPrimary != 8 {
+		t.Fatalf("expected VPPrimary=8, got %d", state.Players[0].VPPrimary)
+	}
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionUndoPrimaryScore,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"round":            2,
+			"scoringSlot":      ScoringSlotEndOfBattleRound,
+			"scoringRuleLabel": "Rule A",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].VPPrimary != 4 {
+		t.Fatalf("expected VPPrimary=4 after undo, got %d", state.Players[0].VPPrimary)
+	}
+	if _, exists := state.Players[0].VPPrimaryScoredSlots[2][ScoringSlotEndOfBattleRound]["Rule A"]; exists {
+		t.Fatal("expected Rule A entry removed after undo")
+	}
+	if _, exists := state.Players[0].VPPrimaryScoredSlots[2][ScoringSlotEndOfBattleRound]["Rule B"]; !exists {
+		t.Fatal("expected Rule B entry to remain after undoing Rule A")
+	}
+	label, _ := events[0].Data["scoringRuleLabel"].(string)
+	if label != "Rule A" {
+		t.Fatalf("expected event scoringRuleLabel=%q, got %v", "Rule A", events[0].Data["scoringRuleLabel"])
+	}
+
+	// After undoing one rule, scoring it again should succeed.
+	_, err = e.Apply(context.Background(), GameAction{
+		Type:         ActionScoreVP,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"category":         "primary",
+			"delta":            4,
+			"scoringSlot":      ScoringSlotEndOfBattleRound,
+			"scoringRuleLabel": "Rule A",
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected to re-score Rule A after undo: %v", err)
 	}
 }
 

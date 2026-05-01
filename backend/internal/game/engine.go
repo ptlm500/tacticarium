@@ -550,10 +550,11 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	delta := intFromData(action.Data, "delta")
 
 	var (
-		eventType   EventType
-		oldVP       int
-		newVP       int
-		scoringSlot string
+		eventType        EventType
+		oldVP            int
+		newVP            int
+		scoringSlot      string
+		scoringRuleLabel string
 	)
 	switch category {
 	case "primary":
@@ -561,19 +562,14 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 		if !IsValidPrimaryScoringSlot(scoringSlot) {
 			return nil, fmt.Errorf("invalid primary scoring time")
 		}
-		if _, used := player.VPPrimaryScoredSlots[e.state.CurrentRound][scoringSlot]; used {
-			return nil, fmt.Errorf("primary already scored at %s in round %d", PrimaryScoringSlotLabel(scoringSlot), e.state.CurrentRound)
+		scoringRuleLabel, _ = action.Data["scoringRuleLabel"].(string)
+		if _, used := player.LookupPrimaryScore(e.state.CurrentRound, scoringSlot, scoringRuleLabel); used {
+			return nil, fmt.Errorf("primary already scored %s", primaryScoreLocator(scoringSlot, scoringRuleLabel, e.state.CurrentRound))
 		}
 		oldVP = player.VPPrimary
 		newVP = ClampVP(oldVP+delta, MaxVPPrimary)
 		player.VPPrimary = newVP
-		if player.VPPrimaryScoredSlots == nil {
-			player.VPPrimaryScoredSlots = map[int]map[string]int{}
-		}
-		if player.VPPrimaryScoredSlots[e.state.CurrentRound] == nil {
-			player.VPPrimaryScoredSlots[e.state.CurrentRound] = map[string]int{}
-		}
-		player.VPPrimaryScoredSlots[e.state.CurrentRound][scoringSlot] = newVP - oldVP
+		player.RecordPrimaryScore(e.state.CurrentRound, scoringSlot, scoringRuleLabel, newVP-oldVP)
 		eventType = EventVPPrimaryScore
 	case "secondary":
 		oldVP = player.VPSecondary
@@ -598,8 +594,8 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	if scoringSlot != "" {
 		data["scoringSlot"] = scoringSlot
 	}
-	if label, _ := action.Data["scoringRuleLabel"].(string); label != "" {
-		data["scoringRuleLabel"] = label
+	if scoringRuleLabel != "" {
+		data["scoringRuleLabel"] = scoringRuleLabel
 	}
 
 	return []GameEvent{{
@@ -629,20 +625,24 @@ func (e *Engine) applyUndoPrimaryScore(action GameAction) ([]GameEvent, error) {
 	if round <= 0 {
 		return nil, fmt.Errorf("invalid round")
 	}
+	scoringRuleLabel, _ := action.Data["scoringRuleLabel"].(string)
 
-	slots, ok := player.VPPrimaryScoredSlots[round]
+	appliedDelta, ok := player.LookupPrimaryScore(round, scoringSlot, scoringRuleLabel)
 	if !ok {
-		return nil, fmt.Errorf("no primary score recorded in round %d", round)
-	}
-	appliedDelta, ok := slots[scoringSlot]
-	if !ok {
-		return nil, fmt.Errorf("no primary score recorded at %s in round %d", PrimaryScoringSlotLabel(scoringSlot), round)
+		return nil, fmt.Errorf("no primary score recorded %s", primaryScoreLocator(scoringSlot, scoringRuleLabel, round))
 	}
 
 	player.VPPrimary = ClampVP(player.VPPrimary-appliedDelta, MaxVPPrimary)
-	delete(slots, scoringSlot)
-	if len(slots) == 0 {
-		delete(player.VPPrimaryScoredSlots, round)
+	player.RemovePrimaryScore(round, scoringSlot, scoringRuleLabel)
+
+	data := map[string]any{
+		"revertedRound": round,
+		"scoringSlot":   scoringSlot,
+		"revertedDelta": appliedDelta,
+		"newTotal":      player.TotalVP(),
+	}
+	if scoringRuleLabel != "" {
+		data["scoringRuleLabel"] = scoringRuleLabel
 	}
 
 	return []GameEvent{{
@@ -650,12 +650,7 @@ func (e *Engine) applyUndoPrimaryScore(action GameAction) ([]GameEvent, error) {
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
-		Data: map[string]any{
-			"revertedRound": round,
-			"scoringSlot":   scoringSlot,
-			"revertedDelta": appliedDelta,
-			"newTotal":      player.TotalVP(),
-		},
+		Data:         data,
 	}}, nil
 }
 

@@ -104,14 +104,51 @@ type PlayerState struct {
 	StratagemsUsedThisPhase []string          `json:"stratagemsUsedThisPhase"`
 	NewOrdersUsedThisPhase  bool              `json:"newOrdersUsedThisPhase"`
 
-	// VPPrimaryScoredSlots maps battle round -> scoring slot -> applied VP delta.
-	// Used to prevent double-scoring the same primary slot in a round and to
-	// support undoing a specific prior score.
-	VPPrimaryScoredSlots map[int]map[string]int `json:"vpPrimaryScoredSlots"`
+	// VPPrimaryScoredSlots maps battle round -> scoring slot -> rule label -> applied VP delta.
+	// Used to prevent double-clicking the same scoring rule and to support
+	// undoing a specific prior score. Multiple distinct rules can score in the
+	// same slot in the same round (e.g. Purge the Foe's four end-of-battle-round
+	// rules).
+	VPPrimaryScoredSlots map[int]map[string]map[string]int `json:"vpPrimaryScoredSlots"`
 }
 
 func (p *PlayerState) TotalVP() int {
 	return p.VPPrimary + p.VPSecondary + p.VPGambit + p.VPPaint
+}
+
+// RecordPrimaryScore stores the applied delta for a (round, slot, ruleLabel)
+// triple, allocating nested maps as needed.
+func (p *PlayerState) RecordPrimaryScore(round int, slot, ruleLabel string, delta int) {
+	if p.VPPrimaryScoredSlots == nil {
+		p.VPPrimaryScoredSlots = map[int]map[string]map[string]int{}
+	}
+	if p.VPPrimaryScoredSlots[round] == nil {
+		p.VPPrimaryScoredSlots[round] = map[string]map[string]int{}
+	}
+	if p.VPPrimaryScoredSlots[round][slot] == nil {
+		p.VPPrimaryScoredSlots[round][slot] = map[string]int{}
+	}
+	p.VPPrimaryScoredSlots[round][slot][ruleLabel] = delta
+}
+
+// LookupPrimaryScore returns the applied delta recorded for a (round, slot,
+// ruleLabel) triple, or (0, false) if no such entry exists.
+func (p *PlayerState) LookupPrimaryScore(round int, slot, ruleLabel string) (int, bool) {
+	delta, ok := p.VPPrimaryScoredSlots[round][slot][ruleLabel]
+	return delta, ok
+}
+
+// RemovePrimaryScore deletes the (round, slot, ruleLabel) entry and prunes
+// empty parent maps so the structure stays compact.
+func (p *PlayerState) RemovePrimaryScore(round int, slot, ruleLabel string) {
+	rules := p.VPPrimaryScoredSlots[round][slot]
+	delete(rules, ruleLabel)
+	if len(rules) == 0 {
+		delete(p.VPPrimaryScoredSlots[round], slot)
+	}
+	if len(p.VPPrimaryScoredSlots[round]) == 0 {
+		delete(p.VPPrimaryScoredSlots, round)
+	}
 }
 
 type GameState struct {

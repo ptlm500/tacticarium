@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -480,6 +481,47 @@ func TestWSPersistence(t *testing.T) {
 		`SELECT COUNT(*) FROM game_events WHERE game_id = $1`, gameID,
 	).Scan(&eventCount))
 	assert.GreaterOrEqual(t, eventCount, 1)
+}
+
+// TestWSPersistence_PrimaryScoredSlots verifies that the per-rule scoring
+// ledger survives a backend restart by round-tripping through the database.
+// Without this, missions like Purge the Foe could lose their duplicate-score
+// guards (and undo history) after any deploy or crash.
+func TestWSPersistence_PrimaryScoredSlots(t *testing.T) {
+	env := testutil.SharedEnv
+	_, _, token1, _, gameID := setupActiveGame(t)
+
+	conn1 := testutil.DialWS(t, env, gameID, token1)
+	testutil.ReadWSMessage(t, conn1, 5*time.Second)
+
+	for _, label := range []string{"Destroyed 1+ enemy unit", "Control 1+ objective"} {
+		testutil.SendWSMessage(t, conn1, map[string]interface{}{
+			"type": "action",
+			"data": map[string]interface{}{
+				"type":             "score_vp",
+				"category":         "primary",
+				"delta":            4,
+				"scoringSlot":      "end_of_battle_round",
+				"scoringRuleLabel": label,
+			},
+		})
+		testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)
+	}
+
+	time.Sleep(200 * time.Millisecond)
+
+	var slotsJSON []byte
+	err := env.Pool.QueryRow(context.Background(),
+		`SELECT vp_primary_scored_slots FROM game_players WHERE game_id = $1 AND player_number = 1`, gameID,
+	).Scan(&slotsJSON)
+	require.NoError(t, err)
+
+	var slots map[string]map[string]map[string]int
+	require.NoError(t, json.Unmarshal(slotsJSON, &slots))
+
+	rules := slots["1"]["end_of_battle_round"]
+	assert.Equal(t, 4, rules["Destroyed 1+ enemy unit"])
+	assert.Equal(t, 4, rules["Control 1+ objective"])
 }
 
 // TestWSLateJoin_Player2CanAct verifies that when player 2 connects to a room

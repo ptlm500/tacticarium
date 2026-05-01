@@ -893,8 +893,11 @@
           "vpPrimaryScoredSlots": {
             "additionalProperties": {
               "additionalProperties": {
-                "format": "int64",
-                "type": "integer"
+                "additionalProperties": {
+                  "format": "int64",
+                  "type": "integer"
+                },
+                "type": "object"
               },
               "type": "object"
             },

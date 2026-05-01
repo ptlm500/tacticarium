@@ -354,8 +354,10 @@ export function GamePage() {
   );
 
   const handleUndoPrimaryScore = useCallback(
-    (round: number, scoringSlot: PrimaryScoringSlot) => {
-      sendAction("undo_primary_score", { round, scoringSlot });
+    (round: number, scoringSlot: PrimaryScoringSlot, scoringRuleLabel: string) => {
+      const data: Record<string, unknown> = { round, scoringSlot };
+      if (scoringRuleLabel) data.scoringRuleLabel = scoringRuleLabel;
+      sendAction("undo_primary_score", data);
     },
     [sendAction],
   );
