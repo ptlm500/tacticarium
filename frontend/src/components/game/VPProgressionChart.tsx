@@ -21,10 +21,10 @@ export function VPProgressionChart({
 
   const data = rounds.map((r) => {
     const my = myStats.vpByRound[r];
-    if (my) myCumulative += my.primary + my.secondary + my.gambit;
+    if (my) myCumulative += my.primary + my.secondary;
 
     const opp = opponentStats?.vpByRound[r];
-    if (opp) oppCumulative += opp.primary + opp.secondary + opp.gambit;
+    if (opp) oppCumulative += opp.primary + opp.secondary;
 
     return {
       round: `R${r}`,

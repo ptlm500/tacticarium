@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function SpectatorPlayerPanel({ player, isActive }: Props) {
-  const totalVP = player.vpPrimary + player.vpSecondary + player.vpGambit + player.vpPaint;
+  const totalVP = player.vpPrimary + player.vpSecondary + player.vpPaint;
 
   const activeSecondaries = player.activeSecondaries ?? [];
   const achievedSecondaries = player.achievedSecondaries ?? [];
@@ -58,7 +58,6 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
           <Stat label="Total VP" value={totalVP} highlight />
           <Stat label="Primary" value={player.vpPrimary} />
           <Stat label="Secondary" value={player.vpSecondary} />
-          <Stat label="Gambit" value={player.vpGambit} />
           <Stat label="Paint" value={player.vpPaint} />
         </div>
 

@@ -62,17 +62,21 @@ describe("SpectatorPlayerPanel", () => {
   });
 
   it("renders CP and the per-category VP breakdown", () => {
-    renderPanel({ cp: 4, vpPrimary: 6, vpSecondary: 3, vpGambit: 2, vpPaint: 1 });
+    renderPanel({ cp: 4, vpPrimary: 6, vpSecondary: 3, vpPaint: 1 });
     expect(screen.getByText("CP").nextSibling?.textContent).toBe("4");
     expect(screen.getByText("Primary").nextSibling?.textContent).toBe("6");
     expect(screen.getByText("Secondary").nextSibling?.textContent).toBe("3");
-    expect(screen.getByText("Gambit").nextSibling?.textContent).toBe("2");
     expect(screen.getByText("Paint").nextSibling?.textContent).toBe("1");
   });
 
-  it("computes total VP as the sum of all VP categories", () => {
+  it("does not surface gambit VP in the spectator panel", () => {
+    renderPanel({ vpGambit: 99 });
+    expect(screen.queryByText("Gambit")).toBeNull();
+  });
+
+  it("computes total VP as primary + secondary + paint (gambit hidden)", () => {
     renderPanel({ vpPrimary: 6, vpSecondary: 3, vpGambit: 2, vpPaint: 1 });
-    expect(screen.getByText("Total VP").nextSibling?.textContent).toBe("12");
+    expect(screen.getByText("Total VP").nextSibling?.textContent).toBe("10");
   });
 
   it("shows tactical mode and the remaining deck count", () => {

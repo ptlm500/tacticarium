@@ -3,12 +3,12 @@ import { ArrowLeft, Handshake, Skull, Swords, Trophy } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import {
   type RestGameEvent,
-  buildPlayerStats,
+  buildScoringHeatmapData,
   getEndReason,
-  getRoundsPlayed,
 } from "../components/game/vpUtils";
 import { VPBreakdownTable } from "../components/game/VPBreakdownTable";
 import { VPProgressionChart } from "../components/game/VPProgressionChart";
+import { ScoringHeatmaps } from "../components/game/ScoringHeatmaps";
 import { EventTimeline } from "../components/game/EventTimeline";
 import { buildPlayerInfo, normalizeRestEvent } from "../components/game/eventFormatting";
 import { useGame, useGameEvents } from "../hooks/queries/useGamesQueries";
@@ -73,13 +73,14 @@ export function GameDetailPage() {
   }
 
   const typedEvents = events as RestGameEvent[];
-  const endReason = getEndReason(typedEvents);
-  const roundsPlayed = getRoundsPlayed(typedEvents);
-  const rounds = Array.from({ length: roundsPlayed }, (_, i) => i + 1);
+  const normalizedEvents = typedEvents.map(normalizeRestEvent);
+  const endReason = getEndReason(normalizedEvents);
+  const heatmapData = buildScoringHeatmapData(normalizedEvents, [myPlayer, opponent]);
+  const roundsPlayed = heatmapData.rounds.length;
 
-  const myStats = buildPlayerStats(typedEvents, myPlayer.playerNumber, myPlayer.vpPaint);
+  const myStats = heatmapData.statsByPlayerNumber[myPlayer.playerNumber];
   const opponentStats = opponent
-    ? buildPlayerStats(typedEvents, opponent.playerNumber, opponent.vpPaint)
+    ? (heatmapData.statsByPlayerNumber[opponent.playerNumber] ?? null)
     : null;
 
   const isAbandoned = gameState.status === "abandoned";
@@ -115,7 +116,6 @@ export function GameDetailPage() {
           ? `Completed after ${roundsPlayed} rounds`
           : null;
 
-  const normalizedEvents = typedEvents.map(normalizeRestEvent);
   const timelinePlayers = buildPlayerInfo(gameState.players);
 
   return (
@@ -185,12 +185,14 @@ export function GameDetailPage() {
               opponentStats={opponentStats}
               myUsername={myPlayer.username}
               opponentUsername={opponent?.username ?? null}
-              rounds={rounds}
+              rounds={heatmapData.rounds}
             />
           </div>
         </HUDFrame>
 
-        {rounds.length > 0 && (
+        <ScoringHeatmaps players={[myPlayer, opponent]} data={heatmapData} />
+
+        {heatmapData.rounds.length > 0 && (
           <HUDFrame label="VP Progression">
             <div className="py-1">
               <VPProgressionChart
@@ -198,7 +200,7 @@ export function GameDetailPage() {
                 opponentStats={opponentStats}
                 myUsername={myPlayer.username}
                 opponentUsername={opponent?.username ?? null}
-                rounds={rounds}
+                rounds={heatmapData.rounds}
               />
             </div>
           </HUDFrame>

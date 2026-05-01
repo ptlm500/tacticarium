@@ -6,12 +6,15 @@ import { useSpectatorConnection } from "../hooks/useSpectatorConnection";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
 import { useMissions, useMissionRules } from "../hooks/queries/useMissionQueries";
 import { PHASE_LABELS, PHASE_ORDER, type GameEvent, type Phase } from "../types/game";
-import { type RestGameEvent } from "../components/game/eventFormatting";
+import { type RestGameEvent, normalizeWsEvent } from "../components/game/eventFormatting";
 import { PhaseTracker } from "../components/game/PhaseTracker";
 import { RoundIndicator } from "../components/game/RoundIndicator";
 import { MissionInfo } from "../components/game/MissionInfo";
 import { GameLog } from "../components/game/GameLog";
 import { SpectatorPlayerPanel } from "../components/game/SpectatorPlayerPanel";
+import { buildScoringHeatmapData } from "../components/game/vpUtils";
+import { PlayerScoringHeatmap } from "../components/game/PlayerScoringHeatmap";
+import { ScoringDetailModal, type CellSelection } from "../components/game/ScoringDetailModal";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
@@ -51,6 +54,7 @@ export function SpectatorPage() {
   const currentTwist = allRules.find((r) => r.id === gameState?.twistId) ?? null;
 
   const [showLog, setShowLog] = useState(false);
+  const [scoringSelection, setScoringSelection] = useState<CellSelection | null>(null);
 
   if (!gameState) {
     return (
@@ -109,6 +113,10 @@ export function SpectatorPage() {
 
   const [player1, player2] = gameState.players;
 
+  const heatmapData = buildScoringHeatmapData(events.map(normalizeWsEvent), [player1, player2], {
+    roundCount: Math.max(gameState.currentRound, 1),
+  });
+
   return (
     <SpectatorShell>
       <div
@@ -144,13 +152,34 @@ export function SpectatorPage() {
       <main className="relative z-0 flex-1 overflow-auto px-4 py-4">
         <div className="mx-auto max-w-7xl space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {player1 && (
-              <SpectatorPlayerPanel player={player1} isActive={gameState.activePlayer === 1} />
-            )}
-            {player2 && (
-              <SpectatorPlayerPanel player={player2} isActive={gameState.activePlayer === 2} />
+            {[player1, player2].map((p, i) =>
+              p ? (
+                <div key={p.playerNumber} className="flex flex-col gap-3">
+                  <SpectatorPlayerPanel player={p} isActive={gameState.activePlayer === i + 1} />
+                  <PlayerScoringHeatmap
+                    username={p.username}
+                    stats={heatmapData.statsByPlayerNumber[p.playerNumber]}
+                    rounds={heatmapData.rounds}
+                    intensityMax={heatmapData.intensityMax}
+                    onCellClick={(round, category) =>
+                      setScoringSelection({
+                        playerNumber: p.playerNumber,
+                        username: p.username,
+                        round,
+                        category,
+                      })
+                    }
+                  />
+                </div>
+              ) : null,
             )}
           </div>
+
+          <ScoringDetailModal
+            selection={scoringSelection}
+            onClose={() => setScoringSelection(null)}
+            events={heatmapData.normalizedEvents}
+          />
 
           <MissionInfo mission={currentMission} twist={currentTwist} />
 

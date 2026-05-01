@@ -5,14 +5,13 @@ import { Button } from "@/components/ui/button";
 interface Props {
   vpPrimary: number;
   vpSecondary: number;
-  vpGambit: number;
   vpPaint: number;
   onAdjust: (category: string, delta: number) => void;
 }
 
-export function VPCounter({ vpPrimary, vpSecondary, vpGambit, vpPaint, onAdjust }: Props) {
+export function VPCounter({ vpPrimary, vpSecondary, vpPaint, onAdjust }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const total = vpPrimary + vpSecondary + vpGambit + vpPaint;
+  const total = vpPrimary + vpSecondary + vpPaint;
 
   return (
     <div className="text-center">
@@ -46,7 +45,6 @@ export function VPCounter({ vpPrimary, vpSecondary, vpGambit, vpPaint, onAdjust 
             category="secondary"
             onAdjust={onAdjust}
           />
-          <VPRow label="Gambit" value={vpGambit} max={12} category="gambit" onAdjust={onAdjust} />
           <div className="flex items-center justify-between text-muted-foreground">
             <span>Paint</span>
             <span className="tabular-nums">{vpPaint}/10</span>

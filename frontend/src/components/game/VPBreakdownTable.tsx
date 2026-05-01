@@ -34,11 +34,11 @@ export function VPBreakdownTable({
           <TableHead className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest">
             Round
           </TableHead>
-          <TableHead colSpan={3} className={cn(headClass, "border-l border-border/50")}>
+          <TableHead colSpan={2} className={cn(headClass, "border-l border-border/50")}>
             {myUsername}
           </TableHead>
           {opponentStats && (
-            <TableHead colSpan={3} className={cn(headClass, "border-l border-border/50")}>
+            <TableHead colSpan={2} className={cn(headClass, "border-l border-border/50")}>
               {opponentUsername}
             </TableHead>
           )}
@@ -47,20 +47,18 @@ export function VPBreakdownTable({
           <TableHead />
           <TableHead className={cn(headClass, "border-l border-border/50")}>Pri</TableHead>
           <TableHead className={headClass}>Sec</TableHead>
-          <TableHead className={headClass}>Gam</TableHead>
           {opponentStats && (
             <>
               <TableHead className={cn(headClass, "border-l border-border/50")}>Pri</TableHead>
               <TableHead className={headClass}>Sec</TableHead>
-              <TableHead className={headClass}>Gam</TableHead>
             </>
           )}
         </TableRow>
       </TableHeader>
       <TableBody>
         {rounds.map((r) => {
-          const my = myStats.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
-          const opp = opponentStats?.vpByRound[r] ?? { primary: 0, secondary: 0, gambit: 0 };
+          const my = myStats.vpByRound[r] ?? { primary: 0, secondary: 0 };
+          const opp = opponentStats?.vpByRound[r] ?? { primary: 0, secondary: 0 };
           return (
             <TableRow key={r}>
               <TableCell className="text-muted-foreground font-mono">R{r}</TableCell>
@@ -68,14 +66,12 @@ export function VPBreakdownTable({
                 {my.primary || "-"}
               </TableCell>
               <TableCell className="text-center">{my.secondary || "-"}</TableCell>
-              <TableCell className="text-center">{my.gambit || "-"}</TableCell>
               {opponentStats && (
                 <>
                   <TableCell className="text-center border-l border-border/50">
                     {opp.primary || "-"}
                   </TableCell>
                   <TableCell className="text-center">{opp.secondary || "-"}</TableCell>
-                  <TableCell className="text-center">{opp.gambit || "-"}</TableCell>
                 </>
               )}
             </TableRow>
@@ -83,11 +79,11 @@ export function VPBreakdownTable({
         })}
         <TableRow>
           <TableCell className="text-muted-foreground font-mono">Paint</TableCell>
-          <TableCell colSpan={3} className="text-center border-l border-border/50">
+          <TableCell colSpan={2} className="text-center border-l border-border/50">
             {myStats.paint}
           </TableCell>
           {opponentStats && (
-            <TableCell colSpan={3} className="text-center border-l border-border/50">
+            <TableCell colSpan={2} className="text-center border-l border-border/50">
               {opponentStats.paint}
             </TableCell>
           )}
@@ -97,14 +93,14 @@ export function VPBreakdownTable({
         <TableRow className="hover:bg-transparent">
           <TableCell className="font-mono uppercase tracking-widest text-primary">Total</TableCell>
           <TableCell
-            colSpan={3}
+            colSpan={2}
             className="text-center border-l border-border/50 text-lg font-bold text-primary"
           >
             {myStats.totalVP} VP
           </TableCell>
           {opponentStats && (
             <TableCell
-              colSpan={3}
+              colSpan={2}
               className="text-center border-l border-border/50 text-lg font-bold"
             >
               {opponentStats.totalVP} VP
