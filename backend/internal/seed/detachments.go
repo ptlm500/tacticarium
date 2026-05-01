@@ -22,7 +22,7 @@ func SeedDetachments(ctx context.Context, pool *pgxpool.Pool, filePath string) (
 	if err != nil {
 		return 0, fmt.Errorf("opening detachments file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	reader := csv.NewReader(f)
 	reader.Comma = '|'
@@ -77,4 +77,3 @@ func SeedDetachments(ctx context.Context, pool *pgxpool.Pool, filePath string) (
 
 	return count, nil
 }
-

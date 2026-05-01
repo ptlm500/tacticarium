@@ -52,7 +52,7 @@ func (h *MissionHandler) ListMissions(ctx context.Context, input *PackIDParam) (
 		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description, &scoringJSON, &m.ScoringTiming); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		json.Unmarshal(scoringJSON, &m.ScoringRules)
+		_ = json.Unmarshal(scoringJSON, &m.ScoringRules)
 		if m.ScoringRules == nil {
 			m.ScoringRules = []models.ScoringAction{}
 		}
@@ -79,7 +79,7 @@ func (h *MissionHandler) ListSecondaries(ctx context.Context, input *PackIDParam
 		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON, &drawJSON); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		json.Unmarshal(optionsJSON, &s.ScoringOptions)
+		_ = json.Unmarshal(optionsJSON, &s.ScoringOptions)
 		if s.ScoringOptions == nil {
 			s.ScoringOptions = []models.ScoringOption{}
 		}

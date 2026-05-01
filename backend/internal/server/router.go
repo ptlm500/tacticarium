@@ -45,7 +45,6 @@ func NewHandlers(pool *pgxpool.Pool, hub *ws.Hub, cfg *config.Config) *Handlers 
 // the huma.API. This is used both by NewRouter (for serving) and by the
 // openapi command (for spec extraction without a running server or database).
 func NewAPI(r chi.Router, h *Handlers, jwtSecret string) huma.API {
-
 	humaConfig := huma.DefaultConfig("Tacticarium API", "1.0.0")
 	humaConfig.Info.Description = "API for the Tacticarium turn tracker"
 	api := humachi.New(r, humaConfig)
@@ -363,7 +362,7 @@ func registerAdminCRUD(api huma.API, mw func(huma.Context, func(huma.Context)), 
 			Summary:       summary,
 			Tags:          []string{tag},
 			Security:      security,
-			Middlewares:    huma.Middlewares{mw},
+			Middlewares:   huma.Middlewares{mw},
 			DefaultStatus: 200,
 		}
 	}

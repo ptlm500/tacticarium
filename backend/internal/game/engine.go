@@ -546,10 +546,10 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	delta := intFromData(action.Data, "delta")
 
 	var (
-		eventType    EventType
-		oldVP        int
-		newVP        int
-		scoringSlot  string
+		eventType   EventType
+		oldVP       int
+		newVP       int
+		scoringSlot string
 	)
 	switch category {
 	case "primary":

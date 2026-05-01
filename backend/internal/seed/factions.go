@@ -16,7 +16,7 @@ func SeedFactions(ctx context.Context, pool *pgxpool.Pool, filePath string) (int
 	if err != nil {
 		return 0, fmt.Errorf("opening factions file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	reader := csv.NewReader(f)
 	reader.Comma = '|'

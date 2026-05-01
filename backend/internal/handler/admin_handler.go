@@ -366,7 +366,7 @@ func (h *AdminHandler) ListMissions(ctx context.Context, input *AdminPackFilterI
 		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description, &scoringRulesJSON, &m.ScoringTiming); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		json.Unmarshal([]byte(scoringRulesJSON), &m.ScoringRules)
+		_ = json.Unmarshal([]byte(scoringRulesJSON), &m.ScoringRules)
 		if m.ScoringRules == nil {
 			m.ScoringRules = []models.ScoringAction{}
 		}
@@ -384,7 +384,7 @@ func (h *AdminHandler) GetMission(ctx context.Context, input *IDParam) (*Mission
 	if err != nil {
 		return nil, huma.Error404NotFound("not found")
 	}
-	json.Unmarshal([]byte(scoringRulesJSON), &m.ScoringRules)
+	_ = json.Unmarshal([]byte(scoringRulesJSON), &m.ScoringRules)
 	if m.ScoringRules == nil {
 		m.ScoringRules = []models.ScoringAction{}
 	}
@@ -470,7 +470,7 @@ func (h *AdminHandler) ListSecondaries(ctx context.Context, input *AdminPackFilt
 		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &scoringJSON, &drawJSON); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		json.Unmarshal([]byte(scoringJSON), &s.ScoringOptions)
+		_ = json.Unmarshal([]byte(scoringJSON), &s.ScoringOptions)
 		if s.ScoringOptions == nil {
 			s.ScoringOptions = []models.ScoringOption{}
 		}
@@ -495,7 +495,7 @@ func (h *AdminHandler) GetSecondary(ctx context.Context, input *IDParam) (*Secon
 	if err != nil {
 		return nil, huma.Error404NotFound("not found")
 	}
-	json.Unmarshal([]byte(scoringJSON), &s.ScoringOptions)
+	_ = json.Unmarshal([]byte(scoringJSON), &s.ScoringOptions)
 	if s.ScoringOptions == nil {
 		s.ScoringOptions = []models.ScoringOption{}
 	}

@@ -86,16 +86,16 @@ type PlayerState struct {
 	Secondaries         []SecondaryObjective `json:"secondaries"`
 
 	// Mission system fields
-	SecondaryMode        string            `json:"secondaryMode"`
-	TacticalDeck         []ActiveSecondary `json:"tacticalDeck"`
-	ActiveSecondaries    []ActiveSecondary `json:"activeSecondaries"`
-	AchievedSecondaries  []ActiveSecondary `json:"achievedSecondaries"`
-	DiscardedSecondaries []ActiveSecondary `json:"discardedSecondaries"`
-	CPGainedThisRound    int               `json:"cpGainedThisRound"`
-	IsChallenger         bool              `json:"isChallenger"`
-	ChallengerCardID     string            `json:"challengerCardId,omitempty"`
-	AdaptOrDieUses       int               `json:"adaptOrDieUses"`
-	StratagemsUsedThisPhase []string       `json:"stratagemsUsedThisPhase"`
+	SecondaryMode           string            `json:"secondaryMode"`
+	TacticalDeck            []ActiveSecondary `json:"tacticalDeck"`
+	ActiveSecondaries       []ActiveSecondary `json:"activeSecondaries"`
+	AchievedSecondaries     []ActiveSecondary `json:"achievedSecondaries"`
+	DiscardedSecondaries    []ActiveSecondary `json:"discardedSecondaries"`
+	CPGainedThisRound       int               `json:"cpGainedThisRound"`
+	IsChallenger            bool              `json:"isChallenger"`
+	ChallengerCardID        string            `json:"challengerCardId,omitempty"`
+	AdaptOrDieUses          int               `json:"adaptOrDieUses"`
+	StratagemsUsedThisPhase []string          `json:"stratagemsUsedThisPhase"`
 
 	// VPPrimaryScoredSlots maps battle round -> scoring slot -> applied VP delta.
 	// Used to prevent double-scoring the same primary slot in a round and to
@@ -108,19 +108,19 @@ func (p *PlayerState) TotalVP() int {
 }
 
 type GameState struct {
-	GameID          string          `json:"gameId"`
-	InviteCode      string          `json:"inviteCode"`
-	Status          GameStatus      `json:"status"`
-	CurrentRound    int             `json:"currentRound"`
-	CurrentTurn     int             `json:"currentTurn"`
-	CurrentPhase    Phase           `json:"currentPhase"`
-	ActivePlayer    int             `json:"activePlayer"`
-	FirstTurnPlayer int             `json:"firstTurnPlayer"`
-	MissionPackID   string          `json:"missionPackId"`
-	MissionID       string          `json:"missionId"`
-	MissionName     string          `json:"missionName"`
-	TwistID         string          `json:"twistId"`
-	TwistName       string          `json:"twistName"`
+	GameID             string          `json:"gameId"`
+	InviteCode         string          `json:"inviteCode"`
+	Status             GameStatus      `json:"status"`
+	CurrentRound       int             `json:"currentRound"`
+	CurrentTurn        int             `json:"currentTurn"`
+	CurrentPhase       Phase           `json:"currentPhase"`
+	ActivePlayer       int             `json:"activePlayer"`
+	FirstTurnPlayer    int             `json:"firstTurnPlayer"`
+	MissionPackID      string          `json:"missionPackId"`
+	MissionID          string          `json:"missionId"`
+	MissionName        string          `json:"missionName"`
+	TwistID            string          `json:"twistId"`
+	TwistName          string          `json:"twistName"`
 	Players            [2]*PlayerState `json:"players"`
 	CreatedAt          time.Time       `json:"createdAt"`
 	CompletedAt        *time.Time      `json:"completedAt,omitempty"`

@@ -25,7 +25,11 @@ func main() {
 		logging.Init(nil)
 		slog.Warn("Failed to init telemetry, continuing without observability", "error", err)
 	} else {
-		defer shutdown(ctx)
+		defer func() {
+			if err := shutdown(ctx); err != nil {
+				slog.Error("telemetry shutdown failed", "error", err)
+			}
+		}()
 		logging.Init(lp)
 	}
 

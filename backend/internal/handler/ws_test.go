@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/peter/tacticarium/backend/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"nhooyr.io/websocket"
 )
 
 // setupGameWithTwoPlayers creates a game with two players and returns their IDs, tokens, and the game ID.
@@ -27,7 +27,7 @@ func setupGameWithTwoPlayers(t *testing.T) (user1ID, user2ID, token1, token2, ga
 
 	token1 = testutil.GenerateToken(t, user1ID, "player1")
 	token2 = testutil.GenerateToken(t, user2ID, "player2")
-	return
+	return user1ID, user2ID, token1, token2, gameID
 }
 
 // setupActiveGame creates a game in active state with both players having factions.
@@ -41,16 +41,19 @@ func setupActiveGame(t *testing.T) (user1ID, user2ID, token1, token2, gameID str
 	testutil.SeedDetachment(t, env.Pool, "det-sm", "SM", "Gladius")
 	testutil.SeedDetachment(t, env.Pool, "det-nec", "NEC", "Awakened Dynasty")
 
-	env.Pool.Exec(context.Background(),
+	_, err := env.Pool.Exec(context.Background(),
 		`UPDATE games SET status = 'active', current_round = 1, current_phase = 'command', active_player = 1 WHERE id = $1`,
 		gameID)
-	env.Pool.Exec(context.Background(),
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(context.Background(),
 		`UPDATE game_players SET faction_id = 'SM', detachment_id = 'det-sm', is_ready = true WHERE game_id = $1 AND player_number = 1`,
 		gameID)
-	env.Pool.Exec(context.Background(),
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(context.Background(),
 		`UPDATE game_players SET faction_id = 'NEC', detachment_id = 'det-nec', is_ready = true WHERE game_id = $1 AND player_number = 2`,
 		gameID)
-	return
+	require.NoError(t, err)
+	return user1ID, user2ID, token1, token2, gameID
 }
 
 func TestWSConnect_Success(t *testing.T) {
@@ -473,9 +476,9 @@ func TestWSPersistence(t *testing.T) {
 	assert.Equal(t, 10, vpPrimary)
 
 	var eventCount int
-	env.Pool.QueryRow(context.Background(),
+	require.NoError(t, env.Pool.QueryRow(context.Background(),
 		`SELECT COUNT(*) FROM game_events WHERE game_id = $1`, gameID,
-	).Scan(&eventCount)
+	).Scan(&eventCount))
 	assert.GreaterOrEqual(t, eventCount, 1)
 }
 
@@ -744,7 +747,7 @@ func TestWSPlayerDisconnect(t *testing.T) {
 	testutil.ReadWSMessage(t, conn2, 5*time.Second)
 	testutil.ReadWSMessage(t, conn1, 5*time.Second) // player_connected for p2
 
-	conn1.Close(websocket.StatusNormalClosure, "leaving")
+	_ = conn1.Close(websocket.StatusNormalClosure, "leaving")
 
 	msg := testutil.DrainUntil(t, conn2, "player_disconnected", 5*time.Second)
 	assert.Equal(t, "player_disconnected", msg["type"])

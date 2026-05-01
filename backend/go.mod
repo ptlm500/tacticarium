@@ -3,6 +3,7 @@ module github.com/peter/tacticarium/backend
 go 1.25.0
 
 require (
+	github.com/coder/websocket v1.8.14
 	github.com/danielgtaylor/huma/v2 v2.37.3
 	github.com/exaring/otelpgx v0.10.0
 	github.com/go-chi/chi/v5 v5.2.5
@@ -24,7 +25,6 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.19.0
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
-	nhooyr.io/websocket v1.8.17
 )
 
 require (

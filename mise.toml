@@ -1,0 +1,32 @@
+experimental_monorepo_root = true
+
+[tools]
+node = "24.14.1"
+go = "1.26.2"
+pnpm = "10.33.0"
+lefthook = "2.1.6"
+
+[env]
+PROJECT_NAME = "{{config_root | split(pat='/') | last}}"
+
+[settings]
+experimental = true
+
+[monorepo]
+config_roots = ["frontend", "admin", "backend"]
+
+[tasks.install]
+description = "Install dependencies for all subprojects"
+depends = ["//frontend:install", "//admin:install", "//backend:install", "setup-hooks"]
+
+[tasks.setup-hooks]
+description = "Install git pre-commit hooks via lefthook"
+run = "lefthook install"
+sources = ["lefthook.yml"]
+
+[tasks.test]
+description = "Run tests for all subprojects"
+depends = ["//frontend:test", "//backend:test"]
+
+[hooks]
+enter = "mise run install"

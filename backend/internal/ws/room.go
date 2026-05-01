@@ -87,9 +87,7 @@ func (r *Room) Run() {
 
 		case client := <-r.unregister:
 			r.mu.Lock()
-			if _, ok := r.clients[client]; ok {
-				delete(r.clients, client)
-			}
+			delete(r.clients, client)
 			r.mu.Unlock()
 
 			if !client.isSpectator {
@@ -103,8 +101,7 @@ func (r *Room) Run() {
 }
 
 func (r *Room) processAction(action *game.GameAction) {
-	ctx, span := tracer.Start(context.Background(), "ws.processAction",
-	)
+	ctx, span := tracer.Start(context.Background(), "ws.processAction")
 	span.SetAttributes(
 		attribute.String("game.id", r.gameID),
 		attribute.Int("game.player_number", action.PlayerNumber),
