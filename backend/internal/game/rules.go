@@ -66,6 +66,20 @@ func IsValidPrimaryScoringSlot(slot string) bool {
 	return false
 }
 
+// PrimaryScoringSlotLabel returns the human-readable name for a primary
+// scoring slot. Falls back to the raw value for unknown slots.
+func PrimaryScoringSlotLabel(slot string) string {
+	switch slot {
+	case ScoringSlotEndOfCommandPhase:
+		return "End of Command Phase"
+	case ScoringSlotEndOfBattleRound:
+		return "End of Battle Round"
+	case ScoringSlotEndOfTurn:
+		return "End of Turn"
+	}
+	return slot
+}
+
 func ClampVP(value, max int) int {
 	if value < 0 {
 		return 0

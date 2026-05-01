@@ -53,12 +53,13 @@ Bugs:
 - [x] New orders doesn't restrict you to once per turn
 - [x] The buttons should be fixed to the bottom
 - [x] Strategems don't have a way to see the rule, only the "legend" flavour text
-- [ ] Error for primary already scored isn't using
+- [x] Error for primary already scored isn't using friendly text
 - [x] Sabotage (for example) needs to only trigger at the end of the oponents turn
 - [ ] "Stratagems This Phase" in the spectate mode gives the ID?
 - [ ] Grid on grid on the battle report screen is a bit much, also spacing
 - [ ] Overall stats don't take into account discarded games
 
 Feature:
+
 - [x] Manually select secondaries as an escape hatch
 - [ ] 2 v 2 mode
