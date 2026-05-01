@@ -4,6 +4,8 @@ import { ActiveSecondary, ScoringOption } from "../../types/game";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type Pile = "deck" | "active" | "achieved" | "discarded";
+
 function filterOptions(options: ScoringOption[] | null | undefined, mode: string): ScoringOption[] {
   if (!options || options.length === 0) return [];
   return options.filter((o) => !o.mode || o.mode === mode);
@@ -14,7 +16,7 @@ interface Props {
   activeSecondaries: ActiveSecondary[];
   achievedSecondaries: ActiveSecondary[];
   discardedSecondaries: ActiveSecondary[];
-  deckSize: number;
+  tacticalDeck: ActiveSecondary[];
   currentRound: number;
   currentPhase: string;
   isMyTurn: boolean;
@@ -25,6 +27,7 @@ interface Props {
   onNewOrders: (discardSecondaryId: string) => void;
   onReshuffle: (secondaryId: string) => void;
   onDraw: () => void;
+  onMove: (secondaryId: string, fromPile: Pile, toPile: Pile, vpScored?: number) => void;
   onScoreFixedVP: (delta: number) => void;
 }
 
@@ -33,7 +36,7 @@ export function SecondaryPanel({
   activeSecondaries,
   achievedSecondaries,
   discardedSecondaries,
-  deckSize,
+  tacticalDeck,
   currentRound,
   currentPhase,
   isMyTurn,
@@ -44,13 +47,19 @@ export function SecondaryPanel({
   onNewOrders,
   onReshuffle,
   onDraw,
+  onMove,
   onScoreFixedVP,
 }: Props) {
   const showNewOrders = isMyTurn && currentPhase === "command";
   const showCPDiscard = isMyTurn && currentPhase === "fight";
   const [expanded, setExpanded] = useState(true);
+  const [manageManually, setManageManually] = useState(false);
+  const deckSize = tacticalDeck.length;
 
   if (!mode) return null;
+
+  const isTactical = mode === "tactical";
+  const showManual = isTactical && manageManually;
 
   return (
     <section>
@@ -60,7 +69,7 @@ export function SecondaryPanel({
         className="flex w-full items-center justify-between rounded-sm border border-border/60 bg-background/40 px-4 py-3 text-left transition-colors hover:border-primary/50"
       >
         <span className="font-mono text-sm uppercase tracking-widest text-primary">
-          Secondary Missions ({mode === "tactical" ? "Tactical" : "Fixed"})
+          Secondary Missions ({isTactical ? "Tactical" : "Fixed"})
         </span>
         {expanded ? (
           <ChevronUp className="size-4 text-muted-foreground" />
@@ -71,6 +80,20 @@ export function SecondaryPanel({
 
       {expanded && (
         <div className="mt-2 space-y-3">
+          {isTactical && (
+            <label className="flex items-center gap-2 rounded-sm border border-border/60 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={manageManually}
+                onChange={(e) => setManageManually(e.target.checked)}
+              />
+              <span className="font-mono uppercase tracking-widest">
+                Manage manually (physical deck)
+              </span>
+            </label>
+          )}
+
+          {/* Active pile */}
           {activeSecondaries.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -86,7 +109,38 @@ export function SecondaryPanel({
                   </div>
                   <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>
 
-                  {mode === "tactical" ? (
+                  {showManual ? (
+                    <div className="flex flex-wrap gap-2">
+                      {filterOptions(s.scoringOptions, "tactical").map((opt, i) => (
+                        <Button
+                          key={i}
+                          type="button"
+                          size="sm"
+                          onClick={() => onMove(s.id, "active", "achieved", opt.vp)}
+                          title={opt.label}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          Achieve {opt.label} +{opt.vp}VP
+                        </Button>
+                      ))}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onMove(s.id, "active", "deck")}
+                      >
+                        Send to Deck
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onMove(s.id, "active", "discarded")}
+                      >
+                        Send to Discard
+                      </Button>
+                    </div>
+                  ) : isTactical ? (
                     <div className="flex flex-wrap gap-2">
                       {filterOptions(s.scoringOptions, "tactical").map((opt, i) => (
                         <Button
@@ -171,7 +225,7 @@ export function SecondaryPanel({
             </div>
           )}
 
-          {mode === "tactical" && activeSecondaries.length < 2 && deckSize > 0 && (
+          {isTactical && !showManual && activeSecondaries.length < 2 && deckSize > 0 && (
             <Button
               type="button"
               onClick={onDraw}
@@ -183,14 +237,38 @@ export function SecondaryPanel({
             </Button>
           )}
 
-          {mode === "tactical" && (
+          {/* Manual pile lists — only shown when manageManually is on */}
+          {showManual && (
+            <>
+              <PileList
+                heading={`Deck (${deckSize})`}
+                cards={tacticalDeck}
+                fromPile="deck"
+                onMove={onMove}
+              />
+              <PileList
+                heading={`Discarded (${discardedSecondaries.length})`}
+                cards={discardedSecondaries}
+                fromPile="discarded"
+                onMove={onMove}
+              />
+              <PileList
+                heading={`Achieved (${achievedSecondaries.length})`}
+                cards={achievedSecondaries}
+                fromPile="achieved"
+                onMove={onMove}
+              />
+            </>
+          )}
+
+          {isTactical && !showManual && (
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Deck: {deckSize} | Achieved: {achievedSecondaries.length} | Discarded:{" "}
               {discardedSecondaries.length}
             </div>
           )}
 
-          {achievedSecondaries.length > 0 && (
+          {!showManual && achievedSecondaries.length > 0 && (
             <div>
               <h3 className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Achieved
@@ -213,5 +291,107 @@ export function SecondaryPanel({
         </div>
       )}
     </section>
+  );
+}
+
+function PileList({
+  heading,
+  cards,
+  fromPile,
+  onMove,
+}: {
+  heading: string;
+  cards: ActiveSecondary[];
+  fromPile: Pile;
+  onMove: Props["onMove"];
+}) {
+  return (
+    <div className="space-y-2">
+      <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        {heading}
+      </h3>
+      {cards.length === 0 ? (
+        <p className="text-xs text-muted-foreground">empty</p>
+      ) : (
+        cards.map((s, i) => (
+          <div
+            key={`${s.id}-${i}`}
+            className="rounded-sm border border-border/60 bg-background/40 p-3"
+          >
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <span className="text-sm font-medium text-foreground">{s.name}</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {s.maxVp} VP max
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {fromPile !== "active" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onMove(s.id, fromPile, "active")}
+                >
+                  Move to Active
+                </Button>
+              )}
+              {fromPile !== "achieved" &&
+                filterOptions(s.scoringOptions, "tactical").map((opt, j) => (
+                  <Button
+                    key={j}
+                    type="button"
+                    size="sm"
+                    onClick={() => onMove(s.id, fromPile, "achieved", opt.vp)}
+                    title={opt.label}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    Achieve {opt.label} +{opt.vp}VP
+                  </Button>
+                ))}
+              {fromPile === "achieved" && (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onMove(s.id, "achieved", "discarded")}
+                  >
+                    Move to Discard
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onMove(s.id, "achieved", "deck")}
+                  >
+                    Move to Deck
+                  </Button>
+                </>
+              )}
+              {fromPile === "discarded" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onMove(s.id, "discarded", "deck")}
+                >
+                  Move to Deck
+                </Button>
+              )}
+              {fromPile === "deck" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onMove(s.id, "deck", "discarded")}
+                >
+                  Move to Discard
+                </Button>
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
   );
 }

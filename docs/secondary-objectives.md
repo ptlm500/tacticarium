@@ -160,6 +160,39 @@ play like a normal draw; the player can then choose to reshuffle it via the
   longer available — the "When Drawn" moment has passed.
 - Implementation: `engine_missions.go` (`applyReshuffleSecondary`)
 
+## Manual Management (Escape Hatch)
+
+Tactical-mode players can opt to manage their secondaries by hand — for
+example, when playing with a physical deck of cards alongside the app. The
+frontend exposes a **"Manage manually"** toggle in the Secondary Missions
+panel. While the toggle is on:
+
+- Normal controls (Achieve buttons, Draw, Discard, Discard +1CP, New Orders,
+  Shuffle Back) are hidden.
+- Every card in every pile (deck, active, discarded, achieved) is rendered
+  with manual move buttons.
+
+The underlying action is `move_secondary`, which moves a card between any two
+piles with **no phase, active-player, or CP restrictions** and is independent
+of the deck order. Moves to the achieved pile may include a VP score; the
+engine does not validate the supplied VP against the card's `scoringOptions`.
+
+- Action: `move_secondary` with `{secondaryId, fromPile, toPile, vpScored?}`
+- **Restrictions**: Game active; tactical mode; `fromPile` and `toPile` are
+  one of `deck` / `active` / `achieved` / `discarded`; the two piles must
+  differ; the card must currently be in `fromPile`.
+- **VP**: If `vpScored` is non-zero, `vpSecondary` is adjusted by that amount
+  (clamped to `0..MaxVPSecondary`). Negative values revoke VP — useful when
+  moving a card *out* of the achieved pile.
+- Emits `secondary_moved` with `{secondaryId, secondaryName, fromPile, toPile,
+  vpDelta, vpSecondary}`.
+- Implementation: `engine_missions.go` (`applyMoveSecondary`)
+
+This is an escape hatch only — players using the digital deck normally should
+prefer `draw_secondary` / `achieve_secondary` / `discard_secondary` /
+`new_orders` / `reshuffle_secondary`, which carry the proper rules
+(restriction handling, CP economy, scoring-option validation).
+
 ## Card Piles (Tactical Mode)
 
 A tactical mode player's secondaries are organised into 4 piles:

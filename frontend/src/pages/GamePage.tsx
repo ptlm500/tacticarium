@@ -421,6 +421,18 @@ export function GamePage() {
     sendAction("draw_secondary");
   }, [sendAction]);
 
+  const handleMoveSecondary = useCallback(
+    (secondaryId: string, fromPile: string, toPile: string, vpScored?: number) => {
+      sendAction("move_secondary", {
+        secondaryId,
+        fromPile,
+        toPile,
+        ...(vpScored ? { vpScored } : {}),
+      });
+    },
+    [sendAction],
+  );
+
   const handleDrawChallengerCard = useCallback(() => {
     sendAction("draw_challenger_card", {
       challengerCardId: "challenger-card-generic",
@@ -605,7 +617,7 @@ export function GamePage() {
             activeSecondaries={myPlayer.activeSecondaries ?? []}
             achievedSecondaries={myPlayer.achievedSecondaries ?? []}
             discardedSecondaries={myPlayer.discardedSecondaries ?? []}
-            deckSize={myPlayer.tacticalDeck?.length ?? 0}
+            tacticalDeck={myPlayer.tacticalDeck ?? []}
             currentRound={gameState.currentRound}
             currentPhase={gameState.currentPhase}
             isMyTurn={isMyTurn}
@@ -616,6 +628,7 @@ export function GamePage() {
             onNewOrders={handleNewOrders}
             onReshuffle={handleReshuffleSecondary}
             onDraw={handleDrawSecondary}
+            onMove={handleMoveSecondary}
             onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
           />
 
