@@ -107,7 +107,7 @@ func TestAdminFactions_CRUD(t *testing.T) {
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/factions/SM", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete not found
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/factions/SM", nil, testutil.AuthHeader(token))
@@ -139,7 +139,7 @@ func TestAdminDetachments_CRUD(t *testing.T) {
 		"id": "gladius", "factionId": "SM", "name": "Gladius Task Force",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// List with filter
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/detachments?faction_id=SM", nil, testutil.AuthHeader(token))
@@ -154,12 +154,12 @@ func TestAdminDetachments_CRUD(t *testing.T) {
 		"factionId": "SM", "name": "Gladius TF Updated",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/detachments/gladius", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Stratagems CRUD ---
@@ -178,7 +178,7 @@ func TestAdminStratagems_CRUD(t *testing.T) {
 		"description": "Reduce AP by 1",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// List with filter
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/stratagems?faction_id=SM", nil, testutil.AuthHeader(token))
@@ -202,12 +202,12 @@ func TestAdminStratagems_CRUD(t *testing.T) {
 		"cpCost": 2, "turn": "your", "phase": "shooting", "description": "Updated desc",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/stratagems/strat-1", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Mission Packs CRUD ---
@@ -222,7 +222,7 @@ func TestAdminMissionPacks_CRUD(t *testing.T) {
 		"id": "ca2025", "name": "Chapter Approved 2025", "description": "2025 season",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// List
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/mission-packs", nil, testutil.AuthHeader(token))
@@ -237,12 +237,12 @@ func TestAdminMissionPacks_CRUD(t *testing.T) {
 		"name": "CA 2025-26", "description": "Updated",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/mission-packs/ca2025", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Missions CRUD ---
@@ -265,7 +265,7 @@ func TestAdminMissions_CRUD(t *testing.T) {
 		},
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Get and check scoring rules
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/missions/mission-1", nil, testutil.AuthHeader(token))
@@ -301,7 +301,7 @@ func TestAdminMissions_CRUD(t *testing.T) {
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/missions/mission-1", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Secondaries CRUD ---
@@ -323,7 +323,7 @@ func TestAdminSecondaries_CRUD(t *testing.T) {
 		},
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Get and verify
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/secondaries/sec-1", nil, testutil.AuthHeader(token))
@@ -343,12 +343,12 @@ func TestAdminSecondaries_CRUD(t *testing.T) {
 		"scoringOptions": []map[string]interface{}{},
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/secondaries/sec-1", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Gambits CRUD ---
@@ -366,7 +366,7 @@ func TestAdminGambits_CRUD(t *testing.T) {
 		"description": "Score extra VP", "vpValue": 12,
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// List
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/gambits?pack_id=ca2025", nil, testutil.AuthHeader(token))
@@ -379,7 +379,7 @@ func TestAdminGambits_CRUD(t *testing.T) {
 	// Get
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/gambits/gambit-1", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Update
 	resp = testutil.DoRequest(t, env, "PUT", "/api/admin/gambits/gambit-1", map[string]interface{}{
@@ -387,12 +387,12 @@ func TestAdminGambits_CRUD(t *testing.T) {
 		"description": "Changed", "vpValue": 8,
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/gambits/gambit-1", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Challenger Cards CRUD ---
@@ -410,7 +410,7 @@ func TestAdminChallengerCards_CRUD(t *testing.T) {
 		"lore": "Some lore", "description": "Card rules",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// List
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/challenger-cards?pack_id=ca2025", nil, testutil.AuthHeader(token))
@@ -433,12 +433,12 @@ func TestAdminChallengerCards_CRUD(t *testing.T) {
 		"lore": "", "description": "New rules",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/challenger-cards/card-1", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Mission Rules CRUD ---
@@ -456,7 +456,7 @@ func TestAdminMissionRules_CRUD(t *testing.T) {
 		"lore": "Dark clouds", "description": "-1 to hit beyond 12\"",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// List
 	resp = testutil.DoRequest(t, env, "GET", "/api/admin/mission-rules?pack_id=ca2025", nil, testutil.AuthHeader(token))
@@ -478,12 +478,12 @@ func TestAdminMissionRules_CRUD(t *testing.T) {
 		"lore": "Updated lore", "description": "Updated rules",
 	}, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Delete
 	resp = testutil.DoRequest(t, env, "DELETE", "/api/admin/mission-rules/rule-1", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // --- Update/Delete not found ---

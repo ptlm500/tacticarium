@@ -19,14 +19,14 @@ func (h *AdminHandler) ImportFactions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "file upload required", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	tmpFile, err := writeTempFile(file, "factions-*.csv")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
 	}
-	defer os.Remove(tmpFile)
+	defer func() { _ = os.Remove(tmpFile) }()
 
 	count, err := seed.SeedFactions(r.Context(), h.db, tmpFile)
 	if err != nil {
@@ -47,14 +47,14 @@ func (h *AdminHandler) ImportDetachments(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "file upload required", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	tmpFile, err := writeTempFile(file, "detachments-*.csv")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
 	}
-	defer os.Remove(tmpFile)
+	defer func() { _ = os.Remove(tmpFile) }()
 
 	count, err := seed.SeedDetachments(r.Context(), h.db, tmpFile)
 	if err != nil {
@@ -75,14 +75,14 @@ func (h *AdminHandler) ImportStratagems(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "file upload required", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	tmpFile, err := writeTempFile(file, "stratagems-*.csv")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
 	}
-	defer os.Remove(tmpFile)
+	defer func() { _ = os.Remove(tmpFile) }()
 
 	stratagems, err := seed.SeedStratagems(r.Context(), h.db, tmpFile)
 	if err != nil {
@@ -103,14 +103,14 @@ func (h *AdminHandler) ImportMissions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "file upload required", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	tmpFile, err := writeTempFile(file, "missions-*.json")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
 	}
-	defer os.Remove(tmpFile)
+	defer func() { _ = os.Remove(tmpFile) }()
 
 	stats, err := seed.SeedMissions(r.Context(), h.db, tmpFile)
 	if err != nil {
@@ -140,8 +140,8 @@ func writeTempFile(src interface{ Read([]byte) (int, error) }, pattern string) (
 		n, readErr := src.Read(buf)
 		if n > 0 {
 			if _, writeErr := tmp.Write(buf[:n]); writeErr != nil {
-				tmp.Close()
-				os.Remove(tmp.Name())
+				_ = tmp.Close()
+				_ = os.Remove(tmp.Name())
 				return "", fmt.Errorf("writing temp file: %w", writeErr)
 			}
 		}
@@ -150,6 +150,6 @@ func writeTempFile(src interface{ Read([]byte) (int, error) }, pattern string) (
 		}
 	}
 
-	tmp.Close()
+	_ = tmp.Close()
 	return filepath.Clean(tmp.Name()), nil
 }

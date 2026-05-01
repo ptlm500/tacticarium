@@ -61,7 +61,7 @@ func (dc *DiscordConfig) ExchangeCode(code string) (*DiscordTokenResponse, error
 	if err != nil {
 		return nil, fmt.Errorf("token exchange request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -91,7 +91,7 @@ func FetchDiscordUser(accessToken string) (*DiscordUser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetching discord user: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -62,7 +62,7 @@ func (gc *GitHubConfig) ExchangeCode(code string) (*GitHubTokenResponse, error) 
 	if err != nil {
 		return nil, fmt.Errorf("token exchange request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -97,7 +97,7 @@ func FetchGitHubUser(accessToken string) (*GitHubUser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetching github user: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -24,7 +24,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"nhooyr.io/websocket"
+	"github.com/coder/websocket"
 )
 
 const TestJWTSecret = "test-jwt-secret"
@@ -104,7 +104,7 @@ func (env *TestEnv) Teardown() {
 	env.Server.Close()
 	env.Pool.Close()
 	if env.container != nil {
-		env.container.Terminate(context.Background())
+		_ = env.container.Terminate(context.Background())
 	}
 }
 
@@ -385,7 +385,7 @@ func DoRequest(t *testing.T, env *TestEnv, method, path string, body interface{}
 // ReadJSON reads and unmarshals the response body.
 func ReadJSON(t *testing.T, resp *http.Response, out interface{}) {
 	t.Helper()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("Failed to read response body: %v", err)
@@ -407,7 +407,7 @@ type ProblemDetails struct {
 // Returns the parsed ProblemDetails for further assertions.
 func AssertProblemDetails(t *testing.T, resp *http.Response, expectedStatus int) ProblemDetails {
 	t.Helper()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, expectedStatus, resp.StatusCode)
 
@@ -438,7 +438,7 @@ func DialWS(t *testing.T, env *TestEnv, gameID, token string) *websocket.Conn {
 	}
 
 	t.Cleanup(func() {
-		conn.Close(websocket.StatusNormalClosure, "test done")
+		_ = conn.Close(websocket.StatusNormalClosure, "test done")
 	})
 
 	return conn
@@ -459,7 +459,7 @@ func DialSpectatorWS(t *testing.T, env *TestEnv, gameID string) *websocket.Conn 
 	}
 
 	t.Cleanup(func() {
-		conn.Close(websocket.StatusNormalClosure, "test done")
+		_ = conn.Close(websocket.StatusNormalClosure, "test done")
 	})
 
 	return conn

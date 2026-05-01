@@ -107,11 +107,13 @@ func TestSelectPrimaryMission_ResetsReadiness(t *testing.T) {
 	state.Players[1].Ready = true
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectPrimaryMission,
 		PlayerNumber: 1,
 		Data:         map[string]any{"missionId": "m1", "missionName": "M"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].Ready || state.Players[1].Ready {
 		t.Fatal("expected readiness to be reset")
 	}
@@ -258,11 +260,13 @@ func TestSelectSecondaryMode_ClearsPreviousSelections(t *testing.T) {
 	state.Players[0].TacticalDeck = []ActiveSecondary{makeActiveSecondary("s2", "S2")}
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSelectSecondaryMode,
 		PlayerNumber: 1,
 		Data:         map[string]any{"mode": "tactical"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].ActiveSecondaries != nil {
 		t.Fatal("expected active secondaries to be cleared")
 	}
@@ -532,11 +536,13 @@ func TestAchieveSecondary_VPCapped(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionAchieveSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "vpScored": 5},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].VPSecondary != MaxVPSecondary {
 		t.Fatalf("expected VP capped at %d, got %d", MaxVPSecondary, state.Players[0].VPSecondary)
 	}
@@ -583,11 +589,13 @@ func TestDiscardSecondary_FreeNoCPGain(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "free": true},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CP != 0 {
 		t.Fatal("expected no CP gain from free discard")
 	}
@@ -601,11 +609,13 @@ func TestDiscardSecondary_Round5NoCPGain(t *testing.T) {
 	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CP != 0 {
 		t.Fatal("expected no CP gain in round 5")
 	}
@@ -813,11 +823,13 @@ func TestScoreChallenger_CustomVP(t *testing.T) {
 	state.Players[0].ChallengerCardID = "cc1"
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionScoreChallenger,
 		PlayerNumber: 1,
 		Data:         map[string]any{"vpScored": 5},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].VPGambit != 5 {
 		t.Fatalf("expected 5 VP gambit, got %d", state.Players[0].VPGambit)
 	}
@@ -2137,11 +2149,13 @@ func TestSetReady_StartGame(t *testing.T) {
 	e := NewEngine(state)
 
 	// Player 1 readies up
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionSetReady,
 		PlayerNumber: 1,
 		Data:         map[string]any{"ready": true},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Status != StatusSetup {
 		t.Fatal("game should still be in setup")
 	}
@@ -2505,7 +2519,9 @@ func TestCPGain_BothPlayersAtEachCommandPhase(t *testing.T) {
 
 	// Player 1: 5 phases → turn 2 command phase, +1 CP each
 	for range 5 {
-		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+		if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if state.Players[0].CP != 1 {
 		t.Fatalf("expected player 1 CP=1 after turn 2 start, got %d", state.Players[0].CP)
@@ -2516,7 +2532,9 @@ func TestCPGain_BothPlayersAtEachCommandPhase(t *testing.T) {
 
 	// Player 2: 5 phases → round 2 turn 1 command phase, +1 CP each
 	for range 5 {
-		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+		if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if state.Players[0].CP != 2 {
 		t.Fatalf("expected player 1 CP=2 after round 2 start, got %d", state.Players[0].CP)
@@ -2534,7 +2552,9 @@ func TestCPGain_BothPlayersGainCPOnTurnSwitch(t *testing.T) {
 
 	// Player 1 finishes turn (5 phases) → switches to player 2's command phase
 	for range 5 {
-		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+		if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Both players should gain 1 CP at the start of player 2's command phase
@@ -2592,8 +2612,12 @@ func TestSetReady_PresetFirstTurnPlayer(t *testing.T) {
 	state.FirstTurnPlayer = 2 // explicitly set to player 2
 	e := NewEngine(state)
 
-	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
-	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}}); err != nil {
+		t.Fatal(err)
+	}
 
 	if state.FirstTurnPlayer != 2 {
 		t.Fatalf("expected FirstTurnPlayer=2, got %d", state.FirstTurnPlayer)
@@ -2609,8 +2633,12 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	e := NewEngine(state)
 
 	// Start game via set_ready (grants 1 CP each for first command phase)
-	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
-	e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}}); err != nil {
+		t.Fatal(err)
+	}
 
 	if state.Players[0].CP != 1 || state.Players[1].CP != 1 {
 		t.Fatalf("expected 1 CP each after game start, got %d and %d", state.Players[0].CP, state.Players[1].CP)
@@ -2620,11 +2648,15 @@ func TestCPGain_AccumulatesAcrossRounds(t *testing.T) {
 	for round := 0; round < 3; round++ {
 		// Player 1 turn
 		for range 5 {
-			e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer})
+			if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer}); err != nil {
+				t.Fatal(err)
+			}
 		}
 		// Player 2 turn
 		for range 5 {
-			e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer})
+			if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: state.ActivePlayer}); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 
@@ -2660,11 +2692,13 @@ func TestDiscardSecondary_CPCappedAt1PerRound(t *testing.T) {
 	e := NewEngine(state)
 
 	// First discard: should gain 1 CP
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CP != 1 {
 		t.Fatalf("expected 1 CP after first discard, got %d", state.Players[0].CP)
 	}
@@ -2673,11 +2707,13 @@ func TestDiscardSecondary_CPCappedAt1PerRound(t *testing.T) {
 	}
 
 	// Second discard: should NOT gain CP (cap reached)
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s2"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CP != 1 {
 		t.Fatalf("expected still 1 CP after second discard (capped), got %d", state.Players[0].CP)
 	}
@@ -2697,11 +2733,13 @@ func TestDiscardSecondary_CPCapResetsNextRound(t *testing.T) {
 	e := NewEngine(state)
 
 	// Discard in round 2 should not gain CP (cap already reached)
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CP != 0 {
 		t.Fatalf("expected 0 CP (cap hit), got %d", state.Players[0].CP)
 	}
@@ -2710,10 +2748,14 @@ func TestDiscardSecondary_CPCapResetsNextRound(t *testing.T) {
 	// Player 1 finishes their turn (already past some phases, set to fight)
 	// Turn switch → +1 CP each (turn 2 command phase)
 	state.CurrentPhase = PhaseFight
-	e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1}); err != nil {
+		t.Fatal(err)
+	}
 	// Player 2's full turn → round advance → +1 CP each (round 3 command phase)
 	for range 5 {
-		e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2})
+		if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 2}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Now in round 3 — CPGainedThisRound should be reset
@@ -2738,21 +2780,25 @@ func TestDiscardSecondary_FreeDiscardDoesNotCountTowardCap(t *testing.T) {
 	e := NewEngine(state)
 
 	// Free discard: no CP, should not affect cap
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s1", "free": true},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CPGainedThisRound != 0 {
 		t.Fatalf("free discard should not affect CPGainedThisRound, got %d", state.Players[0].CPGainedThisRound)
 	}
 
 	// Normal discard after free: should still gain CP
-	e.Apply(context.Background(), GameAction{
+	if _, err := e.Apply(context.Background(), GameAction{
 		Type:         ActionDiscardSecondary,
 		PlayerNumber: 1,
 		Data:         map[string]any{"secondaryId": "s2"},
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state.Players[0].CP != 1 {
 		t.Fatalf("expected 1 CP after normal discard, got %d", state.Players[0].CP)
 	}
@@ -2881,7 +2927,9 @@ func TestCPGainedThisRound_DoesNotResetOnTurnSwitch(t *testing.T) {
 	e := NewEngine(state)
 
 	// Player 1 finishes turn → switches to player 2's command phase
-	e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1})
+	if _, err := e.Apply(context.Background(), GameAction{Type: ActionAdvancePhase, PlayerNumber: 1}); err != nil {
+		t.Fatal(err)
+	}
 
 	// CPGainedThisRound should NOT reset on turn switch (only on round advance)
 	if state.Players[0].CPGainedThisRound != 1 {

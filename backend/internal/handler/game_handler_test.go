@@ -28,9 +28,9 @@ func TestCreateGame(t *testing.T) {
 	assert.Len(t, body["inviteCode"], 6)
 
 	var count int
-	env.Pool.QueryRow(context.Background(),
+	require.NoError(t, env.Pool.QueryRow(context.Background(),
 		`SELECT COUNT(*) FROM game_players WHERE game_id = $1 AND user_id = $2 AND player_number = 1`,
-		body["id"], userID).Scan(&count)
+		body["id"], userID).Scan(&count))
 	assert.Equal(t, 1, count)
 }
 
@@ -59,8 +59,8 @@ func TestJoinGame(t *testing.T) {
 	assert.Equal(t, gameID, body["id"])
 
 	var count int
-	env.Pool.QueryRow(context.Background(),
-		`SELECT COUNT(*) FROM game_players WHERE game_id = $1`, gameID).Scan(&count)
+	require.NoError(t, env.Pool.QueryRow(context.Background(),
+		`SELECT COUNT(*) FROM game_players WHERE game_id = $1`, gameID).Scan(&count))
 	assert.Equal(t, 2, count)
 }
 
@@ -75,7 +75,7 @@ func TestJoinGame_AlreadyInGame(t *testing.T) {
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/join/"+inviteCode, nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestJoinGame_GameFull(t *testing.T) {
@@ -115,7 +115,8 @@ func TestJoinGame_GameAlreadyStarted(t *testing.T) {
 	user2ID := testutil.CreateTestUser(t, env.Pool, "discord-2", "player2")
 	gameID, inviteCode := testutil.CreateTestGame(t, env.Pool, user1ID)
 
-	env.Pool.Exec(context.Background(), `UPDATE games SET status = 'active' WHERE id = $1`, gameID)
+	_, err := env.Pool.Exec(context.Background(), `UPDATE games SET status = 'active' WHERE id = $1`, gameID)
+	require.NoError(t, err)
 
 	token2 := testutil.GenerateToken(t, user2ID, "player2")
 
@@ -243,14 +244,16 @@ func TestGetGameEvents(t *testing.T) {
 	token := testutil.GenerateToken(t, userID, "player1")
 
 	eventData, _ := json.Marshal(map[string]string{"test": "data"})
-	env.Pool.Exec(context.Background(),
+	_, err := env.Pool.Exec(context.Background(),
 		`INSERT INTO game_events (game_id, player_number, event_type, event_data, round, phase)
 		 VALUES ($1, 1, 'test_event', $2, 1, 'command')`,
 		gameID, eventData)
-	env.Pool.Exec(context.Background(),
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(context.Background(),
 		`INSERT INTO game_events (game_id, player_number, event_type, event_data, round, phase)
 		 VALUES ($1, 2, 'test_event_2', $2, 1, 'movement')`,
 		gameID, eventData)
+	require.NoError(t, err)
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/games/"+gameID+"/events", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -274,7 +277,7 @@ func TestHideGame(t *testing.T) {
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Game should no longer appear in list
 	resp = testutil.DoRequest(t, env, "GET", "/api/games", nil, testutil.AuthHeader(token))
@@ -300,7 +303,7 @@ func TestHideGame_OnlyHidesForRequestingUser(t *testing.T) {
 	// Player 1 hides the game
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token1))
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Player 1 should not see it
 	resp = testutil.DoRequest(t, env, "GET", "/api/games", nil, testutil.AuthHeader(token1))
@@ -342,7 +345,7 @@ func TestHideGame_AlreadyHidden(t *testing.T) {
 	// Hide once
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Hide again - should return 404
 	resp = testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
@@ -372,7 +375,7 @@ func TestHideGame_HiddenFromHistory(t *testing.T) {
 	// Hide the completed game
 	resp := testutil.DoRequest(t, env, "POST", "/api/games/"+gameID+"/hide", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Should not appear in history
 	resp = testutil.DoRequest(t, env, "GET", "/api/users/me/history", nil, testutil.AuthHeader(token))

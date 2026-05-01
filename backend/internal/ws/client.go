@@ -9,7 +9,7 @@ import (
 
 	"github.com/peter/tacticarium/backend/internal/game"
 
-	"nhooyr.io/websocket"
+	"github.com/coder/websocket"
 )
 
 type Client struct {
@@ -147,6 +147,6 @@ func (c *Client) Send(msg ServerMessage) {
 func (c *Client) Close() {
 	c.once.Do(func() {
 		close(c.done)
-		c.conn.Close(websocket.StatusNormalClosure, "")
+		_ = c.conn.Close(websocket.StatusNormalClosure, "")
 	})
 }

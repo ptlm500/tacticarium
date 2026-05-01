@@ -41,7 +41,7 @@ func TestListFactions_Empty(t *testing.T) {
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/factions", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestListDetachments(t *testing.T) {
@@ -75,7 +75,7 @@ func TestListDetachments_WrongFaction(t *testing.T) {
 
 	resp := testutil.DoRequest(t, env, "GET", "/api/factions/NEC/detachments", nil, testutil.AuthHeader(token))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestListStratagems(t *testing.T) {

@@ -89,7 +89,7 @@ func writeError(ctx huma.Context, status int, detail string) {
 		"title":  statusText(status),
 		"detail": detail,
 	}
-	json.NewEncoder(ctx.BodyWriter()).Encode(body)
+	_ = json.NewEncoder(ctx.BodyWriter()).Encode(body)
 }
 
 func statusText(code int) string {

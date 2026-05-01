@@ -16,7 +16,7 @@ import (
 	"github.com/peter/tacticarium/backend/internal/models"
 	"github.com/peter/tacticarium/backend/internal/ws"
 	"github.com/peter/tacticarium/backend/pkg/invite"
-	"nhooyr.io/websocket"
+	"github.com/coder/websocket"
 )
 
 type GameHandler struct {
@@ -86,10 +86,13 @@ func (h *GameHandler) JoinGame(ctx context.Context, input *JoinGameInput) (*Join
 
 	// Check if already in game
 	var count int
-	h.db.QueryRow(ctx,
+	if err := h.db.QueryRow(ctx,
 		`SELECT COUNT(*) FROM game_players WHERE game_id = $1 AND user_id = $2`,
 		gameID, user.UserID,
-	).Scan(&count)
+	).Scan(&count); err != nil {
+		slog.ErrorContext(ctx, "Join game membership check failed", "error", err)
+		return nil, huma.Error500InternalServerError("database error")
+	}
 
 	if count > 0 {
 		out := &JoinGameOutput{}
@@ -99,9 +102,12 @@ func (h *GameHandler) JoinGame(ctx context.Context, input *JoinGameInput) (*Join
 	}
 
 	// Check player count
-	h.db.QueryRow(ctx,
+	if err := h.db.QueryRow(ctx,
 		`SELECT COUNT(*) FROM game_players WHERE game_id = $1`, gameID,
-	).Scan(&count)
+	).Scan(&count); err != nil {
+		slog.ErrorContext(ctx, "Join game player count check failed", "error", err)
+		return nil, huma.Error500InternalServerError("database error")
+	}
 
 	if count >= 2 {
 		return nil, huma.Error400BadRequest("game is full")
@@ -165,7 +171,7 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 		if err == nil {
 			for pRows.Next() {
 				var p models.GamePlayerSummary
-				pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				_ = pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
 				g.Players = append(g.Players, p)
 			}
 			pRows.Close()
@@ -207,7 +213,6 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 			WHERE op.game_id = g.id AND op.user_id != $1 AND of2.name = $%d
 		)`, paramN)
 		args = append(args, input.OpponentFaction)
-		paramN++
 	}
 
 	query += ` ORDER BY g.completed_at DESC LIMIT 50`
@@ -236,7 +241,7 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 		if err == nil {
 			for pRows.Next() {
 				var p models.GamePlayerSummary
-				pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				_ = pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
 				g.Players = append(g.Players, p)
 			}
 			pRows.Close()
@@ -366,7 +371,7 @@ func (h *GameHandler) GetGameEvents(ctx context.Context, input *GameIDParam) (*G
 		}
 
 		var data any
-		json.Unmarshal(eventData, &data)
+		_ = json.Unmarshal(eventData, &data)
 		ev.EventData = data
 
 		events = append(events, ev)
@@ -546,10 +551,10 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 			continue
 		}
 
-		json.Unmarshal(tacticalDeckJSON, &p.TacticalDeck)
-		json.Unmarshal(activeSecJSON, &p.ActiveSecondaries)
-		json.Unmarshal(achievedSecJSON, &p.AchievedSecondaries)
-		json.Unmarshal(discardedSecJSON, &p.DiscardedSecondaries)
+		_ = json.Unmarshal(tacticalDeckJSON, &p.TacticalDeck)
+		_ = json.Unmarshal(activeSecJSON, &p.ActiveSecondaries)
+		_ = json.Unmarshal(achievedSecJSON, &p.AchievedSecondaries)
+		_ = json.Unmarshal(discardedSecJSON, &p.DiscardedSecondaries)
 
 		if p.TacticalDeck == nil {
 			p.TacticalDeck = []game.ActiveSecondary{}

@@ -61,5 +61,5 @@ func TestHandleLogout(t *testing.T) {
 
 	resp := testutil.DoRequest(t, env, "POST", "/api/auth/logout", nil, testutil.AuthHeader(token))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }

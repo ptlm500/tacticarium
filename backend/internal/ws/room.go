@@ -87,9 +87,7 @@ func (r *Room) Run() {
 
 		case client := <-r.unregister:
 			r.mu.Lock()
-			if _, ok := r.clients[client]; ok {
-				delete(r.clients, client)
-			}
+			delete(r.clients, client)
 			r.mu.Unlock()
 
 			if !client.isSpectator {
