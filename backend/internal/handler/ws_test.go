@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/peter/tacticarium/backend/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/coder/websocket"
 )
 
 // setupGameWithTwoPlayers creates a game with two players and returns their IDs, tokens, and the game ID.

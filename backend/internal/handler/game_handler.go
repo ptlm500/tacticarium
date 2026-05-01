@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,7 +17,6 @@ import (
 	"github.com/peter/tacticarium/backend/internal/models"
 	"github.com/peter/tacticarium/backend/internal/ws"
 	"github.com/peter/tacticarium/backend/pkg/invite"
-	"github.com/coder/websocket"
 )
 
 type GameHandler struct {

@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/peter/tacticarium/backend/internal/auth"
 	"github.com/peter/tacticarium/backend/internal/config"
@@ -24,7 +25,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/coder/websocket"
 )
 
 const TestJWTSecret = "test-jwt-secret"

@@ -1,0 +1,20 @@
+pre-commit:
+  parallel: true
+  commands:
+    backend-fmt:
+      glob: "backend/**/*.go"
+      root: backend/
+      run: mise exec -- gofumpt -w {staged_files}
+      stage_fixed: true
+    backend-lint:
+      glob: "backend/**/*.go"
+      root: backend/
+      run: mise exec -- golangci-lint run ./...
+    frontend-check:
+      glob: "frontend/**/*.{ts,tsx,js,jsx,css,html,json}"
+      root: frontend/
+      run: mise exec -- pnpm exec vp check
+    admin-check:
+      glob: "admin/**/*.{ts,tsx,js,jsx,css,html,json}"
+      root: admin/
+      run: mise exec -- pnpm exec vp check
