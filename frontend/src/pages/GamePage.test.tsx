@@ -763,6 +763,60 @@ describe("GamePage", () => {
       scoringTiming: "end_of_opponent_turn" as const,
     };
 
+    it("blocks active player's advance with opponent-pending reminder", async () => {
+      worker.use(
+        http.get(`${API_URL}/api/mission-packs/:packId/missions`, () =>
+          HttpResponse.json([
+            {
+              id: "mission-1",
+              missionPackId: "chapter-approved-2025-26",
+              name: "Supply Drop",
+              lore: "",
+              description: "",
+              scoringRules: [],
+              scoringTiming: "end_of_command_phase",
+            },
+          ]),
+        ),
+      );
+
+      await act(async () => {
+        renderGame({
+          activePlayer: 1,
+          currentPhase: "fight",
+          currentRound: 3,
+          currentTurn: 1,
+          players: [
+            makePlayerState({
+              secondaryMode: "tactical",
+              activeSecondaries: [mockActiveSecondary],
+              tacticalDeck: [],
+            }),
+            makePlayerState({
+              userId: "user-2",
+              username: "Opponent",
+              playerNumber: 2,
+              secondaryMode: "tactical",
+              activeSecondaries: [sabotage],
+            }),
+          ],
+        });
+      });
+
+      const user = userEvent.setup();
+      await vi.waitFor(() => {
+        expect(screen.getByText("Advance Phase")).toBeTruthy();
+      });
+      await user.click(screen.getByText("Advance Phase"));
+
+      // The active player's modal includes a reminder block listing the
+      // opponent's end_of_opponent_turn secondaries.
+      await vi.waitFor(() => {
+        expect(screen.getByText(/Wait for Opponent to score/)).toBeTruthy();
+        expect(screen.getByTestId("opponent-pending-secondary")).toBeTruthy();
+      });
+    });
+
     it("excludes end_of_opponent_turn secondaries from the own-turn fight-phase prompt", async () => {
       worker.use(
         http.get(`${API_URL}/api/mission-packs/:packId/missions`, () => {

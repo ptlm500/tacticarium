@@ -202,4 +202,25 @@ describe("ScoringPrompt", () => {
       expect(screen.getByText("Dismiss")).toBeTruthy();
     });
   });
+
+  describe("opponent_pending_secondary", () => {
+    it("renders a read-only reminder listing the opponent's pending secondaries", () => {
+      const items: ScoringPromptItem[] = [
+        {
+          kind: "opponent_pending_secondary",
+          secondaries: [
+            { ...mockActiveSecondary, id: "sabotage", name: "Sabotage" },
+            { ...mockActiveSecondary, id: "defend", name: "Defend Stronghold" },
+          ],
+          opponentName: "Bob",
+        },
+      ];
+      renderPrompt({ items });
+
+      expect(screen.getByTestId("opponent-pending-secondary")).toBeTruthy();
+      expect(screen.getByText(/Wait for Bob to score/)).toBeTruthy();
+      expect(screen.getByText(/• Sabotage/)).toBeTruthy();
+      expect(screen.getByText(/• Defend Stronghold/)).toBeTruthy();
+    });
+  });
 });

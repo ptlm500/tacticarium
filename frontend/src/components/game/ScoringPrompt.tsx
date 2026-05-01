@@ -20,7 +20,12 @@ export type ScoringPromptItem =
       secondaries: ActiveSecondary[];
       timing?: SecondaryScoringTiming;
     }
-  | { kind: "end_of_round_primary"; missionName: string; note: string };
+  | { kind: "end_of_round_primary"; missionName: string; note: string }
+  | {
+      kind: "opponent_pending_secondary";
+      secondaries: ActiveSecondary[];
+      opponentName: string;
+    };
 
 interface Props {
   items: ScoringPromptItem[];
@@ -108,9 +113,45 @@ export function ScoringPrompt({
               canGainCP={canGainCP}
             />
           )}
+          {item.kind === "opponent_pending_secondary" && (
+            <OpponentPendingSecondaryReminder
+              secondaries={item.secondaries}
+              opponentName={item.opponentName}
+            />
+          )}
         </div>
       ))}
     </ReminderPrompt>
+  );
+}
+
+function OpponentPendingSecondaryReminder({
+  secondaries,
+  opponentName,
+}: {
+  secondaries: ActiveSecondary[];
+  opponentName: string;
+}) {
+  return (
+    <div
+      className="rounded-sm border border-amber-500/40 bg-amber-500/10 p-3"
+      data-testid="opponent-pending-secondary"
+    >
+      <h3 className="font-mono text-sm uppercase tracking-widest text-amber-400">
+        Wait for {opponentName} to score
+      </h3>
+      <p className="mt-1 text-xs text-foreground/80">
+        Your opponent has secondaries that score at the end of <em>your</em> turn. Confirm they have
+        scored before continuing.
+      </p>
+      <ul className="mt-2 space-y-1 text-xs">
+        {secondaries.map((s) => (
+          <li key={s.id} className="font-medium text-foreground">
+            • {s.name}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
