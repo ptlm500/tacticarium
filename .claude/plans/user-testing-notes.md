@@ -47,7 +47,7 @@
 
 Bugs:
 
-- [ ] Draw secondaries trigger is enabled on the fight phase
+- [x] Draw secondaries trigger is enabled on the fight phase
 - [x] Joining mid way through game setup, game mission doesn't load (only if you haven't selected your army)
 - [x] Make the objective text more readable by breaking it up (battle round restrictions etc)
 - [x] New orders doesn't restrict you to once per turn

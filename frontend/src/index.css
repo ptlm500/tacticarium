@@ -187,3 +187,31 @@ body {
     top: 100%;
   }
 }
+
+/* ==========================================================================
+   Rules text (HTML-formatted stratagem / mission descriptions from Wahapedia)
+   ========================================================================== */
+
+.rules-text b,
+.rules-text strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.rules-text .kwb {
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rules-text ul,
+.rules-text ol {
+  margin: 0.25rem 0 0.25rem 1.25rem;
+  padding: 0;
+  list-style: disc;
+}
+
+.rules-text ol {
+  list-style: decimal;
+}
