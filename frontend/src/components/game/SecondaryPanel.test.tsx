@@ -270,12 +270,12 @@ describe("SecondaryPanel", () => {
       expect(screen.queryByRole("button", { name: /Draw Secondaries/ })).toBeNull();
     });
 
-    it("exposes manual move buttons for active cards", async () => {
+    it("exposes kanban move buttons for active cards", async () => {
       const user = userEvent.setup();
-      renderPanel();
+      renderPanel({ tacticalDeck: [] });
       await user.click(screen.getByRole("checkbox", { name: /Manage manually/i }));
-      expect(screen.getByText("Send to Deck")).toBeTruthy();
-      expect(screen.getByText("Send to Discard")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "→ Deck" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "→ Discard" })).toBeTruthy();
     });
 
     it("renders deck and discarded piles individually with move-to-active buttons", async () => {
@@ -291,8 +291,8 @@ describe("SecondaryPanel", () => {
       expect(screen.getByText("Deck card 1")).toBeTruthy();
       expect(screen.getByText("Deck card 2")).toBeTruthy();
       expect(screen.getByText("Discarded card")).toBeTruthy();
-      // 3 cards (2 deck + 1 discarded) each get a Move to Active button.
-      expect(screen.getAllByText("Move to Active").length).toBe(3);
+      // 3 cards (2 deck + 1 discarded) each get a → Active button.
+      expect(screen.getAllByRole("button", { name: "→ Active" }).length).toBe(3);
     });
 
     it("calls onMove with the correct pile names when buttons are clicked", async () => {
@@ -300,16 +300,37 @@ describe("SecondaryPanel", () => {
       const calls: Array<[string, string, string, number | undefined]> = [];
       renderPanel({
         activeSecondaries: [{ ...mockActiveSecondary, id: "a-1", name: "Active card" }],
+        tacticalDeck: [],
         onMove: (id, from, to, vp) => calls.push([id, from, to, vp]),
       });
       await user.click(screen.getByRole("checkbox", { name: /Manage manually/i }));
-      await user.click(screen.getByText("Send to Deck"));
-      await user.click(screen.getByText("Send to Discard"));
+      await user.click(screen.getByRole("button", { name: "→ Deck" }));
+      await user.click(screen.getByRole("button", { name: "→ Discard" }));
 
       expect(calls).toEqual([
         ["a-1", "active", "deck", undefined],
         ["a-1", "active", "discarded", undefined],
       ]);
+    });
+
+    it("disables the → Active button when active pile is at capacity", async () => {
+      const user = userEvent.setup();
+      renderPanel({
+        activeSecondaries: [
+          { ...mockActiveSecondary, id: "a-1", name: "A1" },
+          { ...mockActiveSecondary, id: "a-2", name: "A2" },
+        ],
+        tacticalDeck: makeDeck(1),
+      });
+      await user.click(screen.getByRole("checkbox", { name: /Manage manually/i }));
+
+      const moveButtons = screen.getAllByRole("button", {
+        name: "→ Active",
+      }) as HTMLButtonElement[];
+      expect(moveButtons.length).toBeGreaterThan(0);
+      for (const btn of moveButtons) {
+        expect(btn.disabled).toBe(true);
+      }
     });
   });
 });
