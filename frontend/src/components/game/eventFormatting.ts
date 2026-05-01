@@ -100,6 +100,14 @@ export function formatEvent(event: NormalizedEvent): string {
       const reason = event.data?.reason === "mandatory" ? "must shuffle back" : "shuffled back";
       return `${player} ${reason}: ${s(event.data?.secondaryName)}`;
     }
+    case "secondary_moved": {
+      const from = s(event.data?.fromPile);
+      const to = s(event.data?.toPile);
+      const name = s(event.data?.secondaryName);
+      const vpDelta = (event.data?.vpDelta ?? 0) as number;
+      const vpSuffix = vpDelta > 0 ? ` (+${vpDelta} VP)` : vpDelta < 0 ? ` (${vpDelta} VP)` : "";
+      return `📝 ${player} moved ${name}: ${from} → ${to}${vpSuffix}`;
+    }
     case "challenger_scored":
       return `${player} completed challenger mission (+${s(event.data?.vpScored)} VP)`;
     case "game_start":

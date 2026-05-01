@@ -525,6 +525,111 @@ func (e *Engine) applyReshuffleSecondary(action GameAction) ([]GameEvent, error)
 	return events, nil
 }
 
+// applyMoveSecondary is the manual escape hatch for tactical mode players who
+// are tracking their secondaries with a physical deck. It moves a card between
+// any two of the four piles (deck, active, achieved, discarded) with no phase,
+// active-player, or CP restrictions, and optionally adjusts secondary VP by
+// the supplied delta (no scoring-option validation).
+func (e *Engine) applyMoveSecondary(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+
+	if player.SecondaryMode != "tactical" {
+		return nil, fmt.Errorf("can only manually move secondaries in tactical mode")
+	}
+
+	secondaryID := strFromData(action.Data, "secondaryId")
+	fromPile := strFromData(action.Data, "fromPile")
+	toPile := strFromData(action.Data, "toPile")
+	vpDelta := intFromData(action.Data, "vpScored")
+
+	if !isValidSecondaryPile(fromPile) || !isValidSecondaryPile(toPile) {
+		return nil, fmt.Errorf("fromPile and toPile must be one of: deck, active, achieved, discarded")
+	}
+	if fromPile == toPile {
+		return nil, fmt.Errorf("fromPile and toPile must differ")
+	}
+
+	card, ok := removeFromSecondaryPile(player, fromPile, secondaryID)
+	if !ok {
+		return nil, fmt.Errorf("secondary not found in %s pile", fromPile)
+	}
+	appendToSecondaryPile(player, toPile, card)
+
+	appliedDelta := 0
+	if vpDelta != 0 {
+		oldVP := player.VPSecondary
+		player.VPSecondary = ClampVP(oldVP+vpDelta, MaxVPSecondary)
+		appliedDelta = player.VPSecondary - oldVP
+	}
+
+	return []GameEvent{{
+		Type:         EventSecondaryMoved,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data: map[string]any{
+			"secondaryId":   card.ID,
+			"secondaryName": card.Name,
+			"fromPile":      fromPile,
+			"toPile":        toPile,
+			"vpDelta":       appliedDelta,
+			"vpSecondary":   player.VPSecondary,
+		},
+	}}, nil
+}
+
+func isValidSecondaryPile(name string) bool {
+	switch name {
+	case "deck", "active", "achieved", "discarded":
+		return true
+	}
+	return false
+}
+
+func secondaryPilePtr(player *PlayerState, pile string) *[]ActiveSecondary {
+	switch pile {
+	case "deck":
+		return &player.TacticalDeck
+	case "active":
+		return &player.ActiveSecondaries
+	case "achieved":
+		return &player.AchievedSecondaries
+	case "discarded":
+		return &player.DiscardedSecondaries
+	}
+	return nil
+}
+
+func removeFromSecondaryPile(player *PlayerState, pile, id string) (ActiveSecondary, bool) {
+	p := secondaryPilePtr(player, pile)
+	if p == nil {
+		return ActiveSecondary{}, false
+	}
+	for i, s := range *p {
+		if s.ID == id {
+			card := (*p)[i]
+			*p = append((*p)[:i], (*p)[i+1:]...)
+			return card, true
+		}
+	}
+	return ActiveSecondary{}, false
+}
+
+func appendToSecondaryPile(player *PlayerState, pile string, card ActiveSecondary) {
+	p := secondaryPilePtr(player, pile)
+	if p == nil {
+		return
+	}
+	*p = append(*p, card)
+}
+
 func (e *Engine) applyDrawChallengerCard(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")

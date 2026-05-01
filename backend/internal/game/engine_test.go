@@ -3322,3 +3322,287 @@ func TestSetPaintScore_ResetsReadiness(t *testing.T) {
 		t.Fatal("expected other player's readiness to be unchanged")
 	}
 }
+
+// --- Manual Move (escape hatch) ---
+
+func TestMoveSecondary_ActiveToDiscarded(t *testing.T) {
+	state := newActiveTestState()
+	p := state.Players[0]
+	p.SecondaryMode = "tactical"
+	p.ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "discarded",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ActiveSecondaries) != 0 {
+		t.Fatalf("expected card removed from active, got %v", p.ActiveSecondaries)
+	}
+	if len(p.DiscardedSecondaries) != 1 || p.DiscardedSecondaries[0].ID != "s1" {
+		t.Fatalf("expected card in discarded, got %v", p.DiscardedSecondaries)
+	}
+	if p.CP != 0 {
+		t.Fatalf("expected no CP gain, got %d", p.CP)
+	}
+	if len(events) != 1 || events[0].Type != EventSecondaryMoved {
+		t.Fatalf("expected one secondary_moved event, got %v", events)
+	}
+	if events[0].Data["fromPile"] != "active" || events[0].Data["toPile"] != "discarded" {
+		t.Fatalf("event piles wrong: %v", events[0].Data)
+	}
+}
+
+func TestMoveSecondary_ActiveToAchievedScoresVP(t *testing.T) {
+	state := newActiveTestState()
+	p := state.Players[0]
+	p.SecondaryMode = "tactical"
+	p.ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "achieved",
+			"vpScored":    4,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ActiveSecondaries) != 0 {
+		t.Fatalf("expected card removed from active")
+	}
+	if len(p.AchievedSecondaries) != 1 {
+		t.Fatalf("expected card in achieved")
+	}
+	if p.VPSecondary != 4 {
+		t.Fatalf("expected VPSecondary=4, got %d", p.VPSecondary)
+	}
+}
+
+func TestMoveSecondary_DeckToActiveBypassesPhaseAndPlayer(t *testing.T) {
+	state := newActiveTestState()
+	state.CurrentPhase = PhaseFight
+	state.ActivePlayer = 1
+	// Non-active player (player 2) moves a card from their own deck to active.
+	p := state.Players[1]
+	p.SecondaryMode = "tactical"
+	p.TacticalDeck = []ActiveSecondary{makeActiveSecondary("s1", "S1"), makeActiveSecondary("s2", "S2")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 2,
+		Data: map[string]any{
+			"secondaryId": "s2",
+			"fromPile":    "deck",
+			"toPile":      "active",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.TacticalDeck) != 1 || p.TacticalDeck[0].ID != "s1" {
+		t.Fatalf("expected only s1 left in deck, got %v", p.TacticalDeck)
+	}
+	if len(p.ActiveSecondaries) != 1 || p.ActiveSecondaries[0].ID != "s2" {
+		t.Fatalf("expected s2 in active, got %v", p.ActiveSecondaries)
+	}
+}
+
+func TestMoveSecondary_DiscardedToActive(t *testing.T) {
+	state := newActiveTestState()
+	p := state.Players[0]
+	p.SecondaryMode = "tactical"
+	p.DiscardedSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "discarded",
+			"toPile":      "active",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.DiscardedSecondaries) != 0 {
+		t.Fatal("expected card removed from discarded")
+	}
+	if len(p.ActiveSecondaries) != 1 {
+		t.Fatal("expected card in active")
+	}
+}
+
+func TestMoveSecondary_AchievedToActiveCanRevokeVP(t *testing.T) {
+	state := newActiveTestState()
+	p := state.Players[0]
+	p.SecondaryMode = "tactical"
+	p.AchievedSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	p.VPSecondary = 4
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "achieved",
+			"toPile":      "active",
+			"vpScored":    -4,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.VPSecondary != 0 {
+		t.Fatalf("expected VPSecondary=0 after revoking, got %d", p.VPSecondary)
+	}
+	if len(p.ActiveSecondaries) != 1 {
+		t.Fatal("expected card moved to active")
+	}
+}
+
+func TestMoveSecondary_RejectedWhenNotTactical(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "fixed"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "discarded",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error in fixed mode")
+	}
+}
+
+func TestMoveSecondary_RejectedWhenNotActive(t *testing.T) {
+	state := newTestState() // Status = StatusSetup
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "discarded",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error when game not active")
+	}
+}
+
+func TestMoveSecondary_RejectedWhenCardNotInPile(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].TacticalDeck = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "discarded",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error when card not in fromPile")
+	}
+}
+
+func TestMoveSecondary_RejectedSamePile(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "active",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error when fromPile == toPile")
+	}
+}
+
+func TestMoveSecondary_RejectedInvalidPile(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	e := NewEngine(state)
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "graveyard",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for unknown pile name")
+	}
+}
+
+func TestMoveSecondary_VPClampedToMax(t *testing.T) {
+	state := newActiveTestState()
+	p := state.Players[0]
+	p.SecondaryMode = "tactical"
+	p.ActiveSecondaries = []ActiveSecondary{makeActiveSecondary("s1", "S1")}
+	p.VPSecondary = MaxVPSecondary - 2
+	e := NewEngine(state)
+
+	events, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionMoveSecondary,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"secondaryId": "s1",
+			"fromPile":    "active",
+			"toPile":      "achieved",
+			"vpScored":    10,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.VPSecondary != MaxVPSecondary {
+		t.Fatalf("expected VPSecondary clamped to %d, got %d", MaxVPSecondary, p.VPSecondary)
+	}
+	if d, _ := events[0].Data["vpDelta"].(int); d != 2 {
+		t.Fatalf("expected applied vpDelta=2, got %v", events[0].Data["vpDelta"])
+	}
+}

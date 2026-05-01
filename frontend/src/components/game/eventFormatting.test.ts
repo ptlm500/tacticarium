@@ -40,3 +40,47 @@ describe("formatEvent — primary scoring", () => {
     expect(out).toBe("P1 scored 5 primary VP — Hold the most");
   });
 });
+
+describe("formatEvent — secondary_moved", () => {
+  it("formats a move with positive VP", () => {
+    const out = formatEvent({
+      eventType: "secondary_moved",
+      playerNumber: 1,
+      data: {
+        secondaryName: "Behind Enemy Lines",
+        fromPile: "active",
+        toPile: "achieved",
+        vpDelta: 4,
+      },
+    } as NormalizedEvent);
+    expect(out).toBe("📝 P1 moved Behind Enemy Lines: active → achieved (+4 VP)");
+  });
+
+  it("formats a move with no VP change", () => {
+    const out = formatEvent({
+      eventType: "secondary_moved",
+      playerNumber: 2,
+      data: {
+        secondaryName: "Engage on All Fronts",
+        fromPile: "deck",
+        toPile: "active",
+        vpDelta: 0,
+      },
+    } as NormalizedEvent);
+    expect(out).toBe("📝 P2 moved Engage on All Fronts: deck → active");
+  });
+
+  it("formats a move that revokes VP", () => {
+    const out = formatEvent({
+      eventType: "secondary_moved",
+      playerNumber: 1,
+      data: {
+        secondaryName: "Sabotage",
+        fromPile: "achieved",
+        toPile: "active",
+        vpDelta: -3,
+      },
+    } as NormalizedEvent);
+    expect(out).toBe("📝 P1 moved Sabotage: achieved → active (-3 VP)");
+  });
+});

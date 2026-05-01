@@ -60,5 +60,5 @@ Bugs:
 - [ ] Overall stats don't take into account discarded games
 
 Feature:
-- [ ] Manually select secondaries as an escape hatch
+- [x] Manually select secondaries as an escape hatch
 - [ ] 2 v 2 mode
