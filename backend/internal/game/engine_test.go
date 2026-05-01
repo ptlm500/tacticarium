@@ -752,6 +752,55 @@ func TestNewOrders_InsufficientCP(t *testing.T) {
 	}
 }
 
+func TestNewOrders_OncePerPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	state.Players[0].CP = 5
+	state.Players[0].ActiveSecondaries = []ActiveSecondary{
+		makeActiveSecondary("s1", "Sec 1"),
+		makeActiveSecondary("s2", "Sec 2"),
+	}
+	state.Players[0].TacticalDeck = makeDeck(5)
+	e := NewEngine(state)
+
+	if _, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionNewOrders,
+		PlayerNumber: 1,
+		Data:         map[string]any{"discardSecondaryId": "s1"},
+	}); err != nil {
+		t.Fatalf("first new_orders: %v", err)
+	}
+	if !state.Players[0].NewOrdersUsedThisPhase {
+		t.Fatal("expected NewOrdersUsedThisPhase to be true after use")
+	}
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionNewOrders,
+		PlayerNumber: 1,
+		Data:         map[string]any{"discardSecondaryId": "s2"},
+	})
+	if err == nil {
+		t.Fatal("expected second new_orders in same phase to be rejected")
+	}
+}
+
+func TestAdvancePhase_ResetsNewOrdersUsedThisPhase(t *testing.T) {
+	state := newActiveTestState()
+	state.Players[0].NewOrdersUsedThisPhase = true
+	state.Players[1].NewOrdersUsedThisPhase = true
+	e := NewEngine(state)
+
+	if _, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionAdvancePhase,
+		PlayerNumber: 1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if state.Players[0].NewOrdersUsedThisPhase || state.Players[1].NewOrdersUsedThisPhase {
+		t.Fatal("expected NewOrdersUsedThisPhase to reset on advance_phase")
+	}
+}
+
 func TestNewOrders_EmptyDeck(t *testing.T) {
 	state := newActiveTestState()
 	state.Players[0].SecondaryMode = "tactical"

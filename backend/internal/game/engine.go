@@ -368,6 +368,7 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 	for _, p := range e.state.Players {
 		if p != nil {
 			p.StratagemsUsedThisPhase = nil
+			p.NewOrdersUsedThisPhase = false
 		}
 	}
 
@@ -443,6 +444,7 @@ func (e *Engine) applyRevertPhase(action GameAction) ([]GameEvent, error) {
 	for _, p := range e.state.Players {
 		if p != nil {
 			p.StratagemsUsedThisPhase = nil
+			p.NewOrdersUsedThisPhase = false
 		}
 	}
 

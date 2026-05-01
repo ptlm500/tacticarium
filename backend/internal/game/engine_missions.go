@@ -406,6 +406,10 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 		return nil, fmt.Errorf("new orders only available in tactical mode")
 	}
 
+	if player.NewOrdersUsedThisPhase {
+		return nil, fmt.Errorf("new orders can only be used once per Command phase")
+	}
+
 	cpCost := e.newOrdersCPCost()
 	if player.CP < cpCost {
 		return nil, fmt.Errorf("insufficient CP: have %d, need %d", player.CP, cpCost)
@@ -431,6 +435,7 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 
 	// Spend CP
 	player.CP -= cpCost
+	player.NewOrdersUsedThisPhase = true
 
 	// Draw replacement from deck (applies mandatory reshuffle rules)
 	drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)

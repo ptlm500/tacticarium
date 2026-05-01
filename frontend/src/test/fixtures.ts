@@ -40,6 +40,7 @@ export function makePlayerState(overrides?: Partial<PlayerState>): PlayerState {
     isChallenger: false,
     adaptOrDieUses: 0,
     stratagemsUsedThisPhase: [],
+    newOrdersUsedThisPhase: false,
     vpPrimaryScoredSlots: {},
     ...overrides,
   };

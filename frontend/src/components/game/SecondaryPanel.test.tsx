@@ -20,6 +20,7 @@ function renderPanel(overrides?: {
   currentRound?: number;
   canGainCP?: boolean;
   currentCP?: number;
+  newOrdersUsedThisPhase?: boolean;
   activeSecondaries?: ActiveSecondary[];
   achievedSecondaries?: ActiveSecondary[];
   discardedSecondaries?: ActiveSecondary[];
@@ -43,6 +44,7 @@ function renderPanel(overrides?: {
       isMyTurn={overrides?.isMyTurn ?? true}
       currentCP={overrides?.currentCP ?? 3}
       canGainCP={overrides?.canGainCP ?? true}
+      newOrdersUsedThisPhase={overrides?.newOrdersUsedThisPhase ?? false}
       onAchieve={noop}
       onDiscard={noop}
       onNewOrders={noop}
@@ -74,6 +76,17 @@ describe("SecondaryPanel", () => {
     it("is hidden on the opponent's turn", () => {
       renderPanel({ currentPhase: "command", isMyTurn: false });
       expect(screen.queryByText("New Orders")).toBeNull();
+    });
+
+    it("is disabled when already used this phase", () => {
+      renderPanel({
+        currentPhase: "command",
+        isMyTurn: true,
+        newOrdersUsedThisPhase: true,
+      });
+      expect((screen.getByText("New Orders").closest("button") as HTMLButtonElement).disabled).toBe(
+        true,
+      );
     });
   });
 
@@ -119,6 +132,7 @@ describe("SecondaryPanel", () => {
           isMyTurn={isMyTurn}
           currentCP={3}
           canGainCP={true}
+          newOrdersUsedThisPhase={false}
           onAchieve={noop}
           onDiscard={noop}
           onNewOrders={noop}
@@ -138,6 +152,33 @@ describe("SecondaryPanel", () => {
     it("is disabled on the non-active player's turn", () => {
       expect(renderDraw(false).disabled).toBe(true);
     });
+
+    it("is disabled outside the command phase", () => {
+      render(
+        <SecondaryPanel
+          mode="tactical"
+          activeSecondaries={[]}
+          achievedSecondaries={[]}
+          discardedSecondaries={[]}
+          tacticalDeck={makeDeck(5)}
+          currentRound={2}
+          currentPhase="fight"
+          isMyTurn={true}
+          currentCP={3}
+          canGainCP={true}
+          newOrdersUsedThisPhase={false}
+          onAchieve={noop}
+          onDiscard={noop}
+          onNewOrders={noop}
+          onReshuffle={noop}
+          onDraw={noop}
+          onMove={noop}
+          onScoreFixedVP={noop}
+        />,
+      );
+      const button = screen.getByRole("button", { name: /Draw Secondaries/ }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+    });
   });
 
   describe("free Discard button", () => {
@@ -155,6 +196,7 @@ describe("SecondaryPanel", () => {
             isMyTurn={true}
             currentCP={3}
             canGainCP={true}
+            newOrdersUsedThisPhase={false}
             onAchieve={noop}
             onDiscard={noop}
             onNewOrders={noop}
@@ -167,6 +209,50 @@ describe("SecondaryPanel", () => {
         expect(screen.getByText("Discard")).toBeTruthy();
         unmount();
       }
+    });
+  });
+
+  describe("details modal", () => {
+    it("opens when an active secondary is clicked", async () => {
+      const user = userEvent.setup();
+      const card: ActiveSecondary = {
+        ...mockActiveSecondary,
+        id: "active-detail",
+        name: "Behind Enemy Lines",
+        description: "Score VP for units in enemy deployment zone.",
+        maxVp: 8,
+      };
+      renderPanel({ activeSecondaries: [card] });
+
+      // Card description initially appears only inside the card.
+      expect(screen.getAllByText("Score VP for units in enemy deployment zone.")).toHaveLength(1);
+
+      await user.click(screen.getByRole("button", { name: /Behind Enemy Lines/ }));
+
+      // Once the modal opens, the description renders in both the card and the dialog.
+      expect(screen.getByRole("dialog")).toBeTruthy();
+      expect(
+        screen.getAllByText("Score VP for units in enemy deployment zone.").length,
+      ).toBeGreaterThan(1);
+    });
+
+    it("opens when an achieved secondary is clicked", async () => {
+      const user = userEvent.setup();
+      const achieved: ActiveSecondary = {
+        ...mockActiveSecondary,
+        id: "ach-1",
+        name: "Cleared the field",
+        description: "All enemies destroyed.",
+      };
+      renderPanel({
+        activeSecondaries: [],
+        achievedSecondaries: [achieved],
+      });
+
+      await user.click(screen.getByRole("button", { name: /Cleared the field/ }));
+
+      expect(screen.getByRole("dialog")).toBeTruthy();
+      expect(screen.getByText("All enemies destroyed.")).toBeTruthy();
     });
   });
 

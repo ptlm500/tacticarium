@@ -70,6 +70,9 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
               </Badge>
             </div>
             {s.legend && <p className="mb-2 text-xs italic text-muted-foreground">{s.legend}</p>}
+            {s.description && (
+              <p className="mb-2 whitespace-pre-line text-xs text-foreground/80">{s.description}</p>
+            )}
             <div className="mt-2 flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 {s.turn} | {s.phase}
@@ -99,6 +102,12 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
                 stratagem more expensive, cheaper, or free.
               </DialogDescription>
             </DialogHeader>
+
+            {pending.description && (
+              <p className="whitespace-pre-line text-xs text-foreground/80">
+                {pending.description}
+              </p>
+            )}
 
             {usedThisPhase.includes(pending.id) && (
               <div

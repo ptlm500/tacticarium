@@ -302,16 +302,14 @@ export function GameSetupPage() {
           </HUDFrame>
         )}
 
-        {hasDetachment && (
-          <HUDFrame label="Primary Mission">
-            <MissionPicker
-              missions={missions}
-              selectedId={gameState.missionId || ""}
-              onSelect={handleSelectMission}
-              onDrawRandom={handleRandomMission}
-            />
-          </HUDFrame>
-        )}
+        <HUDFrame label="Primary Mission">
+          <MissionPicker
+            missions={missions}
+            selectedId={gameState.missionId || ""}
+            onSelect={handleSelectMission}
+            onDrawRandom={handleRandomMission}
+          />
+        </HUDFrame>
 
         {hasMission && (
           <HUDFrame label="Twist">

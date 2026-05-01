@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { ActiveSecondary, ScoringOption } from "../../types/game";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SecondaryDetailsModal } from "./SecondaryDetailsModal";
 
 type Pile = "deck" | "active" | "achieved" | "discarded";
 
@@ -22,6 +23,7 @@ interface Props {
   isMyTurn: boolean;
   currentCP: number;
   canGainCP: boolean;
+  newOrdersUsedThisPhase: boolean;
   onAchieve: (secondaryId: string, vpScored: number) => void;
   onDiscard: (secondaryId: string, free: boolean) => void;
   onNewOrders: (discardSecondaryId: string) => void;
@@ -42,6 +44,7 @@ export function SecondaryPanel({
   isMyTurn,
   currentCP,
   canGainCP,
+  newOrdersUsedThisPhase,
   onAchieve,
   onDiscard,
   onNewOrders,
@@ -52,8 +55,10 @@ export function SecondaryPanel({
 }: Props) {
   const showNewOrders = isMyTurn && currentPhase === "command";
   const showCPDiscard = isMyTurn && currentPhase === "fight";
+  const canDraw = isMyTurn && currentPhase === "command";
   const [expanded, setExpanded] = useState(true);
   const [manageManually, setManageManually] = useState(false);
+  const [detailsCard, setDetailsCard] = useState<ActiveSecondary | null>(null);
   const deckSize = tacticalDeck.length;
 
   if (!mode) return null;
@@ -101,13 +106,22 @@ export function SecondaryPanel({
               </h3>
               {activeSecondaries.map((s) => (
                 <div key={s.id} className="rounded-sm border border-border/60 bg-background/40 p-3">
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-foreground">{s.name}</span>
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {s.maxVp} VP max
-                    </span>
-                  </div>
-                  <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{s.description}</p>
+                  <button
+                    type="button"
+                    onClick={() => setDetailsCard(s)}
+                    className="block w-full cursor-pointer text-left transition-colors hover:opacity-80"
+                    title="View full details"
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground">{s.name}</span>
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {s.maxVp} VP max
+                      </span>
+                    </div>
+                    <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">
+                      {s.description}
+                    </p>
+                  </button>
 
                   {showManual ? (
                     <div className="flex flex-wrap gap-2">
@@ -183,9 +197,13 @@ export function SecondaryPanel({
                           type="button"
                           size="sm"
                           onClick={() => onNewOrders(s.id)}
-                          disabled={currentCP < 1}
+                          disabled={currentCP < 1 || newOrdersUsedThisPhase}
                           className="bg-amber-700 text-white hover:bg-amber-800"
-                          title="Spend 1 CP to discard and draw a new secondary"
+                          title={
+                            newOrdersUsedThisPhase
+                              ? "Already used this Command phase"
+                              : "Spend 1 CP to discard and draw a new secondary"
+                          }
                         >
                           New Orders
                         </Button>
@@ -229,8 +247,14 @@ export function SecondaryPanel({
             <Button
               type="button"
               onClick={onDraw}
-              disabled={!isMyTurn}
-              title={isMyTurn ? undefined : "Only the active player can draw secondaries"}
+              disabled={!canDraw}
+              title={
+                canDraw
+                  ? undefined
+                  : !isMyTurn
+                    ? "Only the active player can draw secondaries"
+                    : "Drawing is restricted to the Command phase"
+              }
               className="w-full font-mono uppercase tracking-widest"
             >
               Draw Secondaries ({deckSize} remaining)
@@ -245,18 +269,21 @@ export function SecondaryPanel({
                 cards={tacticalDeck}
                 fromPile="deck"
                 onMove={onMove}
+                onSelect={setDetailsCard}
               />
               <PileList
                 heading={`Discarded (${discardedSecondaries.length})`}
                 cards={discardedSecondaries}
                 fromPile="discarded"
                 onMove={onMove}
+                onSelect={setDetailsCard}
               />
               <PileList
                 heading={`Achieved (${achievedSecondaries.length})`}
                 cards={achievedSecondaries}
                 fromPile="achieved"
                 onMove={onMove}
+                onSelect={setDetailsCard}
               />
             </>
           )}
@@ -275,21 +302,26 @@ export function SecondaryPanel({
               </h3>
               <div className="space-y-1">
                 {achievedSecondaries.map((s, i) => (
-                  <div
+                  <button
+                    type="button"
                     key={`${s.id}-${i}`}
+                    onClick={() => setDetailsCard(s)}
                     className={cn(
-                      "rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-1",
+                      "w-full rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-left transition-colors hover:bg-emerald-500/20",
                       "text-xs text-emerald-400",
                     )}
+                    title="View full details"
                   >
                     {s.name}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
         </div>
       )}
+
+      <SecondaryDetailsModal secondary={detailsCard} onClose={() => setDetailsCard(null)} />
     </section>
   );
 }
@@ -299,11 +331,13 @@ function PileList({
   cards,
   fromPile,
   onMove,
+  onSelect,
 }: {
   heading: string;
   cards: ActiveSecondary[];
   fromPile: Pile;
   onMove: Props["onMove"];
+  onSelect: (s: ActiveSecondary) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -318,12 +352,19 @@ function PileList({
             key={`${s.id}-${i}`}
             className="rounded-sm border border-border/60 bg-background/40 p-3"
           >
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <span className="text-sm font-medium text-foreground">{s.name}</span>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {s.maxVp} VP max
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => onSelect(s)}
+              className="mb-2 block w-full cursor-pointer text-left transition-colors hover:opacity-80"
+              title="View full details"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">{s.name}</span>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {s.maxVp} VP max
+                </span>
+              </div>
+            </button>
             <div className="flex flex-wrap gap-2">
               {fromPile !== "active" && (
                 <Button

@@ -62,10 +62,13 @@ Tactical mode players can discard an active secondary they don't want to pursue.
 A Command Phase ability that lets a tactical mode player swap an active secondary for a new one from the deck. Costs CP.
 
 - Action: `new_orders` with `{discardSecondaryId}`
-- **Restrictions**: Command Phase only, tactical mode only
+- **Restrictions**: Command Phase only, tactical mode only, **once per Command phase per player**
 - **CP cost**: 1 (may be modified by twists in future — see `twists.go:9-12`)
 - Discards the specified active secondary and draws a replacement from the deck
 - The discarded card goes to the discarded pile (no CP reward from this discard)
+- The per-phase limit is tracked via `NewOrdersUsedThisPhase` on `PlayerState` and
+  reset on every `advance_phase` / `revert_phase`, mirroring the stratagem
+  once-per-phase limit
 - Implementation: `engine_missions.go:325-395`
 
 ## Secondary Objective Data Model
