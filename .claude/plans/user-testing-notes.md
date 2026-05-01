@@ -63,5 +63,5 @@ Bugs:
 Feature:
 
 - [x] Manually select secondaries as an escape hatch
-- [ ] Way of easily seeing what has been scored per round, per player (e.g. live table or some other visualisation)
+- [x] Way of easily seeing what has been scored per round, per player (e.g. live table or some other visualisation)
 - [ ] 2 v 2 mode
