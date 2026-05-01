@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
 import type { PlayerState } from "../../types/game";
+import { useStratagems } from "../../hooks/queries/useFactionQueries";
+import { PlayerAvatar } from "./PlayerAvatar";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Badge } from "@/components/ui/badge";
 
@@ -9,7 +11,7 @@ interface Props {
 }
 
 export function SpectatorPlayerPanel({ player, isActive }: Props) {
-  const totalVP = player.vpPrimary + player.vpSecondary + player.vpGambit + player.vpPaint;
+  const totalVP = player.vpPrimary + player.vpSecondary + player.vpPaint;
 
   const activeSecondaries = player.activeSecondaries ?? [];
   const achievedSecondaries = player.achievedSecondaries ?? [];
@@ -17,11 +19,18 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
   const tacticalDeck = player.tacticalDeck ?? [];
   const stratagemsUsed = player.stratagemsUsedThisPhase ?? [];
 
+  const { data: stratagems } = useStratagems(player.factionId);
+  const stratagemNameById = new Map((stratagems ?? []).map((s) => [s.id, s.name]));
+
   const label = `${player.username} — ${player.factionName || "Unknown faction"}`;
 
   return (
     <HUDFrame label={label}>
       <div className="space-y-4 py-1">
+        <div className="flex items-center gap-3">
+          <PlayerAvatar avatarUrl={player.avatarUrl} username={player.username} size="md" />
+          <div className="font-mono text-sm text-foreground">{player.username}</div>
+        </div>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
           {isActive && (
             <Badge
@@ -49,7 +58,6 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
           <Stat label="Total VP" value={totalVP} highlight />
           <Stat label="Primary" value={player.vpPrimary} />
           <Stat label="Secondary" value={player.vpSecondary} />
-          <Stat label="Gambit" value={player.vpGambit} />
           <Stat label="Paint" value={player.vpPaint} />
         </div>
 
@@ -89,8 +97,10 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
             <ul className="space-y-1 font-mono text-[11px] text-muted-foreground">
               {achievedSecondaries.map((s) => (
                 <li key={s.id} className="flex justify-between gap-2">
-                  <span className="truncate text-foreground/80">{s.name}</span>
-                  <span className="tabular-nums text-emerald-300">+{s.maxVp}</span>
+                  <span className="truncate text-emerald-300/90">{s.name}</span>
+                  {s.vpScored != null && s.vpScored > 0 && (
+                    <span className="tabular-nums text-emerald-300">+{s.vpScored}</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -120,7 +130,7 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
                   variant="outline"
                   className="font-mono text-[10px] uppercase tracking-widest"
                 >
-                  {id}
+                  {stratagemNameById.get(id) ?? id}
                 </Badge>
               ))}
             </div>

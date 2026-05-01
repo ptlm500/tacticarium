@@ -39,18 +39,23 @@ VP can be scored by **either player at any time** during an active game — it i
 - `"end_of_battle_round"` — score at end of round (missions that use round-end scoring)
 - `"end_of_turn"` — per-action bonuses that trigger at the end of a player's turn
 
-Each slot may be scored **at most once per battle round per player**. Attempting
-to score the same slot twice in the same round returns an error. Different
-slots can still be scored in the same round (e.g., `end_of_command_phase` +
-`end_of_turn`). Slots match the mission's `scoringTiming` values, so the
-frontend passes the appropriate slot automatically.
+Each `(slot, scoringRuleLabel)` pair may be scored **at most once per battle
+round per player**. Attempting to score the same rule twice in the same round
+returns an error. Multiple distinct rules can score in the same slot in the
+same round — e.g. *Purge the Foe* has four end-of-battle-round rules and a
+player can legitimately score all of them in one round. When `scoringRuleLabel`
+is omitted (e.g. ad-hoc backend calls), the empty string is used as the rule
+key, preserving the legacy "once per slot" behaviour for that path. Slots
+match the mission's `scoringTiming` values, so the frontend passes the
+appropriate slot automatically.
 
 ### Undoing a primary score
 
-- Action: `undo_primary_score` with `{round, scoringSlot}`
-- Reverses the applied delta recorded for that round+slot, frees the slot so
-  it can be re-scored, and emits a `vp_primary_score_reverted` event. Any prior
-  round can be undone.
+- Action: `undo_primary_score` with `{round, scoringSlot, scoringRuleLabel?}`
+- Reverses the applied delta recorded for that `(round, slot, ruleLabel)`,
+  frees that entry so it can be re-scored, and emits a
+  `vp_primary_score_reverted` event. Any prior round can be undone. Omit
+  `scoringRuleLabel` to undo a score that was recorded without one.
 
 ### Manual VP adjustment
 

@@ -1,14 +1,23 @@
-import { GameEvent } from "../../types/game";
-import { formatEvent, isHighlightEvent, normalizeWsEvent } from "./eventFormatting";
+import { useMemo } from "react";
+import { GameEvent, GameState } from "../../types/game";
+import {
+  buildPlayerInfo,
+  formatEvent,
+  isHighlightEvent,
+  normalizeWsEvent,
+} from "./eventFormatting";
+import { PlayerAvatar } from "./PlayerAvatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface Props {
   events: GameEvent[];
+  players?: GameState["players"];
 }
 
-export function GameLog({ events }: Props) {
+export function GameLog({ events, players }: Props) {
   const items = [...events].reverse();
+  const playerInfo = useMemo(() => buildPlayerInfo(players), [players]);
 
   return (
     <div className="relative mt-2 overflow-hidden rounded border border-primary/30 bg-card/50 backdrop-blur-sm">
@@ -28,6 +37,7 @@ export function GameLog({ events }: Props) {
               {items.map((event, i) => {
                 const norm = normalizeWsEvent(event);
                 const highlight = isHighlightEvent(norm);
+                const info = norm.playerNumber ? playerInfo[norm.playerNumber] : undefined;
                 return (
                   <li key={i} className="relative flex items-start gap-3 pl-5">
                     <span
@@ -39,12 +49,19 @@ export function GameLog({ events }: Props) {
                           : "border-foreground/30 bg-background",
                       )}
                     />
-                    <div className="flex flex-1 flex-wrap items-baseline gap-x-2 font-mono text-xs leading-relaxed">
+                    <div className="flex flex-1 flex-wrap items-center gap-x-2 font-mono text-xs leading-relaxed">
                       {event.round != null && (
                         <span className="shrink-0 text-primary/60">R{event.round}</span>
                       )}
+                      {info && (
+                        <PlayerAvatar
+                          avatarUrl={info.avatarUrl}
+                          username={info.username}
+                          size="xs"
+                        />
+                      )}
                       <span className={cn(highlight ? "text-foreground" : "text-foreground/70")}>
-                        {formatEvent(norm)}
+                        {formatEvent(norm, playerInfo)}
                       </span>
                     </div>
                   </li>

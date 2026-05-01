@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Skull, Swords, Handshake, Trophy } from "lucide-react";
 import { GameState, PlayerState } from "../../types/game";
 import { gamesApi } from "../../api/games";
-import { type RestGameEvent, buildPlayerStats, getEndReason, getRoundsPlayed } from "./vpUtils";
+import { type RestGameEvent, buildScoringHeatmapData, getEndReason } from "./vpUtils";
+import { normalizeRestEvent } from "./eventFormatting";
 import { VPBreakdownTable } from "./VPBreakdownTable";
+import { ScoringHeatmaps } from "./ScoringHeatmaps";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
@@ -66,13 +68,14 @@ export function GameSummary({ gameState, myPlayer, opponent, currentUserId }: Pr
     );
   }
 
-  const endReason = getEndReason(events);
-  const roundsPlayed = getRoundsPlayed(events);
-  const rounds = Array.from({ length: roundsPlayed }, (_, i) => i + 1);
+  const normalizedEvents = events.map(normalizeRestEvent);
+  const endReason = getEndReason(normalizedEvents);
+  const heatmapData = buildScoringHeatmapData(normalizedEvents, [myPlayer, opponent]);
+  const roundsPlayed = heatmapData.rounds.length;
 
-  const myStats = buildPlayerStats(events, myPlayer.playerNumber, myPlayer.vpPaint);
+  const myStats = heatmapData.statsByPlayerNumber[myPlayer.playerNumber];
   const opponentStats = opponent
-    ? buildPlayerStats(events, opponent.playerNumber, opponent.vpPaint)
+    ? (heatmapData.statsByPlayerNumber[opponent.playerNumber] ?? null)
     : null;
 
   const reasonLabel =
@@ -122,8 +125,10 @@ export function GameSummary({ gameState, myPlayer, opponent, currentUserId }: Pr
               opponentStats={opponentStats}
               myUsername={myPlayer.username}
               opponentUsername={opponent?.username ?? null}
-              rounds={rounds}
+              rounds={heatmapData.rounds}
             />
+
+            <ScoringHeatmaps players={[myPlayer, opponent]} data={heatmapData} />
 
             <Separator />
 

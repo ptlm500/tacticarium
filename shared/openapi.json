@@ -34,6 +34,10 @@
           },
           "scoringTiming": {
             "type": "string"
+          },
+          "vpScored": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "required": [
@@ -396,6 +400,9 @@
       "GamePlayerSummary": {
         "additionalProperties": false,
         "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
           "factionName": {
             "type": "string"
           },
@@ -786,6 +793,9 @@
             "format": "int64",
             "type": "integer"
           },
+          "avatarUrl": {
+            "type": "string"
+          },
           "challengerCardId": {
             "type": "string"
           },
@@ -889,8 +899,11 @@
           "vpPrimaryScoredSlots": {
             "additionalProperties": {
               "additionalProperties": {
-                "format": "int64",
-                "type": "integer"
+                "additionalProperties": {
+                  "format": "int64",
+                  "type": "integer"
+                },
+                "type": "object"
               },
               "type": "object"
             },

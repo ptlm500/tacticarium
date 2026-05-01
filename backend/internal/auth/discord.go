@@ -13,7 +13,22 @@ const (
 	discordAuthorizeURL = "https://discord.com/api/oauth2/authorize"
 	discordTokenURL     = "https://discord.com/api/oauth2/token"
 	discordUserURL      = "https://discord.com/api/users/@me"
+	discordCDNBaseURL   = "https://cdn.discordapp.com"
 )
+
+// AvatarURL builds the Discord CDN URL for a user's avatar. Animated avatars
+// (hashes prefixed "a_") are returned as .gif; everything else as .png. Returns
+// "" when either component is missing — callers should treat that as "no avatar".
+func AvatarURL(discordID string, hash *string) string {
+	if discordID == "" || hash == nil || *hash == "" {
+		return ""
+	}
+	ext := "png"
+	if strings.HasPrefix(*hash, "a_") {
+		ext = "gif"
+	}
+	return fmt.Sprintf("%s/avatars/%s/%s.%s?size=64", discordCDNBaseURL, discordID, *hash, ext)
+}
 
 type DiscordConfig struct {
 	ClientID     string

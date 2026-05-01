@@ -118,6 +118,46 @@ describe("useWebSocket", () => {
     );
   });
 
+  it("reconnects when the tab becomes visible after a stale connection", async () => {
+    let connectionCount = 0;
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        connectionCount += 1;
+        client.send(JSON.stringify({ type: "pong", data: null }));
+      }),
+    );
+
+    await act(async () => {
+      render(<TestComponent gameId="game-1" token="tok" onMessage={onMessage} />);
+    });
+
+    await vi.waitFor(() => {
+      expect(connectionCount).toBe(1);
+      expect(screen.getByTestId("connected").textContent).toBe("true");
+    });
+
+    // Simulate the tab returning to focus after enough idle time for the
+    // visibility handler to consider the open connection stale (>30s).
+    const realNow = Date.now;
+    Date.now = () => realNow() + 60_000;
+    try {
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+    } finally {
+      Date.now = realNow;
+    }
+
+    await vi.waitFor(
+      () => {
+        expect(connectionCount).toBe(2);
+        expect(screen.getByTestId("connected").textContent).toBe("true");
+      },
+      { timeout: 5000 },
+    );
+  });
+
   it("sends action messages over WebSocket", async () => {
     const sentMessages: string[] = [];
 

@@ -161,7 +161,8 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 		}
 
 		pRows, err := h.db.Query(ctx,
-			`SELECT gp.user_id, u.discord_username, COALESCE(f.name, ''), gp.player_number,
+			`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar,
+			        COALESCE(f.name, ''), gp.player_number,
 			        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint
 			 FROM game_players gp
 			 JOIN users u ON gp.user_id = u.id
@@ -171,7 +172,11 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 		if err == nil {
 			for pRows.Next() {
 				var p models.GamePlayerSummary
-				_ = pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				var discordID string
+				var discordAvatar *string
+				_ = pRows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar,
+					&p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 				g.Players = append(g.Players, p)
 			}
 			pRows.Close()
@@ -231,7 +236,8 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 		}
 
 		pRows, err := h.db.Query(ctx,
-			`SELECT gp.user_id, u.discord_username, COALESCE(f.name, ''), gp.player_number,
+			`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar,
+			        COALESCE(f.name, ''), gp.player_number,
 			        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint
 			 FROM game_players gp
 			 JOIN users u ON gp.user_id = u.id
@@ -241,7 +247,11 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 		if err == nil {
 			for pRows.Next() {
 				var p models.GamePlayerSummary
-				_ = pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				var discordID string
+				var discordAvatar *string
+				_ = pRows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar,
+					&p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 				g.Players = append(g.Players, p)
 			}
 			pRows.Close()
@@ -414,6 +424,11 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	avatarURL := ""
+	if p := state.Players[playerNumber-1]; p != nil {
+		avatarURL = p.AvatarURL
+	}
+
 	engine := game.NewEngine(state)
 	engine.SetStratagemLookup(h.lookupStratagem)
 	room := h.hub.GetOrCreateRoom(gameID, engine)
@@ -426,7 +441,7 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := ws.NewClient(conn, room, claims.UserID, claims.Username, playerNumber)
+	client := ws.NewClient(conn, room, claims.UserID, claims.Username, avatarURL, playerNumber)
 	room.Register(client)
 
 	ctx := r.Context()
@@ -519,13 +534,14 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	}
 
 	rows, err := h.db.Query(ctx,
-		`SELECT gp.user_id, u.discord_username, gp.player_number,
+		`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar, gp.player_number,
 		        COALESCE(gp.faction_id, ''), COALESCE(f.name, ''),
 		        COALESCE(gp.detachment_id, ''), COALESCE(d.name, ''),
 		        gp.cp, gp.vp_primary, gp.vp_secondary, gp.vp_gambit, gp.vp_paint,
 		        gp.is_ready, gp.secondary_mode,
 		        gp.tactical_deck, gp.active_secondaries, gp.achieved_secondaries, gp.discarded_secondaries,
-		        gp.is_challenger, COALESCE(gp.challenger_card_id, ''), gp.adapt_or_die_uses
+		        gp.is_challenger, COALESCE(gp.challenger_card_id, ''), gp.adapt_or_die_uses,
+		        gp.vp_primary_scored_slots
 		 FROM game_players gp
 		 JOIN users u ON gp.user_id = u.id
 		 LEFT JOIN factions f ON gp.faction_id = f.id
@@ -539,22 +555,27 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 
 	for rows.Next() {
 		var p game.PlayerState
-		var tacticalDeckJSON, activeSecJSON, achievedSecJSON, discardedSecJSON []byte
-		if err := rows.Scan(&p.UserID, &p.Username, &p.PlayerNumber,
+		var discordID string
+		var discordAvatar *string
+		var tacticalDeckJSON, activeSecJSON, achievedSecJSON, discardedSecJSON, scoredSlotsJSON []byte
+		if err := rows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar, &p.PlayerNumber,
 			&p.FactionID, &p.FactionName,
 			&p.DetachmentID, &p.DetachmentName,
 			&p.CP, &p.VPPrimary, &p.VPSecondary, &p.VPGambit, &p.VPPaint,
 			&p.Ready, &p.SecondaryMode,
 			&tacticalDeckJSON, &activeSecJSON, &achievedSecJSON, &discardedSecJSON,
-			&p.IsChallenger, &p.ChallengerCardID, &p.AdaptOrDieUses); err != nil {
+			&p.IsChallenger, &p.ChallengerCardID, &p.AdaptOrDieUses,
+			&scoredSlotsJSON); err != nil {
 			slog.Error("Scan player error", "error", err)
 			continue
 		}
+		p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 
 		_ = json.Unmarshal(tacticalDeckJSON, &p.TacticalDeck)
 		_ = json.Unmarshal(activeSecJSON, &p.ActiveSecondaries)
 		_ = json.Unmarshal(achievedSecJSON, &p.AchievedSecondaries)
 		_ = json.Unmarshal(discardedSecJSON, &p.DiscardedSecondaries)
+		_ = json.Unmarshal(scoredSlotsJSON, &p.VPPrimaryScoredSlots)
 
 		if p.TacticalDeck == nil {
 			p.TacticalDeck = []game.ActiveSecondary{}
@@ -604,19 +625,26 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 		activeSecJSON, _ := json.Marshal(p.ActiveSecondaries)
 		achievedSecJSON, _ := json.Marshal(p.AchievedSecondaries)
 		discardedSecJSON, _ := json.Marshal(p.DiscardedSecondaries)
+		scoredSlots := p.VPPrimaryScoredSlots
+		if scoredSlots == nil {
+			scoredSlots = map[int]map[string]map[string]int{}
+		}
+		scoredSlotsJSON, _ := json.Marshal(scoredSlots)
 
 		_, err := h.db.Exec(ctx,
 			`UPDATE game_players SET faction_id = NULLIF($1, ''), detachment_id = NULLIF($2, ''),
 			 cp = $3, vp_primary = $4, vp_secondary = $5, vp_gambit = $6, vp_paint = $7, is_ready = $8,
 			 secondary_mode = $9, tactical_deck = $10, active_secondaries = $11,
 			 achieved_secondaries = $12, discarded_secondaries = $13,
-			 is_challenger = $14, challenger_card_id = NULLIF($15, ''), adapt_or_die_uses = $16
-			 WHERE game_id = $17 AND player_number = $18`,
+			 is_challenger = $14, challenger_card_id = NULLIF($15, ''), adapt_or_die_uses = $16,
+			 vp_primary_scored_slots = $17
+			 WHERE game_id = $18 AND player_number = $19`,
 			p.FactionID, p.DetachmentID, p.CP,
 			p.VPPrimary, p.VPSecondary, p.VPGambit, p.VPPaint, p.Ready,
 			p.SecondaryMode, tacticalDeckJSON, activeSecJSON,
 			achievedSecJSON, discardedSecJSON,
 			p.IsChallenger, p.ChallengerCardID, p.AdaptOrDieUses,
+			scoredSlotsJSON,
 			state.GameID, p.PlayerNumber)
 		if err != nil {
 			slog.Error("Persist player state error", "error", err)

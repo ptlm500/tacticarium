@@ -126,6 +126,7 @@ type GameSummary struct {
 type GamePlayerSummary struct {
 	UserID       string `json:"userId"`
 	Username     string `json:"username"`
+	AvatarURL    string `json:"avatarUrl,omitempty"`
 	FactionName  string `json:"factionName,omitempty"`
 	PlayerNumber int    `json:"playerNumber"`
 	TotalVP      int    `json:"totalVp"`

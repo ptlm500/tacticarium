@@ -17,6 +17,7 @@ type Client struct {
 	room         *Room
 	userID       string
 	username     string
+	avatarURL    string
 	playerNumber int
 	isSpectator  bool
 	send         chan ServerMessage
@@ -24,12 +25,13 @@ type Client struct {
 	once         sync.Once
 }
 
-func NewClient(conn *websocket.Conn, room *Room, userID, username string, playerNumber int) *Client {
+func NewClient(conn *websocket.Conn, room *Room, userID, username, avatarURL string, playerNumber int) *Client {
 	return &Client{
 		conn:         conn,
 		room:         room,
 		userID:       userID,
 		username:     username,
+		avatarURL:    avatarURL,
 		playerNumber: playerNumber,
 		send:         make(chan ServerMessage, 64),
 		done:         make(chan struct{}),

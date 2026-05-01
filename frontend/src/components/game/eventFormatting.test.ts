@@ -84,3 +84,43 @@ describe("formatEvent — secondary_moved", () => {
     expect(out).toBe("📝 P1 moved Sabotage: achieved → active (-3 VP)");
   });
 });
+
+describe("formatEvent — player names", () => {
+  const players = { 1: { username: "alice" }, 2: { username: "bob" } };
+
+  it("uses the username when a player map is provided", () => {
+    const out = formatEvent(
+      primaryScore({
+        category: "primary",
+        appliedDelta: 5,
+        scoringRuleLabel: "Hold the most",
+      }),
+      players,
+    );
+    expect(out).toBe("alice scored 5 primary VP — Hold the most");
+  });
+
+  it("uses the right username for player 2", () => {
+    const out = formatEvent(
+      {
+        eventType: "cp_gain",
+        playerNumber: 2,
+        data: { amount: 1 },
+      } as NormalizedEvent,
+      players,
+    );
+    expect(out).toBe("bob gained 1 CP");
+  });
+
+  it("falls back to P{n} when the player has no entry in the map", () => {
+    const out = formatEvent(
+      {
+        eventType: "cp_gain",
+        playerNumber: 3,
+        data: { amount: 1 },
+      } as NormalizedEvent,
+      players,
+    );
+    expect(out).toBe("P3 gained 1 CP");
+  });
+});

@@ -26,6 +26,7 @@ import { MissionInfo } from "../components/game/MissionInfo";
 import { MissionScoring } from "../components/game/MissionScoring";
 import { PrimaryScoreHistory } from "../components/game/PrimaryScoreHistory";
 import { GameLog } from "../components/game/GameLog";
+import { PlayerAvatar } from "../components/game/PlayerAvatar";
 import { ScoringPrompt, ScoringPromptItem } from "../components/game/ScoringPrompt";
 import { PrimaryScoringSlot } from "../types/scoring";
 import { ReminderPrompt } from "../components/game/ReminderPrompt";
@@ -37,7 +38,10 @@ import type { ActiveSecondary } from "../types/game";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
-import { type RestGameEvent } from "../components/game/eventFormatting";
+import { type RestGameEvent, normalizeWsEvent } from "../components/game/eventFormatting";
+import { buildScoringHeatmapData } from "../components/game/vpUtils";
+import { PlayerScoringHeatmap } from "../components/game/PlayerScoringHeatmap";
+import { ScoringDetailModal, type CellSelection } from "../components/game/ScoringDetailModal";
 import type { GameEvent, Phase } from "../types/game";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -91,6 +95,7 @@ export function GamePage() {
   const [showRevertModal, setShowRevertModal] = useState(false);
   const [showCPCapOverride, setShowCPCapOverride] = useState(false);
   const [opponentDetailsCard, setOpponentDetailsCard] = useState<ActiveSecondary | null>(null);
+  const [scoringSelection, setScoringSelection] = useState<CellSelection | null>(null);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
@@ -354,8 +359,10 @@ export function GamePage() {
   );
 
   const handleUndoPrimaryScore = useCallback(
-    (round: number, scoringSlot: PrimaryScoringSlot) => {
-      sendAction("undo_primary_score", { round, scoringSlot });
+    (round: number, scoringSlot: PrimaryScoringSlot, scoringRuleLabel: string) => {
+      const data: Record<string, unknown> = { round, scoringSlot };
+      if (scoringRuleLabel) data.scoringRuleLabel = scoringRuleLabel;
+      sendAction("undo_primary_score", data);
     },
     [sendAction],
   );
@@ -460,10 +467,16 @@ export function GamePage() {
     );
   }
 
-  const totalVP = myPlayer.vpPrimary + myPlayer.vpSecondary + myPlayer.vpGambit + myPlayer.vpPaint;
-  const opponentVP = opponent
-    ? opponent.vpPrimary + opponent.vpSecondary + opponent.vpGambit + opponent.vpPaint
-    : 0;
+  const totalVP = myPlayer.vpPrimary + myPlayer.vpSecondary + myPlayer.vpPaint;
+  const opponentVP = opponent ? opponent.vpPrimary + opponent.vpSecondary + opponent.vpPaint : 0;
+
+  const heatmapData = buildScoringHeatmapData(events.map(normalizeWsEvent), [myPlayer, opponent], {
+    roundCount: Math.max(gameState.currentRound, 1),
+  });
+  const myStats = heatmapData.statsByPlayerNumber[myPlayer.playerNumber];
+  const opponentStats = opponent
+    ? (heatmapData.statsByPlayerNumber[opponent.playerNumber] ?? null)
+    : null;
 
   if (gameState.status === "completed" || gameState.status === "abandoned") {
     return (
@@ -527,58 +540,104 @@ export function GamePage() {
       {/* Main Content */}
       <div className="relative z-0 min-h-0 flex-1 overflow-auto px-4 py-4">
         <div className="mx-auto max-w-3xl space-y-4">
-          {/* Scoreboard — both players' CP and VP side-by-side */}
           <div className="grid grid-cols-2 gap-3">
-            <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
-              <div className="space-y-3 py-1">
-                <CPCounter
-                  cp={myPlayer.cp}
-                  canGainCP={myPlayer.cpGainedThisRound < 1}
-                  onAdjust={handleAdjustCP}
-                />
-                <VPCounter
-                  vpPrimary={myPlayer.vpPrimary}
-                  vpSecondary={myPlayer.vpSecondary}
-                  vpGambit={myPlayer.vpGambit}
-                  vpPaint={myPlayer.vpPaint}
-                  onAdjust={handleAdjustVPManual}
-                />
-              </div>
-            </HUDFrame>
-
-            {opponent && (
-              <HUDFrame label={`${opponent.username} — ${opponent.factionName}`}>
+            <div className="flex flex-col gap-3">
+              <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
                 <div className="space-y-3 py-1">
-                  <div className="text-center">
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Command Points
-                    </p>
-                    <span className="mt-1 block font-mono text-3xl font-bold text-primary tabular-nums">
-                      {opponent.cp}
-                    </span>
+                  <div className="flex items-center justify-center">
+                    <PlayerAvatar
+                      avatarUrl={myPlayer.avatarUrl}
+                      username={myPlayer.username}
+                      size="md"
+                    />
                   </div>
-                  <div className="text-center">
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Victory Points
-                    </p>
-                    <span className="mt-1 block font-mono text-3xl font-bold text-primary tabular-nums">
-                      {opponentVP}
-                    </span>
-                  </div>
-                  {!opponentConnected && (
-                    <div className="flex justify-center">
-                      <Badge
-                        variant="outline"
-                        role="status"
-                        aria-label="Opponent disconnected"
-                        className="border-amber-500/50 font-mono text-[10px] uppercase tracking-widest text-amber-300"
-                      >
-                        Disconnected
-                      </Badge>
-                    </div>
-                  )}
+                  <CPCounter
+                    cp={myPlayer.cp}
+                    canGainCP={myPlayer.cpGainedThisRound < 1}
+                    onAdjust={handleAdjustCP}
+                  />
+                  <VPCounter
+                    vpPrimary={myPlayer.vpPrimary}
+                    vpSecondary={myPlayer.vpSecondary}
+                    vpPaint={myPlayer.vpPaint}
+                    onAdjust={handleAdjustVPManual}
+                  />
                 </div>
               </HUDFrame>
+              <PlayerScoringHeatmap
+                username={myPlayer.username}
+                stats={myStats}
+                rounds={heatmapData.rounds}
+                intensityMax={heatmapData.intensityMax}
+                onCellClick={(round, category) =>
+                  setScoringSelection({
+                    playerNumber: myPlayer.playerNumber,
+                    username: myPlayer.username,
+                    round,
+                    category,
+                  })
+                }
+              />
+            </div>
+
+            {opponent && (
+              <div className="flex flex-col gap-3">
+                <HUDFrame label={`${opponent.username} — ${opponent.factionName}`}>
+                  <div className="space-y-3 py-1">
+                    <div className="flex items-center justify-center">
+                      <PlayerAvatar
+                        avatarUrl={opponent.avatarUrl}
+                        username={opponent.username}
+                        size="md"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        Command Points
+                      </p>
+                      <span className="mt-1 block font-mono text-3xl font-bold text-primary tabular-nums">
+                        {opponent.cp}
+                      </span>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        Victory Points
+                      </p>
+                      <span className="mt-1 block font-mono text-3xl font-bold text-primary tabular-nums">
+                        {opponentVP}
+                      </span>
+                    </div>
+                    {!opponentConnected && (
+                      <div className="flex justify-center">
+                        <Badge
+                          variant="outline"
+                          role="status"
+                          aria-label="Opponent disconnected"
+                          className="border-amber-500/50 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+                        >
+                          Disconnected
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </HUDFrame>
+                {opponentStats && (
+                  <PlayerScoringHeatmap
+                    username={opponent.username}
+                    stats={opponentStats}
+                    rounds={heatmapData.rounds}
+                    intensityMax={heatmapData.intensityMax}
+                    onCellClick={(round, category) =>
+                      setScoringSelection({
+                        playerNumber: opponent.playerNumber,
+                        username: opponent.username,
+                        round,
+                        category,
+                      })
+                    }
+                  />
+                )}
+              </div>
             )}
           </div>
 
@@ -757,7 +816,7 @@ export function GamePage() {
               </span>
               {showLog ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </Button>
-            {showLog && <GameLog events={events} />}
+            {showLog && <GameLog events={events} players={gameState?.players} />}
           </section>
         </div>
       </div>
@@ -908,6 +967,12 @@ export function GamePage() {
       <SecondaryDetailsModal
         secondary={opponentDetailsCard}
         onClose={() => setOpponentDetailsCard(null)}
+      />
+
+      <ScoringDetailModal
+        selection={scoringSelection}
+        onClose={() => setScoringSelection(null)}
+        events={heatmapData.normalizedEvents}
       />
 
       {/* Draw Prompt */}

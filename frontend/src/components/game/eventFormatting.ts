@@ -1,4 +1,4 @@
-import type { GameEvent } from "../../types/game";
+import type { GameEvent, GameState } from "../../types/game";
 
 /** Normalized event shape used by shared components. */
 export interface NormalizedEvent {
@@ -8,6 +8,25 @@ export interface NormalizedEvent {
   phase?: string;
   data?: Record<string, unknown>;
   createdAt?: string;
+}
+
+/** Display info for a player, keyed by playerNumber, used for log/timeline rendering. */
+export interface PlayerInfo {
+  username: string;
+  avatarUrl?: string;
+}
+
+export type PlayerInfoMap = Record<number, PlayerInfo>;
+
+export function buildPlayerInfo(players: GameState["players"] | undefined): PlayerInfoMap {
+  const map: PlayerInfoMap = {};
+  if (!players) return map;
+  for (const p of players) {
+    if (p?.username) {
+      map[p.playerNumber] = { username: p.username, avatarUrl: p.avatarUrl };
+    }
+  }
+  return map;
 }
 
 /** REST API event shape from /api/games/:id/events. */
@@ -50,8 +69,10 @@ function s(value: unknown, fallback = ""): string {
   return JSON.stringify(value);
 }
 
-export function formatEvent(event: NormalizedEvent): string {
-  const player = event.playerNumber ? `P${event.playerNumber}` : "";
+export function formatEvent(event: NormalizedEvent, players?: PlayerInfoMap): string {
+  const player = event.playerNumber
+    ? (players?.[event.playerNumber]?.username ?? `P${event.playerNumber}`)
+    : "";
 
   switch (event.eventType) {
     case "phase_advance":

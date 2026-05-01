@@ -307,6 +307,7 @@ func (e *Engine) applyAchieveSecondary(action GameAction) ([]GameEvent, error) {
 			return nil, fmt.Errorf("invalid VP score %d: does not match any scoring option", vpScored)
 		}
 	}
+	achieved.VPScored = vpScored
 	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
 	player.AchievedSecondaries = append(player.AchievedSecondaries, achieved)
 

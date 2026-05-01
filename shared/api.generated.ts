@@ -691,6 +691,8 @@ export interface components {
             name: string;
             scoringOptions: components["schemas"]["SecondaryScoringOption"][] | null;
             scoringTiming?: string;
+            /** Format: int64 */
+            vpScored?: number;
         };
         AdminMeOutputBody: {
             /**
@@ -835,6 +837,7 @@ export interface components {
             round: number | null;
         };
         GamePlayerSummary: {
+            avatarUrl?: string;
             factionName?: string;
             /** Format: int64 */
             playerNumber: number;
@@ -965,6 +968,7 @@ export interface components {
             activeSecondaries: components["schemas"]["ActiveSecondary"][] | null;
             /** Format: int64 */
             adaptOrDieUses: number;
+            avatarUrl?: string;
             challengerCardId?: string;
             /** Format: int64 */
             cp: number;
@@ -997,7 +1001,9 @@ export interface components {
             vpPrimary: number;
             vpPrimaryScoredSlots: {
                 [key: string]: {
-                    [key: string]: number;
+                    [key: string]: {
+                        [key: string]: number;
+                    };
                 };
             };
             /** Format: int64 */

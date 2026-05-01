@@ -2,7 +2,7 @@
 
 - [ ] Invite code top right
 
-- [ ] opponent down the bottom!
+- [x] opponent down the bottom!
 
 - [x] Select which player goes first
 
@@ -24,7 +24,7 @@
 
 - [x] CP gain isn't triggered per player turn
 
-- [ ] New orders should only exist when new orders is active
+- [x] New orders should only exist when new orders is active
 
 - [x] There's no cull the horde?
 
@@ -55,11 +55,13 @@ Bugs:
 - [x] Strategems don't have a way to see the rule, only the "legend" flavour text
 - [x] Error for primary already scored isn't using friendly text
 - [x] Sabotage (for example) needs to only trigger at the end of the oponents turn
-- [ ] "Stratagems This Phase" in the spectate mode gives the ID?
+- [x] "Stratagems This Phase" in the spectate mode gives the ID?
 - [ ] Grid on grid on the battle report screen is a bit much, also spacing
 - [ ] Overall stats don't take into account discarded games
+- [x] Some missions, such as Purge The Foe allow for multiple scoring options per turn, so the restriction of only scoring 1 doesn't work
 
 Feature:
 
 - [x] Manually select secondaries as an escape hatch
+- [x] Way of easily seeing what has been scored per round, per player (e.g. live table or some other visualisation)
 - [ ] 2 v 2 mode
