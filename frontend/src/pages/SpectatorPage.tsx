@@ -167,7 +167,7 @@ export function SpectatorPage() {
               </span>
               {showLog ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </Button>
-            {showLog && <GameLog events={events} />}
+            {showLog && <GameLog events={events} players={gameState.players} />}
           </section>
         </div>
       </main>

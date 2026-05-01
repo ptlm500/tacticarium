@@ -65,6 +65,7 @@ func (r *Room) Run() {
 				r.engine.AddPlayer(&game.PlayerState{
 					UserID:       client.userID,
 					Username:     client.username,
+					AvatarURL:    client.avatarURL,
 					PlayerNumber: client.playerNumber,
 					VPPaint:      game.MaxVPPaint,
 				})

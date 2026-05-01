@@ -10,7 +10,7 @@ import {
 import { VPBreakdownTable } from "../components/game/VPBreakdownTable";
 import { VPProgressionChart } from "../components/game/VPProgressionChart";
 import { EventTimeline } from "../components/game/EventTimeline";
-import { normalizeRestEvent } from "../components/game/eventFormatting";
+import { buildPlayerInfo, normalizeRestEvent } from "../components/game/eventFormatting";
 import { useGame, useGameEvents } from "../hooks/queries/useGamesQueries";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -116,6 +116,7 @@ export function GameDetailPage() {
           : null;
 
   const normalizedEvents = typedEvents.map(normalizeRestEvent);
+  const timelinePlayers = buildPlayerInfo(gameState.players);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -221,7 +222,11 @@ export function GameDetailPage() {
 
         <HUDFrame label="Event Timeline">
           <div className="py-1">
-            <EventTimeline events={normalizedEvents} defaultFilter="highlights" />
+            <EventTimeline
+              events={normalizedEvents}
+              defaultFilter="highlights"
+              players={timelinePlayers}
+            />
           </div>
         </HUDFrame>
       </main>

@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { type NormalizedEvent, formatEvent, isHighlightEvent } from "./eventFormatting";
+import {
+  type NormalizedEvent,
+  type PlayerInfoMap,
+  formatEvent,
+  isHighlightEvent,
+} from "./eventFormatting";
+import { PlayerAvatar } from "./PlayerAvatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -12,9 +18,10 @@ import {
 interface Props {
   events: NormalizedEvent[];
   defaultFilter?: "highlights" | "all";
+  players?: PlayerInfoMap;
 }
 
-export function EventTimeline({ events, defaultFilter = "highlights" }: Props) {
+export function EventTimeline({ events, defaultFilter = "highlights", players }: Props) {
   const [filter, setFilter] = useState(defaultFilter);
 
   const filtered = filter === "highlights" ? events.filter(isHighlightEvent) : events;
@@ -40,14 +47,23 @@ export function EventTimeline({ events, defaultFilter = "highlights" }: Props) {
           <p className="text-center font-mono text-xs text-muted-foreground">No events.</p>
         ) : (
           <div className="space-y-1">
-            {[...filtered].reverse().map((event, i) => (
-              <div key={i} className="flex gap-2 font-mono text-xs text-muted-foreground">
-                {event.round != null && (
-                  <span className="shrink-0 text-primary/60">R{event.round}</span>
-                )}
-                <span className="text-foreground/80">{formatEvent(event)}</span>
-              </div>
-            ))}
+            {[...filtered].reverse().map((event, i) => {
+              const info = event.playerNumber ? players?.[event.playerNumber] : undefined;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 font-mono text-xs text-muted-foreground"
+                >
+                  {event.round != null && (
+                    <span className="shrink-0 text-primary/60">R{event.round}</span>
+                  )}
+                  {info && (
+                    <PlayerAvatar avatarUrl={info.avatarUrl} username={info.username} size="xs" />
+                  )}
+                  <span className="text-foreground/80">{formatEvent(event, players)}</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </ScrollArea>

@@ -76,6 +76,7 @@ type ActiveSecondary struct {
 type PlayerState struct {
 	UserID              string               `json:"userId"`
 	Username            string               `json:"username"`
+	AvatarURL           string               `json:"avatarUrl,omitempty"`
 	PlayerNumber        int                  `json:"playerNumber"`
 	FactionID           string               `json:"factionId"`
 	FactionName         string               `json:"factionName"`

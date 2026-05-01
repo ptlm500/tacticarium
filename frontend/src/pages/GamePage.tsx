@@ -26,6 +26,7 @@ import { MissionInfo } from "../components/game/MissionInfo";
 import { MissionScoring } from "../components/game/MissionScoring";
 import { PrimaryScoreHistory } from "../components/game/PrimaryScoreHistory";
 import { GameLog } from "../components/game/GameLog";
+import { PlayerAvatar } from "../components/game/PlayerAvatar";
 import { ScoringPrompt, ScoringPromptItem } from "../components/game/ScoringPrompt";
 import { PrimaryScoringSlot } from "../types/scoring";
 import { ReminderPrompt } from "../components/game/ReminderPrompt";
@@ -533,6 +534,13 @@ export function GamePage() {
           <div className="grid grid-cols-2 gap-3">
             <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
               <div className="space-y-3 py-1">
+                <div className="flex items-center justify-center">
+                  <PlayerAvatar
+                    avatarUrl={myPlayer.avatarUrl}
+                    username={myPlayer.username}
+                    size="md"
+                  />
+                </div>
                 <CPCounter
                   cp={myPlayer.cp}
                   canGainCP={myPlayer.cpGainedThisRound < 1}
@@ -551,6 +559,13 @@ export function GamePage() {
             {opponent && (
               <HUDFrame label={`${opponent.username} — ${opponent.factionName}`}>
                 <div className="space-y-3 py-1">
+                  <div className="flex items-center justify-center">
+                    <PlayerAvatar
+                      avatarUrl={opponent.avatarUrl}
+                      username={opponent.username}
+                      size="md"
+                    />
+                  </div>
                   <div className="text-center">
                     <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                       Command Points
@@ -759,7 +774,7 @@ export function GamePage() {
               </span>
               {showLog ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </Button>
-            {showLog && <GameLog events={events} />}
+            {showLog && <GameLog events={events} players={gameState?.players} />}
           </section>
         </div>
       </div>

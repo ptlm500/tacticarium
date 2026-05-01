@@ -400,6 +400,9 @@
       "GamePlayerSummary": {
         "additionalProperties": false,
         "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
           "factionName": {
             "type": "string"
           },
@@ -789,6 +792,9 @@
           "adaptOrDieUses": {
             "format": "int64",
             "type": "integer"
+          },
+          "avatarUrl": {
+            "type": "string"
           },
           "challengerCardId": {
             "type": "string"

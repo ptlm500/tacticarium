@@ -161,7 +161,8 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 		}
 
 		pRows, err := h.db.Query(ctx,
-			`SELECT gp.user_id, u.discord_username, COALESCE(f.name, ''), gp.player_number,
+			`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar,
+			        COALESCE(f.name, ''), gp.player_number,
 			        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint
 			 FROM game_players gp
 			 JOIN users u ON gp.user_id = u.id
@@ -171,7 +172,11 @@ func (h *GameHandler) ListGames(ctx context.Context, input *struct{}) (*GameList
 		if err == nil {
 			for pRows.Next() {
 				var p models.GamePlayerSummary
-				_ = pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				var discordID string
+				var discordAvatar *string
+				_ = pRows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar,
+					&p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 				g.Players = append(g.Players, p)
 			}
 			pRows.Close()
@@ -231,7 +236,8 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 		}
 
 		pRows, err := h.db.Query(ctx,
-			`SELECT gp.user_id, u.discord_username, COALESCE(f.name, ''), gp.player_number,
+			`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar,
+			        COALESCE(f.name, ''), gp.player_number,
 			        gp.vp_primary + gp.vp_secondary + gp.vp_gambit + gp.vp_paint
 			 FROM game_players gp
 			 JOIN users u ON gp.user_id = u.id
@@ -241,7 +247,11 @@ func (h *GameHandler) GetHistory(ctx context.Context, input *HistoryInput) (*Gam
 		if err == nil {
 			for pRows.Next() {
 				var p models.GamePlayerSummary
-				_ = pRows.Scan(&p.UserID, &p.Username, &p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				var discordID string
+				var discordAvatar *string
+				_ = pRows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar,
+					&p.FactionName, &p.PlayerNumber, &p.TotalVP)
+				p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 				g.Players = append(g.Players, p)
 			}
 			pRows.Close()
@@ -414,6 +424,11 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	avatarURL := ""
+	if p := state.Players[playerNumber-1]; p != nil {
+		avatarURL = p.AvatarURL
+	}
+
 	engine := game.NewEngine(state)
 	engine.SetStratagemLookup(h.lookupStratagem)
 	room := h.hub.GetOrCreateRoom(gameID, engine)
@@ -426,7 +441,7 @@ func (h *GameHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := ws.NewClient(conn, room, claims.UserID, claims.Username, playerNumber)
+	client := ws.NewClient(conn, room, claims.UserID, claims.Username, avatarURL, playerNumber)
 	room.Register(client)
 
 	ctx := r.Context()
@@ -519,7 +534,7 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	}
 
 	rows, err := h.db.Query(ctx,
-		`SELECT gp.user_id, u.discord_username, gp.player_number,
+		`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar, gp.player_number,
 		        COALESCE(gp.faction_id, ''), COALESCE(f.name, ''),
 		        COALESCE(gp.detachment_id, ''), COALESCE(d.name, ''),
 		        gp.cp, gp.vp_primary, gp.vp_secondary, gp.vp_gambit, gp.vp_paint,
@@ -540,8 +555,10 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 
 	for rows.Next() {
 		var p game.PlayerState
+		var discordID string
+		var discordAvatar *string
 		var tacticalDeckJSON, activeSecJSON, achievedSecJSON, discardedSecJSON, scoredSlotsJSON []byte
-		if err := rows.Scan(&p.UserID, &p.Username, &p.PlayerNumber,
+		if err := rows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar, &p.PlayerNumber,
 			&p.FactionID, &p.FactionName,
 			&p.DetachmentID, &p.DetachmentName,
 			&p.CP, &p.VPPrimary, &p.VPSecondary, &p.VPGambit, &p.VPPaint,
@@ -552,6 +569,7 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 			slog.Error("Scan player error", "error", err)
 			continue
 		}
+		p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 
 		_ = json.Unmarshal(tacticalDeckJSON, &p.TacticalDeck)
 		_ = json.Unmarshal(activeSecJSON, &p.ActiveSecondaries)

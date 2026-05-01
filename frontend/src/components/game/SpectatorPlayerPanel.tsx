@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 import type { PlayerState } from "../../types/game";
 import { useStratagems } from "../../hooks/queries/useFactionQueries";
+import { PlayerAvatar } from "./PlayerAvatar";
 import { HUDFrame } from "@/components/ui/hud-frame";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,6 +27,10 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
   return (
     <HUDFrame label={label}>
       <div className="space-y-4 py-1">
+        <div className="flex items-center gap-3">
+          <PlayerAvatar avatarUrl={player.avatarUrl} username={player.username} size="md" />
+          <div className="font-mono text-sm text-foreground">{player.username}</div>
+        </div>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
           {isActive && (
             <Badge

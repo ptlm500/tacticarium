@@ -837,6 +837,7 @@ export interface components {
             round: number | null;
         };
         GamePlayerSummary: {
+            avatarUrl?: string;
             factionName?: string;
             /** Format: int64 */
             playerNumber: number;
@@ -967,6 +968,7 @@ export interface components {
             activeSecondaries: components["schemas"]["ActiveSecondary"][] | null;
             /** Format: int64 */
             adaptOrDieUses: number;
+            avatarUrl?: string;
             challengerCardId?: string;
             /** Format: int64 */
             cp: number;
