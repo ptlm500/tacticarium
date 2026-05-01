@@ -33,7 +33,7 @@ import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
-import { useMissions, useMissionRules } from "../hooks/queries/useMissionQueries";
+import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
 import { type RestGameEvent } from "../components/game/eventFormatting";
 import type { GameEvent, Phase } from "../types/game";
@@ -108,6 +108,27 @@ export function GamePage() {
     status: string;
   } | null>(null);
 
+  const {
+    data: stratagems = [],
+    isError: stratagemsError,
+    refetch: refetchStratagems,
+  } = useStratagems(myPlayer?.factionId);
+  const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
+  const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
+  const { data: allSecondaries = [] } = useSecondaries(gameState?.missionPackId);
+
+  // Source-of-truth scoringTiming lookup. The ActiveSecondary card embeds
+  // scoringTiming when the deck is built, but cards in flight from before the
+  // seed/admin tagging won't have it — so prefer the live secondaries query.
+  const getScoringTiming = useCallback(
+    (s: { id: string; scoringTiming?: string }): "end_of_own_turn" | "end_of_opponent_turn" => {
+      const fromSource = allSecondaries.find((src) => src.id === s.id)?.scoringTiming;
+      const value = fromSource || s.scoringTiming || "end_of_own_turn";
+      return value === "end_of_opponent_turn" ? "end_of_opponent_turn" : "end_of_own_turn";
+    },
+    [allSecondaries],
+  );
+
   useEffect(() => {
     if (!gameState || !myPlayer) return;
     const prev = prevTurnState.current;
@@ -121,7 +142,7 @@ export function GamePage() {
 
       if (prevWasOpponentFight && !stillOpponentFight) {
         const opponentTurnSecondaries = (myPlayer.activeSecondaries ?? []).filter(
-          (s) => s.scoringTiming === "end_of_opponent_turn",
+          (s) => getScoringTiming(s) === "end_of_opponent_turn",
         );
         if (opponentTurnSecondaries.length > 0) {
           setOpponentTurnPromptItems(
@@ -144,15 +165,7 @@ export function GamePage() {
       activePlayer: gameState.activePlayer,
       status: gameState.status,
     };
-  }, [gameState, myPlayer]);
-
-  const {
-    data: stratagems = [],
-    isError: stratagemsError,
-    refetch: refetchStratagems,
-  } = useStratagems(myPlayer?.factionId);
-  const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
-  const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
+  }, [gameState, myPlayer, getScoringTiming]);
 
   const currentMission = allMissions.find((m) => m.id === gameState?.missionId) ?? null;
   const currentTwist = allRules.find((r) => r.id === gameState?.twistId) ?? null;
@@ -248,7 +261,7 @@ export function GamePage() {
     if (isFightPhase) {
       if (myPlayer.secondaryMode === "fixed") {
         const fixedSecondaries = (myPlayer.activeSecondaries ?? []).filter(
-          (s) => s.isFixed && (s.scoringTiming ?? "end_of_own_turn") === "end_of_own_turn",
+          (s) => s.isFixed && getScoringTiming(s) === "end_of_own_turn",
         );
         if (fixedSecondaries.length > 0) {
           items.push({
@@ -259,11 +272,25 @@ export function GamePage() {
         }
       } else {
         const hasOwnTurnSecondary = (myPlayer.activeSecondaries ?? []).some(
-          (s) => (s.scoringTiming ?? "end_of_own_turn") === "end_of_own_turn",
+          (s) => getScoringTiming(s) === "end_of_own_turn",
         );
         if (hasOwnTurnSecondary) {
           items.push({ kind: "secondary", timing: "end_of_own_turn" });
         }
+      }
+
+      // Block advancing on the opponent's pending end_of_opponent_turn scoring.
+      // The opponent owns the scoring; this is a read-only reminder so the
+      // active player must wait for the opponent to score before continuing.
+      const opponentPending = (opponent?.activeSecondaries ?? []).filter(
+        (s) => getScoringTiming(s) === "end_of_opponent_turn",
+      );
+      if (opponentPending.length > 0) {
+        items.push({
+          kind: "opponent_pending_secondary",
+          secondaries: opponentPending,
+          opponentName: opponent?.username ?? "Your opponent",
+        });
       }
     }
 
@@ -283,7 +310,7 @@ export function GamePage() {
     } else {
       doAdvancePhase();
     }
-  }, [gameState, myPlayer, currentMission, doAdvancePhase]);
+  }, [gameState, myPlayer, opponent, currentMission, doAdvancePhase, getScoringTiming]);
 
   const handleAdjustCP = useCallback(
     (delta: number) => {

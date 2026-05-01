@@ -96,16 +96,23 @@ Assets* variant) score at the end of the **opponent's** turn instead. The
 | Value | When the prompt fires |
 |---|---|
 | `end_of_own_turn` (default) | When the owner advances out of their own Fight phase. |
-| `end_of_opponent_turn` | Reactively, on the owner's client, the moment their opponent's Fight phase ends (turn rolls over or game ends). |
+| `end_of_opponent_turn` | Two prompts fire together: a read-only **reminder block** in the active player's blocking advance modal listing the opponent's pending cards, and a reactive scoring modal on the opponent's (owner's) client. The active player can't click Continue without seeing the reminder. |
 
-The reactive prompt is non-blocking — dismissing it does not freeze the game,
-since `achieve_secondary` works at any time anyway. Cards with mixed timing
-(scoring options that resolve at different moments) are not modelled; one card,
-one timing.
+Timing is resolved at prompt time by looking up the secondary's ID against the
+`useSecondaries` query — this means admin edits to `scoringTiming` take effect
+immediately for in-flight games. The embedded `scoringTiming` on the
+`ActiveSecondary` card is the fallback when source data is unavailable.
+
+The reactive prompt is non-blocking on the owner's side — dismissing it does
+not freeze the game, since `achieve_secondary` works at any time anyway. The
+*active player's* modal is what gates the advance; the reminder block in that
+modal is what enforces the wait. Cards with mixed timing (scoring options that
+resolve at different moments) are not modelled; one card, one timing.
 
 The timing is seeded per-mission-pack in
-`backend/internal/seed/missions.go` (`secondaryScoringTimings`). New cards
-default to `end_of_own_turn` unless explicitly tagged.
+`backend/internal/seed/missions.go` (`secondaryScoringTimings`) and editable
+per-card via the admin UI. New cards default to `end_of_own_turn` unless
+explicitly tagged.
 
 Scoring options can be mode-filtered: an option with `mode: "fixed"` only applies in fixed mode, `mode: "tactical"` only in tactical mode, and empty/omitted applies in both.
 
