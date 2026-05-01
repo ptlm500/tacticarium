@@ -979,6 +979,7 @@ export interface components {
             gambitDeclaredRound?: number;
             gambitId?: string;
             isChallenger: boolean;
+            newOrdersUsedThisPhase: boolean;
             /** Format: int64 */
             playerNumber: number;
             ready: boolean;

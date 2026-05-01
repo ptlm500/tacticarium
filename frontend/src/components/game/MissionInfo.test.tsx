@@ -29,7 +29,7 @@ describe("MissionInfo", () => {
     expect(screen.getByText("Additional objectives appear.")).toBeTruthy();
   });
 
-  it("shows scoring rules with VP values and round requirements", async () => {
+  it("shows scoring rules grouped by battle round", async () => {
     const user = userEvent.setup();
     render(<MissionInfo mission={mission} twist={twist} />);
 
@@ -40,12 +40,12 @@ describe("MissionInfo", () => {
     expect(screen.getByText("2 objectives")).toBeTruthy();
     expect(screen.getByText("+10 VP")).toBeTruthy();
     expect(screen.getByText("3+ objectives")).toBeTruthy();
-    // Both rules have minRound: 2
-    const roundBadges = screen.getAllByText("(R2+)");
-    expect(roundBadges).toHaveLength(2);
+    // Both rules have minRound: 2 — grouped under one heading
+    const groupHeadings = screen.getAllByText("From Battle Round 2");
+    expect(groupHeadings).toHaveLength(1);
   });
 
-  it("does not show round badge for minRound 1 or missing", async () => {
+  it("renders rules without minRound under an Anytime heading", async () => {
     const user = userEvent.setup();
     const missionNoMinRound = {
       ...mockMissions[1], // Scorched Earth — no minRound on rules
@@ -55,7 +55,8 @@ describe("MissionInfo", () => {
     await user.click(screen.getByText("Mission Info"));
 
     expect(screen.getByText("Burned 1")).toBeTruthy();
-    expect(screen.queryByText(/\(R\d+\+\)/)).toBeNull();
+    expect(screen.getByText("Anytime")).toBeTruthy();
+    expect(screen.queryByText(/From Battle Round/)).toBeNull();
   });
 
   it("shows 'None' when mission or twist is null", async () => {

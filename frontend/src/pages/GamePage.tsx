@@ -32,6 +32,8 @@ import { ReminderPrompt } from "../components/game/ReminderPrompt";
 import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
+import { SecondaryDetailsModal } from "../components/game/SecondaryDetailsModal";
+import type { ActiveSecondary } from "../types/game";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
 import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
@@ -88,6 +90,7 @@ export function GamePage() {
   const [showAbandonModal, setShowAbandonModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
   const [showCPCapOverride, setShowCPCapOverride] = useState(false);
+  const [opponentDetailsCard, setOpponentDetailsCard] = useState<ActiveSecondary | null>(null);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
@@ -474,7 +477,7 @@ export function GamePage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -522,7 +525,7 @@ export function GamePage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-0 flex-1 overflow-auto px-4 py-4">
+      <div className="relative z-0 min-h-0 flex-1 overflow-auto px-4 py-4">
         <div className="mx-auto max-w-3xl space-y-4">
           {/* Your State */}
           <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
@@ -591,9 +594,12 @@ export function GamePage() {
                     {opponent.secondaryMode === "tactical" ? "Tactical" : "Fixed"})
                   </h3>
                   {(opponent.activeSecondaries ?? []).map((s) => (
-                    <div
+                    <button
+                      type="button"
                       key={s.id}
-                      className="rounded-sm border border-border/60 bg-background/40 p-2"
+                      onClick={() => setOpponentDetailsCard(s)}
+                      title="View full details"
+                      className="block w-full cursor-pointer rounded-sm border border-border/60 bg-background/40 p-2 text-left transition-colors hover:border-primary/50"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <span className="text-sm font-medium text-foreground">{s.name}</span>
@@ -604,7 +610,7 @@ export function GamePage() {
                       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                         {s.description}
                       </p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -623,6 +629,7 @@ export function GamePage() {
             isMyTurn={isMyTurn}
             currentCP={myPlayer.cp}
             canGainCP={myPlayer.cpGainedThisRound < 1}
+            newOrdersUsedThisPhase={myPlayer.newOrdersUsedThisPhase ?? false}
             onAchieve={handleAchieveSecondary}
             onDiscard={handleDiscardSecondary}
             onNewOrders={handleNewOrders}
@@ -886,6 +893,11 @@ export function GamePage() {
           cancelLabel="Dismiss"
         />
       )}
+
+      <SecondaryDetailsModal
+        secondary={opponentDetailsCard}
+        onClose={() => setOpponentDetailsCard(null)}
+      />
 
       {/* Draw Prompt */}
       {showDrawPrompt && (

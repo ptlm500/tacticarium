@@ -828,6 +828,9 @@
           "isChallenger": {
             "type": "boolean"
           },
+          "newOrdersUsedThisPhase": {
+            "type": "boolean"
+          },
           "playerNumber": {
             "format": "int64",
             "type": "integer"
@@ -922,6 +925,7 @@
           "isChallenger",
           "adaptOrDieUses",
           "stratagemsUsedThisPhase",
+          "newOrdersUsedThisPhase",
           "vpPrimaryScoredSlots"
         ],
         "type": "object"

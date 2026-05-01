@@ -99,6 +99,7 @@ type PlayerState struct {
 	ChallengerCardID        string            `json:"challengerCardId,omitempty"`
 	AdaptOrDieUses          int               `json:"adaptOrDieUses"`
 	StratagemsUsedThisPhase []string          `json:"stratagemsUsedThisPhase"`
+	NewOrdersUsedThisPhase  bool              `json:"newOrdersUsedThisPhase"`
 
 	// VPPrimaryScoredSlots maps battle round -> scoring slot -> applied VP delta.
 	// Used to prevent double-scoring the same primary slot in a round and to
