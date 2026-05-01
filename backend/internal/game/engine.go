@@ -519,7 +519,7 @@ func (e *Engine) applyAdjustCP(action GameAction) ([]GameEvent, error) {
 	}
 	newCP := player.CP + delta
 	if newCP < 0 {
-		return nil, fmt.Errorf("insufficient CP")
+		return nil, fmt.Errorf("not enough CP")
 	}
 
 	player.CP = newCP
@@ -559,10 +559,10 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	case "primary":
 		scoringSlot, _ = action.Data["scoringSlot"].(string)
 		if !IsValidPrimaryScoringSlot(scoringSlot) {
-			return nil, fmt.Errorf("primary score requires a valid scoringSlot (end_of_command_phase, end_of_battle_round, end_of_turn)")
+			return nil, fmt.Errorf("invalid primary scoring time")
 		}
 		if _, used := player.VPPrimaryScoredSlots[e.state.CurrentRound][scoringSlot]; used {
-			return nil, fmt.Errorf("primary already scored for slot %q in round %d", scoringSlot, e.state.CurrentRound)
+			return nil, fmt.Errorf("primary already scored at %s in round %d", PrimaryScoringSlotLabel(scoringSlot), e.state.CurrentRound)
 		}
 		oldVP = player.VPPrimary
 		newVP = ClampVP(oldVP+delta, MaxVPPrimary)
@@ -586,7 +586,7 @@ func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 		player.VPGambit = newVP
 		eventType = EventVPGambitScore
 	default:
-		return nil, fmt.Errorf("invalid VP category: %s", category)
+		return nil, fmt.Errorf("unknown VP category: %s", category)
 	}
 
 	data := map[string]any{
@@ -624,7 +624,7 @@ func (e *Engine) applyUndoPrimaryScore(action GameAction) ([]GameEvent, error) {
 	round := intFromData(action.Data, "round")
 	scoringSlot, _ := action.Data["scoringSlot"].(string)
 	if !IsValidPrimaryScoringSlot(scoringSlot) {
-		return nil, fmt.Errorf("invalid scoringSlot")
+		return nil, fmt.Errorf("invalid primary scoring time")
 	}
 	if round <= 0 {
 		return nil, fmt.Errorf("invalid round")
@@ -632,11 +632,11 @@ func (e *Engine) applyUndoPrimaryScore(action GameAction) ([]GameEvent, error) {
 
 	slots, ok := player.VPPrimaryScoredSlots[round]
 	if !ok {
-		return nil, fmt.Errorf("no primary score recorded for round %d", round)
+		return nil, fmt.Errorf("no primary score recorded in round %d", round)
 	}
 	appliedDelta, ok := slots[scoringSlot]
 	if !ok {
-		return nil, fmt.Errorf("no primary score recorded for slot %q in round %d", scoringSlot, round)
+		return nil, fmt.Errorf("no primary score recorded at %s in round %d", PrimaryScoringSlotLabel(scoringSlot), round)
 	}
 
 	player.VPPrimary = ClampVP(player.VPPrimary-appliedDelta, MaxVPPrimary)
@@ -687,7 +687,7 @@ func (e *Engine) applyAdjustVPManual(action GameAction) ([]GameEvent, error) {
 		newVP = ClampVP(oldVP+delta, MaxVPGambit)
 		player.VPGambit = newVP
 	default:
-		return nil, fmt.Errorf("invalid VP category: %s", category)
+		return nil, fmt.Errorf("unknown VP category: %s", category)
 	}
 
 	return []GameEvent{{
@@ -722,17 +722,17 @@ func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 	if e.stratagemLookup != nil {
 		info, err := e.stratagemLookup(stratagemID)
 		if err != nil {
-			return nil, fmt.Errorf("stratagem not found: %w", err)
+			return nil, fmt.Errorf("stratagem not found")
 		}
 		stratagemName = info.Name
 		originalCpCost = info.CPCost
 	}
 
 	if cpSpent < 0 {
-		return nil, fmt.Errorf("cp cost cannot be negative")
+		return nil, fmt.Errorf("CP cost cannot be negative")
 	}
 	if player.CP < cpSpent {
-		return nil, fmt.Errorf("insufficient CP: have %d, need %d", player.CP, cpSpent)
+		return nil, fmt.Errorf("not enough CP — you have %d, need %d", player.CP, cpSpent)
 	}
 
 	player.CP -= cpSpent

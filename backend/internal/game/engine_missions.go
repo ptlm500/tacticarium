@@ -17,7 +17,7 @@ func (e *Engine) applySelectPrimaryMission(action GameAction) ([]GameEvent, erro
 	missionName := strFromData(action.Data, "missionName")
 
 	if missionID == "" {
-		return nil, fmt.Errorf("missionId is required")
+		return nil, fmt.Errorf("mission ID is required")
 	}
 
 	e.state.MissionPackID = missionPackID
@@ -47,7 +47,7 @@ func (e *Engine) applySelectTwist(action GameAction) ([]GameEvent, error) {
 	twistName := strFromData(action.Data, "twistName")
 
 	if twistID == "" {
-		return nil, fmt.Errorf("twistId is required")
+		return nil, fmt.Errorf("twist ID is required")
 	}
 
 	e.state.TwistID = twistID
@@ -79,7 +79,7 @@ func (e *Engine) applySelectSecondaryMode(action GameAction) ([]GameEvent, error
 
 	mode := strFromData(action.Data, "mode")
 	if mode != "fixed" && mode != "tactical" {
-		return nil, fmt.Errorf("mode must be 'fixed' or 'tactical'")
+		return nil, fmt.Errorf("secondary mode must be fixed or tactical")
 	}
 
 	player.SecondaryMode = mode
@@ -111,7 +111,7 @@ func (e *Engine) applySetFixedSecondaries(action GameAction) ([]GameEvent, error
 
 	secondaries, err := activeSecondariesFromData(action.Data, "secondaries")
 	if err != nil {
-		return nil, fmt.Errorf("invalid secondaries data: %w", err)
+		return nil, fmt.Errorf("invalid secondaries data")
 	}
 
 	if len(secondaries) != 2 {
@@ -144,7 +144,7 @@ func (e *Engine) applyInitTacticalDeck(action GameAction) ([]GameEvent, error) {
 
 	deck, err := activeSecondariesFromData(action.Data, "deck")
 	if err != nil {
-		return nil, fmt.Errorf("invalid deck data: %w", err)
+		return nil, fmt.Errorf("invalid deck data")
 	}
 
 	if len(deck) == 0 {
@@ -407,12 +407,12 @@ func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
 	}
 
 	if player.NewOrdersUsedThisPhase {
-		return nil, fmt.Errorf("new orders can only be used once per Command phase")
+		return nil, fmt.Errorf("new orders can only be used once per Command Phase")
 	}
 
 	cpCost := e.newOrdersCPCost()
 	if player.CP < cpCost {
-		return nil, fmt.Errorf("insufficient CP: have %d, need %d", player.CP, cpCost)
+		return nil, fmt.Errorf("not enough CP — you have %d, need %d", player.CP, cpCost)
 	}
 
 	discardID := strFromData(action.Data, "discardSecondaryId")
@@ -555,10 +555,10 @@ func (e *Engine) applyMoveSecondary(action GameAction) ([]GameEvent, error) {
 	vpDelta := intFromData(action.Data, "vpScored")
 
 	if !isValidSecondaryPile(fromPile) || !isValidSecondaryPile(toPile) {
-		return nil, fmt.Errorf("fromPile and toPile must be one of: deck, active, achieved, discarded")
+		return nil, fmt.Errorf("pile must be one of: deck, active, achieved, discarded")
 	}
 	if fromPile == toPile {
-		return nil, fmt.Errorf("fromPile and toPile must differ")
+		return nil, fmt.Errorf("source and destination piles must differ")
 	}
 
 	card, ok := removeFromSecondaryPile(player, fromPile, secondaryID)
@@ -725,7 +725,7 @@ func (e *Engine) applyAdaptOrDie(action GameAction) ([]GameEvent, error) {
 		discardID := strFromData(action.Data, "discardSecondaryId")
 		newSecondary, err := singleActiveSecondaryFromData(action.Data, "newSecondary")
 		if err != nil {
-			return nil, fmt.Errorf("invalid new secondary: %w", err)
+			return nil, fmt.Errorf("invalid new secondary")
 		}
 
 		idx := -1

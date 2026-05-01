@@ -30,7 +30,7 @@ export function PrimaryScoreHistory({ scoredSlots, onUndo }: Props) {
   return (
     <div className="space-y-1">
       <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        Primary Scores — Undo
+        Primary Scores
       </h3>
       <ul className="space-y-1">
         {entries.map(({ round, slot, delta }) => (

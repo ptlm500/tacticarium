@@ -360,7 +360,7 @@ describe("GamePage", () => {
       });
 
       await vi.waitFor(() => {
-        expect(screen.getByText("Active Secondaries (Tactical)")).toBeTruthy();
+        expect(screen.getByText("Opponent's Active Secondaries (Tactical)")).toBeTruthy();
         expect(screen.getByText("Score VP for units in enemy deployment zone")).toBeTruthy();
         // Opponent name appears in the header; the secondary name appears in the opponent block.
         expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
@@ -385,7 +385,7 @@ describe("GamePage", () => {
       });
 
       await vi.waitFor(() => {
-        expect(screen.getByText("Active Secondaries (Fixed)")).toBeTruthy();
+        expect(screen.getByText("Opponent's Active Secondaries (Fixed)")).toBeTruthy();
         expect(screen.getByText("Assassination")).toBeTruthy();
       });
     });
@@ -433,7 +433,7 @@ describe("GamePage", () => {
       });
 
       await vi.waitFor(() => {
-        expect(screen.getByText("Active Secondaries (Tactical)")).toBeTruthy();
+        expect(screen.getByText("Opponent's Active Secondaries (Tactical)")).toBeTruthy();
       });
 
       // The opponent's secondary card should expose no Achieve / Discard / New Orders buttons.
