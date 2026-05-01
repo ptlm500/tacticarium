@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { RulesText } from "./RulesText";
 
 interface Props {
   stratagems: Stratagem[];
@@ -71,7 +72,7 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
             </div>
             {s.legend && <p className="mb-2 text-xs italic text-muted-foreground">{s.legend}</p>}
             {s.description && (
-              <p className="mb-2 whitespace-pre-line text-xs text-foreground/80">{s.description}</p>
+              <RulesText html={s.description} className="mb-2 text-xs text-foreground/80" />
             )}
             <div className="mt-2 flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -104,9 +105,7 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
             </DialogHeader>
 
             {pending.description && (
-              <p className="whitespace-pre-line text-xs text-foreground/80">
-                {pending.description}
-              </p>
+              <RulesText html={pending.description} className="text-xs text-foreground/80" />
             )}
 
             {usedThisPhase.includes(pending.id) && (

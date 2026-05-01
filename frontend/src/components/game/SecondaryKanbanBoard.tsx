@@ -251,9 +251,6 @@ function SecondaryCard({
   onMove: Props["onMove"];
   activeAtCapacity: boolean;
 }) {
-  const scoringOpts = filterOptions(card.scoringOptions, "tactical");
-  const showAchieveButtons = pile !== "achieved" && scoringOpts.length > 0;
-
   return (
     <div
       draggable
@@ -327,19 +324,6 @@ function SecondaryCard({
             </Button>
           );
         })}
-        {showAchieveButtons &&
-          scoringOpts.map((opt, i) => (
-            <Button
-              key={i}
-              type="button"
-              size="sm"
-              onClick={() => onMove(card.id, pile, "achieved", opt.vp)}
-              title={opt.label}
-              className="h-6 bg-emerald-600 px-2 text-[10px] text-white hover:bg-emerald-700"
-            >
-              ✓ {opt.label} +{opt.vp}
-            </Button>
-          ))}
       </div>
     </div>
   );

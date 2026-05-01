@@ -87,9 +87,7 @@ export function SecondaryPanel({
                 checked={manageManually}
                 onChange={(e) => setManageManually(e.target.checked)}
               />
-              <span className="font-mono uppercase tracking-widest">
-                Manage manually (physical deck)
-              </span>
+              <span className="font-mono uppercase tracking-widest">Manage manually</span>
             </label>
           )}
 
