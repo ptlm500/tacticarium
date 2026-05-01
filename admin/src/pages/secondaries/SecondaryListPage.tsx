@@ -56,6 +56,14 @@ export function SecondaryListPage() {
           { key: "maxVp", label: "Max VP" },
           { key: "isFixed", label: "Fixed", render: (s) => (s.isFixed ? "Yes" : "No") },
           {
+            key: "scoringTiming",
+            label: "Timing",
+            render: (s) =>
+              (s.scoringTiming ?? "end_of_own_turn") === "end_of_opponent_turn"
+                ? "Opp turn"
+                : "Own turn",
+          },
+          {
             key: "scoringOptions",
             label: "Options",
             render: (s) => <span>{(s.scoringOptions ?? []).length}</span>,

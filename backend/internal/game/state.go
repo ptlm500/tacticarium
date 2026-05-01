@@ -65,6 +65,9 @@ type ActiveSecondary struct {
 	MaxVP           int                       `json:"maxVp"`
 	ScoringOptions  []SecondaryScoringOption  `json:"scoringOptions"`
 	DrawRestriction *SecondaryDrawRestriction `json:"drawRestriction,omitempty"`
+	// ScoringTiming controls when the frontend prompts the owner to score.
+	// "end_of_own_turn" (default) or "end_of_opponent_turn".
+	ScoringTiming string `json:"scoringTiming,omitempty"`
 }
 
 type PlayerState struct {

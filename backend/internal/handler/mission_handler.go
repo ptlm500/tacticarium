@@ -64,7 +64,7 @@ func (h *MissionHandler) ListMissions(ctx context.Context, input *PackIDParam) (
 
 func (h *MissionHandler) ListSecondaries(ctx context.Context, input *PackIDParam) (*SecondaryListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options, draw_restriction
+		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options, draw_restriction, scoring_timing
 		 FROM secondaries WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
@@ -76,7 +76,7 @@ func (h *MissionHandler) ListSecondaries(ctx context.Context, input *PackIDParam
 		var s models.Secondary
 		var optionsJSON []byte
 		var drawJSON []byte
-		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON, &drawJSON); err != nil {
+		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON, &drawJSON, &s.ScoringTiming); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
 		_ = json.Unmarshal(optionsJSON, &s.ScoringOptions)

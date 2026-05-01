@@ -81,8 +81,31 @@ ActiveSecondary {
   maxVp           — Maximum VP this secondary can award
   scoringOptions  — Array of {label, vp, mode} scoring criteria
   drawRestriction — Optional {round, mode} "When Drawn" rule
+  scoringTiming   — When the owner is prompted to score (see below)
 }
 ```
+
+## Scoring Timing
+
+Most secondaries score at the end of their owner's own turn — the engine
+prompts the active player when they advance out of the Fight phase. A handful
+of cards (e.g. *Sabotage*, *Defend Stronghold*, the Pariah Nexus *Recover
+Assets* variant) score at the end of the **opponent's** turn instead. The
+`scoringTiming` field controls when the owner is prompted:
+
+| Value | When the prompt fires |
+|---|---|
+| `end_of_own_turn` (default) | When the owner advances out of their own Fight phase. |
+| `end_of_opponent_turn` | Reactively, on the owner's client, the moment their opponent's Fight phase ends (turn rolls over or game ends). |
+
+The reactive prompt is non-blocking — dismissing it does not freeze the game,
+since `achieve_secondary` works at any time anyway. Cards with mixed timing
+(scoring options that resolve at different moments) are not modelled; one card,
+one timing.
+
+The timing is seeded per-mission-pack in
+`backend/internal/seed/missions.go` (`secondaryScoringTimings`). New cards
+default to `end_of_own_turn` unless explicitly tagged.
 
 Scoring options can be mode-filtered: an option with `mode: "fixed"` only applies in fixed mode, `mode: "tactical"` only in tactical mode, and empty/omitted applies in both.
 

@@ -64,6 +64,7 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 	scoringRules := missionScoringRules()
 	scoringTimings := missionScoringTimings()
 	secondaryScoringOpts := secondaryScoringOptions()
+	secondaryTimings := secondaryScoringTimings()
 
 	for _, entry := range entries {
 		// Skip generic setup rules and entries without a pack prefix
@@ -119,11 +120,15 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (sta
 			if opts, ok := secondaryScoringOpts[entry.ID]; ok {
 				optionsJSON, _ = json.Marshal(opts)
 			}
+			timing := "end_of_own_turn"
+			if t, ok := secondaryTimings[entry.ID]; ok {
+				timing = t
+			}
 			_, err := pool.Exec(ctx,
-				`INSERT INTO secondaries (id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, max_vp = $6, is_fixed = $7, scoring_options = $8`,
-				entry.ID, packID, name, entry.Lore, entry.Body, maxVP, isFixed, optionsJSON)
+				`INSERT INTO secondaries (id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options, scoring_timing)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+				 ON CONFLICT (id) DO UPDATE SET name = $3, lore = $4, description = $5, max_vp = $6, is_fixed = $7, scoring_options = $8, scoring_timing = $9`,
+				entry.ID, packID, name, entry.Lore, entry.Body, maxVP, isFixed, optionsJSON, timing)
 			if err != nil {
 				return stats, fmt.Errorf("inserting secondary %s: %w", entry.ID, err)
 			}
@@ -411,5 +416,20 @@ func missionScoringTimings() map[string]string {
 		"mission-chapter-approved-2025-26-unexploded-ordinance": "end_of_command_phase",
 		"mission-chapter-approved-2025-26-linchpin":             "end_of_command_phase",
 		"mission-chapter-approved-2025-26-hidden-supplies":      "end_of_command_phase",
+	}
+}
+
+// secondaryScoringTimings returns the scoring timing for each secondary objective.
+// Secondaries not listed here default to "end_of_own_turn". Cards whose rules
+// say "End of your opponent's turn" must be tagged "end_of_opponent_turn" so
+// the frontend prompts the (currently non-active) owner at the right moment.
+func secondaryScoringTimings() map[string]string {
+	return map[string]string{
+		"secondary-mission-defend-stronghold":                          "end_of_opponent_turn",
+		"secondary-mission-pariah-nexus-defend-stronghold":             "end_of_opponent_turn",
+		"secondary-mission-chapter-approved-2025-26-defend-stronghold": "end_of_opponent_turn",
+		"secondary-mission-pariah-nexus-recover-assets":                "end_of_opponent_turn",
+		"secondary-mission-pariah-nexus-sabotage":                      "end_of_opponent_turn",
+		"secondary-mission-chapter-approved-2025-26-sabotage":          "end_of_opponent_turn",
 	}
 }

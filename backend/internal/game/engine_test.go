@@ -385,6 +385,68 @@ func TestInitTacticalDeck_EmptyDeckError(t *testing.T) {
 	}
 }
 
+func TestInitTacticalDeck_PreservesScoringTiming(t *testing.T) {
+	state := newTestState()
+	state.Players[0].SecondaryMode = "tactical"
+	e := NewEngine(state)
+
+	ownTurn := makeSecondary("s1", "S1")
+	oppTurn := makeSecondary("s2", "S2")
+	oppTurn["scoringTiming"] = "end_of_opponent_turn"
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionInitTacticalDeck,
+		PlayerNumber: 1,
+		Data: map[string]any{
+			"deck": []any{ownTurn, oppTurn},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deck := state.Players[0].TacticalDeck
+	if len(deck) != 2 {
+		t.Fatalf("expected deck of 2, got %d", len(deck))
+	}
+	if deck[0].ScoringTiming != "" {
+		t.Errorf("card 1 should default to empty timing (= own turn), got %q", deck[0].ScoringTiming)
+	}
+	if deck[1].ScoringTiming != "end_of_opponent_turn" {
+		t.Errorf("card 2 should carry end_of_opponent_turn, got %q", deck[1].ScoringTiming)
+	}
+}
+
+func TestSetFixedSecondaries_PreservesScoringTiming(t *testing.T) {
+	state := newTestState()
+	state.Players[0].SecondaryMode = "fixed"
+	e := NewEngine(state)
+
+	a := makeSecondary("a", "A")
+	a["isFixed"] = true
+	a["scoringTiming"] = "end_of_opponent_turn"
+	b := makeSecondary("b", "B")
+	b["isFixed"] = true
+
+	_, err := e.Apply(context.Background(), GameAction{
+		Type:         ActionSetFixedSecondaries,
+		PlayerNumber: 1,
+		Data:         map[string]any{"secondaries": []any{a, b}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	active := state.Players[0].ActiveSecondaries
+	if len(active) != 2 {
+		t.Fatalf("expected 2 active secondaries, got %d", len(active))
+	}
+	if active[0].ScoringTiming != "end_of_opponent_turn" {
+		t.Errorf("card a should carry end_of_opponent_turn, got %q", active[0].ScoringTiming)
+	}
+	if active[1].ScoringTiming != "" {
+		t.Errorf("card b should default to empty timing, got %q", active[1].ScoringTiming)
+	}
+}
+
 // --- Gameplay Actions ---
 
 func TestDrawSecondary(t *testing.T) {

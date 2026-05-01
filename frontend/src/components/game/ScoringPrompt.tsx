@@ -4,6 +4,8 @@ import { PrimaryScoringSlot } from "../../types/scoring";
 import { ReminderPrompt } from "./ReminderPrompt";
 import { Button } from "@/components/ui/button";
 
+export type SecondaryScoringTiming = "end_of_own_turn" | "end_of_opponent_turn";
+
 export type ScoringPromptItem =
   | {
       kind: "primary";
@@ -12,8 +14,12 @@ export type ScoringPromptItem =
       currentRound: number;
       scoringSlot: PrimaryScoringSlot;
     }
-  | { kind: "secondary" }
-  | { kind: "fixed_secondary"; secondaries: ActiveSecondary[] }
+  | { kind: "secondary"; timing?: SecondaryScoringTiming }
+  | {
+      kind: "fixed_secondary";
+      secondaries: ActiveSecondary[];
+      timing?: SecondaryScoringTiming;
+    }
   | { kind: "end_of_round_primary"; missionName: string; note: string };
 
 interface Props {
@@ -31,6 +37,15 @@ interface Props {
   onScoreFixedVP: (delta: number) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
+
+function matchesTiming(s: ActiveSecondary, timing: SecondaryScoringTiming): boolean {
+  const t = (s.scoringTiming as SecondaryScoringTiming | undefined) ?? "end_of_own_turn";
+  return t === timing;
 }
 
 export function ScoringPrompt({
@@ -43,13 +58,17 @@ export function ScoringPrompt({
   onScoreFixedVP,
   onConfirm,
   onCancel,
+  title = "Scoring Reminder",
+  description = "Before advancing, check if you need to score.",
+  confirmLabel = "I've scored, continue",
+  cancelLabel = "Let me score first",
 }: Props) {
   return (
     <ReminderPrompt
-      title="Scoring Reminder"
-      description="Before advancing, check if you need to score."
-      confirmLabel="I've scored, continue"
-      cancelLabel="Let me score first"
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      cancelLabel={cancelLabel}
       onConfirm={onConfirm}
       onCancel={onCancel}
     >
@@ -72,11 +91,18 @@ export function ScoringPrompt({
             </div>
           )}
           {item.kind === "fixed_secondary" && (
-            <FixedSecondaryReminder secondaries={item.secondaries} onScore={onScoreFixedVP} />
+            <FixedSecondaryReminder
+              secondaries={item.secondaries.filter((s) =>
+                matchesTiming(s, item.timing ?? "end_of_own_turn"),
+              )}
+              onScore={onScoreFixedVP}
+            />
           )}
           {item.kind === "secondary" && (
             <SecondaryReminder
-              activeSecondaries={activeSecondaries}
+              activeSecondaries={activeSecondaries.filter((s) =>
+                matchesTiming(s, item.timing ?? "end_of_own_turn"),
+              )}
               onAchieve={onAchieveSecondary}
               onDiscard={onDiscardSecondary}
               canGainCP={canGainCP}

@@ -18,6 +18,7 @@ export function SecondaryEditPage() {
     maxVp: 15,
     isFixed: false,
     scoringOptions: [],
+    scoringTiming: "end_of_own_turn",
   });
   const [packs, setPacks] = useState<MissionPack[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +146,22 @@ export function SecondaryEditPage() {
               Fixed Secondary
             </label>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Scoring Timing</label>
+          <select
+            value={form.scoringTiming || "end_of_own_turn"}
+            onChange={(e) => setForm({ ...form, scoringTiming: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          >
+            <option value="end_of_own_turn">End of Own Turn (default)</option>
+            <option value="end_of_opponent_turn">End of Opponent's Turn</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Controls when the player is prompted to score. Use "End of Opponent's Turn" for cards
+            like Sabotage and Defend Stronghold whose rules say "WHEN: End of your opponent's turn".
+          </p>
         </div>
 
         <div className="p-3 bg-gray-800 rounded border border-gray-700">

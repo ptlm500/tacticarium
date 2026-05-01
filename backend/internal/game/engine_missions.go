@@ -695,6 +695,7 @@ func activeSecondariesFromData(data map[string]any, key string) ([]ActiveSeconda
 			MaxVP:           intFromMapAny(m, "maxVp"),
 			ScoringOptions:  scoringOptionsFromMapAny(m, "scoringOptions"),
 			DrawRestriction: drawRestrictionFromMapAny(m, "drawRestriction"),
+			ScoringTiming:   strFromMapAny(m, "scoringTiming"),
 		}
 		result = append(result, s)
 	}
@@ -718,6 +719,7 @@ func singleActiveSecondaryFromData(data map[string]any, key string) (ActiveSecon
 		MaxVP:           intFromMapAny(m, "maxVp"),
 		ScoringOptions:  scoringOptionsFromMapAny(m, "scoringOptions"),
 		DrawRestriction: drawRestrictionFromMapAny(m, "drawRestriction"),
+		ScoringTiming:   strFromMapAny(m, "scoringTiming"),
 	}, nil
 }
 

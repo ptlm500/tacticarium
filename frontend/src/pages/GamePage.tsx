@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -94,7 +94,57 @@ export function GamePage() {
   const isMyTurn = myPlayer?.playerNumber === gameState?.activePlayer;
 
   const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
+  const [opponentTurnPromptItems, setOpponentTurnPromptItems] = useState<
+    ScoringPromptItem[] | null
+  >(null);
   const [showDrawPrompt, setShowDrawPrompt] = useState(false);
+  // Tracks the previous (phase, activePlayer, status) to detect the moment the
+  // opponent's Fight phase ends and pop a reactive prompt for end-of-opponent-turn
+  // secondaries. Seeded on first observation so a page reload mid-turn doesn't
+  // retroactively trigger.
+  const prevTurnState = useRef<{
+    phase: Phase;
+    activePlayer: number;
+    status: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!gameState || !myPlayer) return;
+    const prev = prevTurnState.current;
+    const opponentNum = myPlayer.playerNumber === 1 ? 2 : 1;
+
+    if (prev) {
+      const prevWasOpponentFight =
+        prev.phase === "fight" && prev.activePlayer === opponentNum && prev.status === "active";
+      const stillOpponentFight =
+        gameState.currentPhase === "fight" && gameState.activePlayer === opponentNum;
+
+      if (prevWasOpponentFight && !stillOpponentFight) {
+        const opponentTurnSecondaries = (myPlayer.activeSecondaries ?? []).filter(
+          (s) => s.scoringTiming === "end_of_opponent_turn",
+        );
+        if (opponentTurnSecondaries.length > 0) {
+          setOpponentTurnPromptItems(
+            myPlayer.secondaryMode === "fixed"
+              ? [
+                  {
+                    kind: "fixed_secondary",
+                    secondaries: opponentTurnSecondaries,
+                    timing: "end_of_opponent_turn",
+                  },
+                ]
+              : [{ kind: "secondary", timing: "end_of_opponent_turn" }],
+          );
+        }
+      }
+    }
+
+    prevTurnState.current = {
+      phase: gameState.currentPhase,
+      activePlayer: gameState.activePlayer,
+      status: gameState.status,
+    };
+  }, [gameState, myPlayer]);
 
   const {
     data: stratagems = [],
@@ -197,12 +247,23 @@ export function GamePage() {
 
     if (isFightPhase) {
       if (myPlayer.secondaryMode === "fixed") {
-        const fixedSecondaries = (myPlayer.activeSecondaries ?? []).filter((s) => s.isFixed);
+        const fixedSecondaries = (myPlayer.activeSecondaries ?? []).filter(
+          (s) => s.isFixed && (s.scoringTiming ?? "end_of_own_turn") === "end_of_own_turn",
+        );
         if (fixedSecondaries.length > 0) {
-          items.push({ kind: "fixed_secondary", secondaries: fixedSecondaries });
+          items.push({
+            kind: "fixed_secondary",
+            secondaries: fixedSecondaries,
+            timing: "end_of_own_turn",
+          });
         }
       } else {
-        items.push({ kind: "secondary" });
+        const hasOwnTurnSecondary = (myPlayer.activeSecondaries ?? []).some(
+          (s) => (s.scoringTiming ?? "end_of_own_turn") === "end_of_own_turn",
+        );
+        if (hasOwnTurnSecondary) {
+          items.push({ kind: "secondary", timing: "end_of_own_turn" });
+        }
       }
     }
 
@@ -763,6 +824,26 @@ export function GamePage() {
           onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
           onConfirm={doAdvancePhase}
           onCancel={() => setScoringPromptItems(null)}
+        />
+      )}
+
+      {/* Reactive prompt fired when opponent's Fight phase ends — for
+          secondaries that score at the end of the opponent's turn (e.g. Sabotage). */}
+      {opponentTurnPromptItems && (
+        <ScoringPrompt
+          items={opponentTurnPromptItems}
+          onScore={handleScoreVP}
+          activeSecondaries={myPlayer.activeSecondaries ?? []}
+          onAchieveSecondary={handleAchieveSecondary}
+          onDiscardSecondary={handleDiscardSecondary}
+          canGainCP={myPlayer.cpGainedThisRound < 1}
+          onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
+          onConfirm={() => setOpponentTurnPromptItems(null)}
+          onCancel={() => setOpponentTurnPromptItems(null)}
+          title="Opponent's Turn Ended"
+          description="Score any secondaries that resolve at the end of your opponent's turn."
+          confirmLabel="Done"
+          cancelLabel="Dismiss"
         />
       )}
 
