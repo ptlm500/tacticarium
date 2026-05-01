@@ -527,10 +527,10 @@ export function GamePage() {
       {/* Main Content */}
       <div className="relative z-0 min-h-0 flex-1 overflow-auto px-4 py-4">
         <div className="mx-auto max-w-3xl space-y-4">
-          {/* Your State */}
-          <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
-            <div className="space-y-3 py-1">
-              <div className="grid grid-cols-2 gap-4">
+          {/* Scoreboard — both players' CP and VP side-by-side */}
+          <div className="grid grid-cols-2 gap-3">
+            <HUDFrame label={`${myPlayer.username} — ${myPlayer.factionName}`}>
+              <div className="space-y-3 py-1">
                 <CPCounter
                   cp={myPlayer.cp}
                   canGainCP={myPlayer.cpGainedThisRound < 1}
@@ -544,76 +544,87 @@ export function GamePage() {
                   onAdjust={handleAdjustVPManual}
                 />
               </div>
-              {currentMission &&
-                currentMission.scoringRules &&
-                currentMission.scoringRules.length > 0 && (
-                  <MissionScoring
-                    scoringRules={currentMission.scoringRules ?? []}
-                    currentRound={gameState.currentRound}
-                    missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
-                    onScore={(vp, slot, label) => handleScoreVP("primary", vp, slot, label)}
-                  />
-                )}
-              <PrimaryScoreHistory
-                scoredSlots={myPlayer.vpPrimaryScoredSlots ?? {}}
-                onUndo={handleUndoPrimaryScore}
-              />
-            </div>
-          </HUDFrame>
+            </HUDFrame>
 
-          {/* Opponent State */}
-          {opponent && (
-            <div className="rounded-sm border border-border/40 bg-background/40 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {opponent.username} — {opponent.factionName}
-                </h2>
-                {!opponentConnected && (
-                  <Badge
-                    variant="outline"
-                    role="status"
-                    aria-label="Opponent disconnected"
-                    className="border-amber-500/50 font-mono text-[10px] uppercase tracking-widest text-amber-300"
-                  >
-                    Disconnected
-                  </Badge>
-                )}
-              </div>
-              <div className="mt-2 flex gap-6 font-mono text-sm tabular-nums">
-                <span>
-                  <span className="text-muted-foreground">CP:</span> {opponent.cp}
-                </span>
-                <span>
-                  <span className="text-muted-foreground">VP:</span> {opponentVP}
-                </span>
-              </div>
-              {(opponent.activeSecondaries ?? []).length > 0 && (
-                <div className="mt-3 space-y-2">
-                  <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Active Secondaries (
-                    {opponent.secondaryMode === "tactical" ? "Tactical" : "Fixed"})
-                  </h3>
-                  {(opponent.activeSecondaries ?? []).map((s) => (
-                    <button
-                      type="button"
-                      key={s.id}
-                      onClick={() => setOpponentDetailsCard(s)}
-                      title="View full details"
-                      className="block w-full cursor-pointer rounded-sm border border-border/60 bg-background/40 p-2 text-left transition-colors hover:border-primary/50"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium text-foreground">{s.name}</span>
-                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                          {s.maxVp} VP max
-                        </span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                        {s.description}
-                      </p>
-                    </button>
-                  ))}
+            {opponent && (
+              <HUDFrame label={`${opponent.username} — ${opponent.factionName}`}>
+                <div className="space-y-3 py-1">
+                  <div className="text-center">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Command Points
+                    </p>
+                    <span className="mt-1 block font-mono text-3xl font-bold text-primary tabular-nums">
+                      {opponent.cp}
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Victory Points
+                    </p>
+                    <span className="mt-1 block font-mono text-3xl font-bold text-primary tabular-nums">
+                      {opponentVP}
+                    </span>
+                  </div>
+                  {!opponentConnected && (
+                    <div className="flex justify-center">
+                      <Badge
+                        variant="outline"
+                        role="status"
+                        aria-label="Opponent disconnected"
+                        className="border-amber-500/50 font-mono text-[10px] uppercase tracking-widest text-amber-300"
+                      >
+                        Disconnected
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-              )}
+              </HUDFrame>
+            )}
+          </div>
+
+          {/* Mission Scoring + Primary Score History */}
+          {currentMission &&
+            currentMission.scoringRules &&
+            currentMission.scoringRules.length > 0 && (
+              <MissionScoring
+                scoringRules={currentMission.scoringRules ?? []}
+                currentRound={gameState.currentRound}
+                missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
+                onScore={(vp, slot, label) => handleScoreVP("primary", vp, slot, label)}
+              />
+            )}
+          <PrimaryScoreHistory
+            scoredSlots={myPlayer.vpPrimaryScoredSlots ?? {}}
+            onUndo={handleUndoPrimaryScore}
+          />
+
+          {/* Opponent's Active Secondaries */}
+          {opponent && (opponent.activeSecondaries ?? []).length > 0 && (
+            <div className="rounded-sm border border-border/40 bg-background/40 p-3">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {`${opponent.username}'s Active Secondaries (${opponent.secondaryMode === "tactical" ? "Tactical" : "Fixed"})`}
+              </h3>
+              <div className="mt-2 space-y-2">
+                {(opponent.activeSecondaries ?? []).map((s) => (
+                  <button
+                    type="button"
+                    key={s.id}
+                    onClick={() => setOpponentDetailsCard(s)}
+                    title="View full details"
+                    className="block w-full cursor-pointer rounded-sm border border-border/60 bg-background/40 p-2 text-left transition-colors hover:border-primary/50"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground">{s.name}</span>
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {s.maxVp} VP max
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {s.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
