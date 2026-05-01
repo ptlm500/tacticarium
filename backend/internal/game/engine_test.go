@@ -572,6 +572,9 @@ func TestAchieveSecondary(t *testing.T) {
 	if len(state.Players[0].AchievedSecondaries) != 1 {
 		t.Fatal("expected 1 achieved")
 	}
+	if got := state.Players[0].AchievedSecondaries[0].VPScored; got != 5 {
+		t.Fatalf("expected achieved card VPScored=5, got %d", got)
+	}
 	if state.Players[0].VPSecondary != 5 {
 		t.Fatalf("expected 5 VP secondary, got %d", state.Players[0].VPSecondary)
 	}

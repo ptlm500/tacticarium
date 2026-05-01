@@ -691,6 +691,8 @@ export interface components {
             name: string;
             scoringOptions: components["schemas"]["SecondaryScoringOption"][] | null;
             scoringTiming?: string;
+            /** Format: int64 */
+            vpScored?: number;
         };
         AdminMeOutputBody: {
             /**

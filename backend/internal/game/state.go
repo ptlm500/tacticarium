@@ -68,6 +68,9 @@ type ActiveSecondary struct {
 	// ScoringTiming controls when the frontend prompts the owner to score.
 	// "end_of_own_turn" (default) or "end_of_opponent_turn".
 	ScoringTiming string `json:"scoringTiming,omitempty"`
+	// VPScored is set when the card moves to AchievedSecondaries. Zero on cards
+	// in deck/active/discarded piles.
+	VPScored int `json:"vpScored,omitempty"`
 }
 
 type PlayerState struct {
