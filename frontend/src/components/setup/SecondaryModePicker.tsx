@@ -33,6 +33,8 @@ function secondaryToActive(s: Secondary): ActiveSecondary {
     isFixed: s.isFixed,
     maxVp: s.maxVp,
     scoringOptions: s.scoringOptions,
+    drawRestriction: s.drawRestriction,
+    scoringTiming: s.scoringTiming,
   };
 }
 

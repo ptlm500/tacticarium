@@ -31,6 +31,9 @@
               "array",
               "null"
             ]
+          },
+          "scoringTiming": {
+            "type": "string"
           }
         },
         "required": [
@@ -1015,6 +1018,9 @@
               "array",
               "null"
             ]
+          },
+          "scoringTiming": {
+            "type": "string"
           }
         },
         "required": [

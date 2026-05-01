@@ -91,6 +91,9 @@ type Secondary struct {
 	IsFixed         bool             `json:"isFixed"`
 	ScoringOptions  []ScoringOption  `json:"scoringOptions"`
 	DrawRestriction *DrawRestriction `json:"drawRestriction,omitempty"`
+	// ScoringTiming controls when the frontend prompts the owner to score.
+	// "end_of_own_turn" (default) or "end_of_opponent_turn".
+	ScoringTiming string `json:"scoringTiming,omitempty"`
 }
 
 type ChallengerCard struct {

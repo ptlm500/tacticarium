@@ -145,4 +145,61 @@ describe("ScoringPrompt", () => {
       expect(props.onScoreFixedVP).toHaveBeenCalledWith(3);
     });
   });
+
+  describe("timing filtering", () => {
+    const ownTurnSecondary = {
+      ...mockActiveSecondary,
+      id: "own-1",
+      name: "Own Turn Card",
+    };
+    const opponentTurnSecondary = {
+      ...mockActiveSecondary,
+      id: "opp-1",
+      name: "Sabotage",
+      scoringTiming: "end_of_opponent_turn" as const,
+    };
+
+    it("default own-turn item hides end_of_opponent_turn secondaries", () => {
+      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_own_turn" }];
+      renderPrompt({
+        items,
+        activeSecondaries: [ownTurnSecondary, opponentTurnSecondary],
+      });
+
+      expect(screen.getByText("Own Turn Card")).toBeTruthy();
+      expect(screen.queryByText("Sabotage")).toBeNull();
+    });
+
+    it("opponent-turn item shows only end_of_opponent_turn secondaries", () => {
+      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_opponent_turn" }];
+      renderPrompt({
+        items,
+        activeSecondaries: [ownTurnSecondary, opponentTurnSecondary],
+      });
+
+      expect(screen.getByText("Sabotage")).toBeTruthy();
+      expect(screen.queryByText("Own Turn Card")).toBeNull();
+    });
+
+    it("untagged secondaries default to end_of_own_turn", () => {
+      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_own_turn" }];
+      // mockActiveSecondary has no scoringTiming field — should appear in own-turn prompt.
+      renderPrompt({ items, activeSecondaries: [mockActiveSecondary] });
+      expect(screen.getByText(mockActiveSecondary.name!)).toBeTruthy();
+    });
+
+    it("renders custom title and labels when overridden", () => {
+      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_opponent_turn" }];
+      renderPrompt({
+        items,
+        title: "Opponent's Turn Ended",
+        description: "Score now.",
+        confirmLabel: "Done",
+        cancelLabel: "Dismiss",
+      });
+      expect(screen.getByText("Opponent's Turn Ended")).toBeTruthy();
+      expect(screen.getByText("Done")).toBeTruthy();
+      expect(screen.getByText("Dismiss")).toBeTruthy();
+    });
+  });
 });

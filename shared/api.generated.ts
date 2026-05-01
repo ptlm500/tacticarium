@@ -690,6 +690,7 @@ export interface components {
             maxVp: number;
             name: string;
             scoringOptions: components["schemas"]["SecondaryScoringOption"][] | null;
+            scoringTiming?: string;
         };
         AdminMeOutputBody: {
             /**
@@ -1033,6 +1034,7 @@ export interface components {
             missionPackId: string;
             name: string;
             scoringOptions: components["schemas"]["ScoringOption"][] | null;
+            scoringTiming?: string;
         };
         SecondaryDrawRestriction: {
             mode: string;
