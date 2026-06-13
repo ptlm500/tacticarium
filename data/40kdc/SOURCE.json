@@ -1,0 +1,10 @@
+{
+  "_comment": "Vendored snapshot of reference data from 40kdc-data. Do not edit by hand — refreshed by scripts/vendor-40kdc-data.sh (driven by .github/workflows/update-40kdc-data.yml). App consumes only the entities it models; army-list/unit/weapon/terrain data is intentionally NOT vendored.",
+  "repo": "https://github.com/wn-mitch/40kdc-data",
+  "branch": "main",
+  "commit": "9653ccb69ab8d7975b3a254fe7597ad220bc9a3b",
+  "commit_date": "2026-06-12T23:22:35-04:00",
+  "edition": "11th",
+  "dataslate": "launch",
+  "vendored_at": "2026-06-13"
+}

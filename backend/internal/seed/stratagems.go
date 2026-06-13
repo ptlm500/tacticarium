@@ -2,128 +2,106 @@ package seed
 
 import (
 	"context"
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
-	"io"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SeedStratagems reads Stratagems.csv and upserts every stratagem. Detachments
-// must already be seeded (see SeedDetachments) — the stratagem seed looks up
-// each detachment's game_mode from the DB to decide the stratagem's game_mode.
-//
-// A stratagem is tagged boarding_actions if either:
-//   - its type starts with "Boarding Actions – " (the 6 generic BA strats), or
-//   - its detachment_id points to a boarding_actions detachment.
-//
-// Otherwise it is tagged core.
-func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (int, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return 0, fmt.Errorf("opening stratagems file: %w", err)
-	}
-	defer func() { _ = f.Close() }()
-
-	reader := csv.NewReader(f)
-	reader.Comma = '|'
-	reader.LazyQuotes = true
-
-	// Skip header
-	if _, err := reader.Read(); err != nil {
-		return 0, fmt.Errorf("reading header: %w", err)
-	}
-
-	// Load detachment game modes from the DB so we can tag stratagems without
-	// a round-trip per row. SeedDetachments must have run first for this to be
-	// non-empty; if it hasn't, stratagems attached to BA-only detachments will
-	// default to core. We warn rather than fail so seeding stratagems
-	// independently still works in ad-hoc scenarios.
-	detachmentModes, err := loadDetachmentModesFromDB(ctx, pool)
-	if err != nil {
-		return 0, fmt.Errorf("loading detachment game modes: %w", err)
-	}
-
-	stratagemCount := 0
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			continue
-		}
-
-		if len(record) < 11 {
-			continue
-		}
-
-		factionID := strings.TrimSpace(record[0])
-		name := strings.TrimSpace(record[1])
-		id := strings.TrimSpace(record[2])
-		stratType := strings.TrimSpace(record[3])
-		cpCostStr := strings.TrimSpace(record[4])
-		legend := strings.TrimSpace(record[5])
-		turn := strings.ReplaceAll(strings.TrimSpace(record[6]), "\u2019", "'")
-		phase := strings.TrimSpace(record[7])
-		detachmentID := strings.TrimSpace(record[9])
-		description := strings.TrimSpace(record[10])
-
-		if id == "" || name == "" {
-			continue
-		}
-
-		cpCost, _ := strconv.Atoi(cpCostStr)
-
-		var factionIDPtr, detachmentIDPtr *string
-		if factionID != "" {
-			factionIDPtr = &factionID
-		}
-		if detachmentID != "" {
-			detachmentIDPtr = &detachmentID
-		}
-
-		gameMode := "core"
-		if strings.HasPrefix(stratType, "Boarding Actions \u2013 ") {
-			gameMode = "boarding_actions"
-		} else if mode, ok := detachmentModes[detachmentID]; ok && mode == "boarding_actions" {
-			gameMode = "boarding_actions"
-		}
-
-		_, err = pool.Exec(ctx,
-			`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, legend, turn, phase, description, game_mode)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-			 ON CONFLICT (id) DO UPDATE SET
-			   faction_id = $2, detachment_id = $3, name = $4, type = $5,
-			   cp_cost = $6, legend = $7, turn = $8, phase = $9, description = $10, game_mode = $11`,
-			id, factionIDPtr, detachmentIDPtr, name, stratType, cpCost, legend, turn, phase, description, gameMode)
-		if err != nil {
-			fmt.Printf("Warning: error inserting stratagem %s: %v\n", id, err)
-			continue
-		}
-		stratagemCount++
-	}
-
-	return stratagemCount, nil
+type stratagemJSON struct {
+	ID                 string          `json:"id"`
+	Name               string          `json:"name"`
+	Category           string          `json:"category"`
+	Type               *string         `json:"type"`
+	DetachmentID       *string         `json:"detachment_id"`
+	CPCost             int             `json:"cp_cost"`
+	Phases             []string        `json:"phases"`
+	PlayerTurn         *string         `json:"player_turn"`
+	Timing             *string         `json:"timing"`
+	TargetRestrictions json.RawMessage `json:"target_restrictions"`
+	AbilityID          *string         `json:"ability_id"`
+	GameVersion        gameVersion     `json:"game_version"`
 }
 
-func loadDetachmentModesFromDB(ctx context.Context, pool *pgxpool.Pool) (map[string]string, error) {
-	rows, err := pool.Query(ctx, `SELECT id, game_mode FROM detachments`)
+// SeedStratagems upserts every stratagem in a 40kdc-data stratagems.json array
+// (the top-level core file or a per-faction file). The stratagem's faction_id
+// is resolved from its detachment (detachments must be seeded first); core
+// stratagems have no detachment and therefore a null faction_id.
+func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (int, error) {
+	var stratagems []stratagemJSON
+	if err := readJSON(filePath, &stratagems); err != nil {
+		return 0, err
+	}
+
+	detachmentFactions, err := loadDetachmentFactions(ctx, pool)
+	if err != nil {
+		return 0, fmt.Errorf("loading detachment factions: %w", err)
+	}
+
+	count := 0
+	for _, s := range stratagems {
+		if s.ID == "" {
+			continue
+		}
+
+		var factionID *string
+		if s.DetachmentID != nil {
+			if fid, ok := detachmentFactions[*s.DetachmentID]; ok {
+				factionID = &fid
+			}
+		}
+
+		phases := s.Phases
+		if phases == nil {
+			phases = []string{}
+		}
+
+		var targetRestrictions *string
+		if len(s.TargetRestrictions) > 0 && string(s.TargetRestrictions) != "null" {
+			tr := string(s.TargetRestrictions)
+			targetRestrictions = &tr
+		}
+
+		// The same stratagem id recurs across detachments (sometimes with
+		// differing attributes), so the surrogate primary key is detachment-scoped.
+		scope := "core"
+		if s.DetachmentID != nil {
+			scope = *s.DetachmentID
+		}
+		pk := scope + "/" + s.ID
+
+		_, err := pool.Exec(ctx,
+			`INSERT INTO stratagems
+			   (pk, id, faction_id, detachment_id, name, type, cp_cost, category, phases, player_turn, timing, target_restrictions, ability_id)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			 ON CONFLICT (pk) DO UPDATE SET
+			   id = $2, faction_id = $3, detachment_id = $4, name = $5, type = $6, cp_cost = $7,
+			   category = $8, phases = $9, player_turn = $10, timing = $11,
+			   target_restrictions = $12, ability_id = $13`,
+			pk, s.ID, factionID, s.DetachmentID, s.Name, s.Type, s.CPCost, s.Category,
+			phases, s.PlayerTurn, s.Timing, targetRestrictions, s.AbilityID)
+		if err != nil {
+			return count, fmt.Errorf("inserting stratagem %s: %w", s.ID, err)
+		}
+		count++
+	}
+	return count, nil
+}
+
+func loadDetachmentFactions(ctx context.Context, pool *pgxpool.Pool) (map[string]string, error) {
+	rows, err := pool.Query(ctx, `SELECT id, faction_id FROM detachments`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	modes := make(map[string]string)
+	out := make(map[string]string)
 	for rows.Next() {
-		var id, mode string
-		if err := rows.Scan(&id, &mode); err != nil {
+		var id, factionID string
+		if err := rows.Scan(&id, &factionID); err != nil {
 			return nil, err
 		}
-		modes[id] = mode
+		out[id] = factionID
 	}
-	return modes, rows.Err()
+	return out, rows.Err()
 }

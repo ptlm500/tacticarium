@@ -1,0 +1,432 @@
+[
+  {
+    "id": "hammer-of-avernii",
+    "name": "Hammer of Avernii",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "spiritus-ferrum",
+      "medusan-roar-aura",
+      "iron-laurel",
+      "steel-font"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "ruthless-butchery",
+      "augmetic-fortitude",
+      "dominator-beacon",
+      "cogitated-ferocity",
+      "dropship-extraction"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "1st-company-task-force",
+    "name": "1st Company Task Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "the-imperiums-sword",
+      "fear-made-manifest-aura",
+      "rites-of-war",
+      "iron-resolve"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "heroes-of-the-chapter",
+      "legendary-fortitude",
+      "terrifying-proficiency",
+      "duty-and-honour",
+      "orbital-teleportarium"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "gladius-task-force",
+    "name": "Gladius Task Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "artificer-armour",
+      "the-honour-vehement",
+      "adept-of-the-codex",
+      "fire-discipline"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "honour-the-chapter",
+      "storm-of-fire",
+      "only-in-death-does-duty-end",
+      "adaptive-strategy",
+      "squad-tactics"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "stormlance-task-force",
+    "name": "Stormlance Task Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "fury-of-the-storm",
+      "portents-of-wisdom",
+      "feinting-withdrawal",
+      "hunters-instincts"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "blitzing-fusillade",
+      "shock-assault",
+      "ride-hard-ride-fast",
+      "wind-swift-evasion",
+      "full-throttle"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "disruption"
+    ]
+  },
+  {
+    "id": "librarius-conclave",
+    "name": "Librarius Conclave",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "celerity",
+      "prescience",
+      "obfuscation",
+      "temporal-corridor",
+      "fusillade"
+    ],
+    "stratagem_ids": [],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "vanguard-spearhead",
+    "name": "Vanguard Spearhead",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "the-blade-driven-deep",
+      "ghostweave-cloak",
+      "execute-and-redeploy",
+      "shadow-war-veteran"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "strike-from-the-shadows",
+      "surgical-strikes",
+      "calculated-feint",
+      "guerrilla-tactics",
+      "a-deadly-prize"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "orbital-assault-force",
+    "name": "Orbital Assault Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "laurels-of-thunder",
+      "veteran-of-the-vanguard",
+      "orbital-uplink-reliquary"
+    ],
+    "stratagem_ids": [
+      "suppression-strafing",
+      "dedicated-gunship",
+      "blind-screen",
+      "tactical-decapitation",
+      "shock-onslaught",
+      "onward-for-the-emperor"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "anvil-siege-force",
+    "name": "Anvil Siege Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "indomitable-fury",
+      "fleet-commander",
+      "stoic-defender",
+      "architect-of-war"
+    ],
+    "stratagem_ids": [
+      "battle-drill-recall",
+      "armour-of-contempt",
+      "no-threat-too-great",
+      "rigid-discipline",
+      "not-one-backwards-step",
+      "hail-of-vengeance"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "firestorm-assault-force",
+    "name": "Firestorm Assault Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "champion-of-humanity",
+      "war-tempered-artifice",
+      "forged-in-battle",
+      "adamantine-mantle"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "crucible-of-battle",
+      "onslaught-of-fire",
+      "burning-vengeance",
+      "immolation-protocols",
+      "rapid-embarkation"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "ironstorm-spearhead",
+    "name": "Ironstorm Spearhead",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "target-augury-web",
+      "the-flesh-is-weak",
+      "adept-of-the-omnissiah",
+      "master-of-machine-war"
+    ],
+    "stratagem_ids": [
+      "unbowed-conviction",
+      "armour-of-contempt",
+      "mercy-is-weakness",
+      "vengeful-animus",
+      "ancient-fury",
+      "power-of-the-machine-spirit"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "fulguris-task-force",
+    "name": "Fulguris Task Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "bellicose-weapon-spirits",
+      "raptorial-cogitator-core"
+    ],
+    "stratagem_ids": [
+      "data-link-augury",
+      "reactive-evasion",
+      "anti-grav-surge"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "disruption"
+    ]
+  },
+  {
+    "id": "subversion-assets",
+    "name": "Subversion Assets",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "shroud-field",
+      "death-in-the-dark"
+    ],
+    "stratagem_ids": [
+      "adaptive-operations",
+      "strike-from-the-shadows",
+      "cloaked-position"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "armoured-speartip",
+    "name": "Armoured Speartip",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "liberator",
+      "tip-of-the-spear",
+      "shock-deployment",
+      "armoured-commander"
+    ],
+    "stratagem_ids": [
+      "machine-wrath",
+      "ceramite-sledgehammer",
+      "advanced-deployment",
+      "armour-of-contempt",
+      "purgation-doctrine",
+      "rapid-embarkation"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "bastion-task-force",
+    "name": "Bastion Task Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "eye-of-the-primarch",
+      "hero-of-the-chapter",
+      "blades-of-valour",
+      "bombast-omnivox"
+    ],
+    "stratagem_ids": [
+      "codex-discipline",
+      "shock-bombardment",
+      "guided-disruption",
+      "angels-defiant",
+      "light-of-vengeance",
+      "heresy-undone"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "ceramite-sentinels",
+    "name": "Ceramite Sentinels",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "honour-indefatigable",
+      "castellum-omnivox",
+      "defensive-mastery"
+    ],
+    "stratagem_ids": [
+      "unyielding-might",
+      "stand-to-the-end",
+      "priority-strike",
+      "augmented-targeting",
+      "armour-of-contempt",
+      "evasive-repositioning"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "headhunter-task-force",
+    "name": "Headhunter Task Force",
+    "faction_id": "iron-hands",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "redoubtable-machine-spirit",
+      "gunnery-honours",
+      "firestorm-coordinators",
+      "astartes-tank-ace-aura"
+    ],
+    "stratagem_ids": [
+      "armour-of-contempt",
+      "rapid-gunnery",
+      "reactive-repositioning",
+      "target-weak-point",
+      "kill-shot",
+      "machine-vengeance"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  }
+]

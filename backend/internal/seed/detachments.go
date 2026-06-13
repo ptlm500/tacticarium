@@ -2,78 +2,47 @@ package seed
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// SeedDetachments reads Detachments.csv and upserts every row. The CSV's
-// `type` column is the authoritative source for game_mode: rows with
-// type = "Boarding Actions" are tagged boarding_actions; everything else is
-// core.
-//
-// Columns: id | faction_id | name | legend | type
+type detachmentJSON struct {
+	ID                string      `json:"id"`
+	FactionID         string      `json:"faction_id"`
+	Name              string      `json:"name"`
+	DetachmentPoints  *int        `json:"detachment_points"`
+	ForceDispositions []string    `json:"force_dispositions"`
+	GameVersion       gameVersion `json:"game_version"`
+}
+
+// SeedDetachments upserts every detachment in a 40kdc-data detachments.json
+// array. Factions must be seeded first (faction_id is a FK).
 func SeedDetachments(ctx context.Context, pool *pgxpool.Pool, filePath string) (int, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return 0, fmt.Errorf("opening detachments file: %w", err)
-	}
-	defer func() { _ = f.Close() }()
-
-	reader := csv.NewReader(f)
-	reader.Comma = '|'
-	reader.LazyQuotes = true
-	// Rows have a trailing empty field from the terminating pipe; allow variable
-	// field counts so csv doesn't complain on short/long rows.
-	reader.FieldsPerRecord = -1
-
-	// Skip header
-	if _, err := reader.Read(); err != nil {
-		return 0, fmt.Errorf("reading header: %w", err)
+	var detachments []detachmentJSON
+	if err := readJSON(filePath, &detachments); err != nil {
+		return 0, err
 	}
 
 	count := 0
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
+	for _, d := range detachments {
+		if d.ID == "" || d.FactionID == "" {
+			continue
 		}
+		dispositions := d.ForceDispositions
+		if dispositions == nil {
+			dispositions = []string{}
+		}
+		_, err := pool.Exec(ctx,
+			`INSERT INTO detachments (id, faction_id, name, detachment_points, force_dispositions)
+			 VALUES ($1, $2, $3, $4, $5)
+			 ON CONFLICT (id) DO UPDATE
+			   SET faction_id = $2, name = $3, detachment_points = $4, force_dispositions = $5`,
+			d.ID, d.FactionID, d.Name, d.DetachmentPoints, dispositions)
 		if err != nil {
-			// Skip malformed rows rather than aborting the whole seed.
-			continue
-		}
-
-		if len(record) < 3 {
-			continue
-		}
-
-		id := strings.TrimSpace(record[0])
-		factionID := strings.TrimSpace(record[1])
-		name := strings.TrimSpace(record[2])
-
-		if id == "" || factionID == "" || name == "" {
-			continue
-		}
-
-		gameMode := "core"
-		if len(record) >= 5 && strings.TrimSpace(record[4]) == "Boarding Actions" {
-			gameMode = "boarding_actions"
-		}
-
-		_, err = pool.Exec(ctx,
-			`INSERT INTO detachments (id, faction_id, name, game_mode) VALUES ($1, $2, $3, $4)
-			 ON CONFLICT (id) DO UPDATE SET faction_id = $2, name = $3, game_mode = $4`,
-			id, factionID, name, gameMode)
-		if err != nil {
-			fmt.Printf("Warning: error inserting detachment %s: %v\n", id, err)
-			continue
+			return count, fmt.Errorf("inserting detachment %s: %w", d.ID, err)
 		}
 		count++
 	}
-
 	return count, nil
 }

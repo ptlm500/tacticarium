@@ -2,62 +2,42 @@ package seed
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type factionJSON struct {
+	ID              string      `json:"id"`
+	Name            string      `json:"name"`
+	ParentFactionID *string     `json:"parent_faction_id"`
+	FactionRuleID   *string     `json:"faction_rule_id"`
+	GameVersion     gameVersion `json:"game_version"`
+}
+
+// SeedFactions upserts every faction in a 40kdc-data factions.json array
+// (one such file per faction directory).
 func SeedFactions(ctx context.Context, pool *pgxpool.Pool, filePath string) (int, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return 0, fmt.Errorf("opening factions file: %w", err)
-	}
-	defer func() { _ = f.Close() }()
-
-	reader := csv.NewReader(f)
-	reader.Comma = '|'
-	reader.LazyQuotes = true
-
-	// Skip header
-	if _, err := reader.Read(); err != nil {
-		return 0, fmt.Errorf("reading header: %w", err)
+	var factions []factionJSON
+	if err := readJSON(filePath, &factions); err != nil {
+		return 0, err
 	}
 
 	count := 0
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return count, fmt.Errorf("reading row: %w", err)
-		}
-
-		if len(record) < 3 {
+	for _, f := range factions {
+		if f.ID == "" {
 			continue
 		}
-
-		id := strings.TrimSpace(record[0])
-		name := strings.TrimSpace(record[1])
-		link := strings.TrimSpace(record[2])
-
-		if id == "" {
-			continue
-		}
-
-		_, err = pool.Exec(ctx,
-			`INSERT INTO factions (id, name, wahapedia_link) VALUES ($1, $2, $3)
-			 ON CONFLICT (id) DO UPDATE SET name = $2, wahapedia_link = $3`,
-			id, name, link)
+		_, err := pool.Exec(ctx,
+			`INSERT INTO factions (id, name, parent_faction_id, faction_rule_id)
+			 VALUES ($1, $2, $3, $4)
+			 ON CONFLICT (id) DO UPDATE
+			   SET name = $2, parent_faction_id = $3, faction_rule_id = $4`,
+			f.ID, f.Name, f.ParentFactionID, f.FactionRuleID)
 		if err != nil {
-			return count, fmt.Errorf("inserting faction %s: %w", id, err)
+			return count, fmt.Errorf("inserting faction %s: %w", f.ID, err)
 		}
 		count++
 	}
-
 	return count, nil
 }
