@@ -42,7 +42,7 @@ func SeedMissions(ctx context.Context, pool *pgxpool.Pool, filePath string) (int
 			roundCap = 15
 		}
 		_, err := pool.Exec(ctx,
-			`INSERT INTO missions (id, name, vp_per_game_cap, vp_per_round_cap, deployment_pattern_ids)
+			`INSERT INTO primary_missions (id, name, vp_per_game_cap, vp_per_round_cap, deployment_pattern_ids)
 			 VALUES ($1, $2, $3, $4, $5)
 			 ON CONFLICT (id) DO UPDATE
 			   SET name = $2, vp_per_game_cap = $3, vp_per_round_cap = $4, deployment_pattern_ids = $5`,

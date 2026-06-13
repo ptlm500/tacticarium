@@ -1,67 +1,31 @@
 -- +goose Up
--- 11th Edition reference-data reset.
+-- 11th Edition reference data — additive "expand" phase.
 --
--- 10th edition support is dropped. This migration wipes all game data and the
--- 10e mission/scoring reference tables, reshapes the carried-forward reference
--- tables (factions, detachments, stratagems) to the 40kdc-data shape, and
--- creates the new 11e reference layer (force dispositions, missions, the
--- disposition matchup matrix, unified mission cards, deployment patterns).
+-- 10th edition is being dropped, but this migration is deliberately additive: it
+-- introduces the 11e reference layer ALONGSIDE the existing 10e tables so the
+-- current handlers and tests keep working while the rest of the edition upgrade
+-- lands incrementally. The destructive "contract" steps — dropping the 10e
+-- mission/scoring tables (gambits, challenger_cards, mission_rules, mission_packs,
+-- the 10e missions/secondaries) and switching the handlers over — happen in the
+-- later PRs that migrate those handlers, keeping every PR's build green.
 --
--- This migration is intentionally NOT reversible (Up-only): the 10e dataset is
--- gone and is reseeded fresh from the vendored 40kdc-data snapshot. Game-state
--- (per-player) schema changes land in a later migration alongside the engine
--- rework.
+-- Reseeding the 10e CSV data is gone, so the 10e tables simply go unpopulated
+-- until they are removed.
 
--- 1. Wipe all game data. games CASCADE clears game_players, game_events,
---    stratagem_usage and game_player_secondaries.
-TRUNCATE TABLE games CASCADE;
-
--- 2. Drop FKs from games into reference tables we are about to replace.
-ALTER TABLE games DROP CONSTRAINT IF EXISTS games_mission_id_fkey;
-ALTER TABLE games DROP CONSTRAINT IF EXISTS games_mission_pack_id_fkey;
-
--- 3. Drop the game_player_secondaries join table (10e shape). 11e secondary
---    state lives in the game_players.*_secondaries JSONB columns.
-DROP TABLE IF EXISTS game_player_secondaries CASCADE;
-
--- 4. Drop 10e-only reference tables.
-DROP TABLE IF EXISTS gambits CASCADE;
-DROP TABLE IF EXISTS challenger_cards CASCADE;
-DROP TABLE IF EXISTS mission_rules CASCADE;
-DROP TABLE IF EXISTS secondaries CASCADE;
-DROP TABLE IF EXISTS missions CASCADE;
-DROP TABLE IF EXISTS mission_packs CASCADE;
-
--- 5. Drop 10e mission/twist columns from games. mission_id is kept as a plain
---    TEXT column (FK removed); per-player asymmetric missions + force
---    dispositions are added with the engine rework.
-ALTER TABLE games DROP COLUMN IF EXISTS mission_pack_id;
-ALTER TABLE games DROP COLUMN IF EXISTS twist_id;
-ALTER TABLE games DROP COLUMN IF EXISTS twist_name;
-
--- 6. Reshape factions to the 40kdc-data shape.
-TRUNCATE TABLE factions CASCADE;
-ALTER TABLE factions DROP COLUMN IF EXISTS wahapedia_link;
-ALTER TABLE factions ADD COLUMN IF NOT EXISTS parent_faction_id TEXT;
-ALTER TABLE factions ADD COLUMN IF NOT EXISTS faction_rule_id   TEXT;
-
--- 7. Reshape detachments: add detachment points + force dispositions, drop the
---    10e game_mode tag.
-ALTER TABLE detachments DROP COLUMN IF EXISTS game_mode;
-ALTER TABLE detachments ADD COLUMN IF NOT EXISTS detachment_points INT;
+-- 1. 11e attributes on the carried-forward reference tables. Added as nullable
+--    / defaulted columns so existing 10e reads are unaffected.
+ALTER TABLE factions    ADD COLUMN IF NOT EXISTS parent_faction_id  TEXT;
+ALTER TABLE factions    ADD COLUMN IF NOT EXISTS faction_rule_id    TEXT;
+ALTER TABLE detachments ADD COLUMN IF NOT EXISTS detachment_points  INT;
 ALTER TABLE detachments ADD COLUMN IF NOT EXISTS force_dispositions TEXT[] NOT NULL DEFAULT '{}';
 
--- 8. Rebuild stratagems in the 40kdc-data shape.
---    The same stratagem id recurs across detachments, sometimes with differing
---    attributes (e.g. full-throttle is 1CP/charge for Orks' Kult of Speed but
---    2CP/movement for Marines' Stormlance Task Force). The faithful identity is
---    therefore (detachment_id, id), captured by an explicit surrogate primary
---    key so a detachment's full stratagem list is preserved. The stratagem_usage
---    FK to stratagems(id) is dropped — game data is wiped and how usage
---    references a (detachment-scoped) stratagem is redefined with the engine work.
-ALTER TABLE stratagem_usage DROP CONSTRAINT IF EXISTS stratagem_usage_stratagem_id_fkey;
-DROP TABLE IF EXISTS stratagems CASCADE;
-CREATE TABLE stratagems (
+-- 2. 11e stratagems. The 10e `stratagems` table is retained (and still served by
+--    the current handlers) until the faction handlers switch over; the 11e data
+--    lands in a parallel table. The same stratagem id recurs across detachments,
+--    sometimes with differing attributes (e.g. full-throttle is 1CP/charge for
+--    Orks' Kult of Speed but 2CP/movement for Marines' Stormlance Task Force), so
+--    the faithful identity is (detachment_id, id), captured by a surrogate key.
+CREATE TABLE IF NOT EXISTS stratagems_11e (
     pk                  TEXT PRIMARY KEY,
     id                  TEXT NOT NULL,
     faction_id          TEXT REFERENCES factions(id),
@@ -76,12 +40,12 @@ CREATE TABLE stratagems (
     target_restrictions JSONB,
     ability_id          TEXT
 );
-CREATE INDEX idx_stratagems_faction    ON stratagems(faction_id);
-CREATE INDEX idx_stratagems_detachment ON stratagems(detachment_id);
-CREATE INDEX idx_stratagems_id         ON stratagems(id);
-CREATE INDEX idx_stratagems_phases     ON stratagems USING GIN (phases);
+CREATE INDEX IF NOT EXISTS idx_stratagems_11e_faction    ON stratagems_11e(faction_id);
+CREATE INDEX IF NOT EXISTS idx_stratagems_11e_detachment ON stratagems_11e(detachment_id);
+CREATE INDEX IF NOT EXISTS idx_stratagems_11e_id         ON stratagems_11e(id);
+CREATE INDEX IF NOT EXISTS idx_stratagems_11e_phases     ON stratagems_11e USING GIN (phases);
 
--- 9. New 11e reference layer.
+-- 3. New 11e reference layer (no collisions with 10e tables).
 
 -- Force dispositions: the five strategic-intent tags.
 CREATE TABLE IF NOT EXISTS force_dispositions (
@@ -93,18 +57,20 @@ CREATE TABLE IF NOT EXISTS force_dispositions (
 -- Deployment patterns: objective coordinates + per-player territory/zone
 -- polygons. The board model derives each objective's role from these.
 CREATE TABLE IF NOT EXISTS deployment_patterns (
-    id                            TEXT PRIMARY KEY,
-    name                          TEXT NOT NULL,
-    source                        TEXT,
-    description                   TEXT,
-    objectives                    JSONB NOT NULL DEFAULT '[]',
-    territories                   JSONB NOT NULL DEFAULT '[]',
-    zones                         JSONB NOT NULL DEFAULT '[]',
+    id                             TEXT PRIMARY KEY,
+    name                           TEXT NOT NULL,
+    source                         TEXT,
+    description                    TEXT,
+    objectives                     JSONB NOT NULL DEFAULT '[]',
+    territories                    JSONB NOT NULL DEFAULT '[]',
+    zones                          JSONB NOT NULL DEFAULT '[]',
     recommended_terrain_layout_ids TEXT[] NOT NULL DEFAULT '{}'
 );
 
--- Missions: the objective record. VP caps are per-card (per game + per round).
-CREATE TABLE IF NOT EXISTS missions (
+-- Primary missions: the 11e objective record. VP caps are per-card (per game +
+-- per round). Named distinctly from the 10e `missions` table, which it replaces
+-- once the mission handlers switch over.
+CREATE TABLE IF NOT EXISTS primary_missions (
     id                     TEXT PRIMARY KEY,
     name                   TEXT NOT NULL,
     vp_per_game_cap        INT NOT NULL DEFAULT 45,
@@ -113,12 +79,12 @@ CREATE TABLE IF NOT EXISTS missions (
 );
 
 -- Mission matchups: the 5x5 selector matrix. (own disposition, opponent
--- disposition) -> the mission that player plays.
+-- disposition) -> the primary mission that player plays.
 CREATE TABLE IF NOT EXISTS mission_matchups (
     id                   TEXT PRIMARY KEY,
     disposition          TEXT NOT NULL REFERENCES force_dispositions(id),
     opponent_disposition TEXT NOT NULL REFERENCES force_dispositions(id),
-    mission_id           TEXT NOT NULL REFERENCES missions(id),
+    mission_id           TEXT NOT NULL REFERENCES primary_missions(id),
     UNIQUE (disposition, opponent_disposition)
 );
 

@@ -71,7 +71,7 @@ func SeedStratagems(ctx context.Context, pool *pgxpool.Pool, filePath string) (i
 		pk := scope + "/" + s.ID
 
 		_, err := pool.Exec(ctx,
-			`INSERT INTO stratagems
+			`INSERT INTO stratagems_11e
 			   (pk, id, faction_id, detachment_id, name, type, cp_cost, category, phases, player_turn, timing, target_restrictions, ability_id)
 			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 			 ON CONFLICT (pk) DO UPDATE SET
