@@ -169,8 +169,8 @@ export function GameDetailPage() {
                 {reasonLabel}
               </p>
             )}
-            {gameState.missionName && (
-              <p className="mt-2 font-mono text-xs text-foreground/80">{gameState.missionName}</p>
+            {myPlayer.missionName && (
+              <p className="mt-2 font-mono text-xs text-foreground/80">{myPlayer.missionName}</p>
             )}
             <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               {myPlayer.factionName} vs {opponent?.factionName ?? "Unknown"}

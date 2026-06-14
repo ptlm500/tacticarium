@@ -1,4 +1,4 @@
-import { GameState, PlayerState, GameEvent, ActiveSecondary } from "../types/game";
+import { GameState, PlayerState, GameEvent, SecondaryCard, Board } from "../types/game";
 import { Faction, Detachment, Stratagem } from "../types/faction";
 import { Mission, Secondary, MissionRule } from "../types/mission";
 import { User } from "../api/auth";
@@ -27,24 +27,28 @@ export function makePlayerState(overrides?: Partial<PlayerState>): PlayerState {
     cp: 5,
     vpPrimary: 0,
     vpSecondary: 0,
-    vpGambit: 0,
     vpPaint: 0,
     ready: false,
-    secondaries: [],
     secondaryMode: "tactical",
-    tacticalDeck: [],
-    activeSecondaries: [],
-    achievedSecondaries: [],
-    discardedSecondaries: [],
+    secondaryDeck: [],
+    secondaryHand: [],
+    secondaryScored: [],
+    pendingScorePrompts: [],
+    primaryScoredThisRound: 0,
+    secondaryScoredThisRound: 0,
+    missionId: "mission-1",
+    missionName: "Supply Drop",
     cpGainedThisRound: 0,
-    isChallenger: false,
-    adaptOrDieUses: 0,
     stratagemsUsedThisPhase: [],
-    newOrdersUsedThisPhase: false,
-    vpPrimaryScoredSlots: {},
     ...overrides,
   };
 }
+
+const mockBoard: Board = {
+  deploymentPatternId: "",
+  objectives: [],
+  playerSides: [],
+};
 
 export function makeGameState(overrides?: Partial<GameState>): GameState {
   return {
@@ -56,11 +60,9 @@ export function makeGameState(overrides?: Partial<GameState>): GameState {
     currentPhase: "command",
     activePlayer: 1,
     firstTurnPlayer: 1,
-    missionPackId: "chapter-approved-2025-26",
-    missionId: "mission-1",
-    missionName: "Supply Drop",
-    twistId: "twist-1",
-    twistName: "Hidden Supplies",
+    board: mockBoard,
+    vpPerGameCap: 50,
+    vpPerRoundCap: 15,
     players: [
       makePlayerState(),
       makePlayerState({
@@ -78,29 +80,20 @@ export function makeGameState(overrides?: Partial<GameState>): GameState {
   };
 }
 
-export const mockActiveSecondary: ActiveSecondary = {
+export const mockActiveSecondary: SecondaryCard = {
   id: "sec-1",
   name: "Behind Enemy Lines",
-  description: "Score VP for units in enemy deployment zone",
-  isFixed: false,
-  maxVp: 5,
-  scoringOptions: [
-    { label: "1 unit", vp: 2 },
-    { label: "2+ units", vp: 5, mode: "tactical" },
-    { label: "End game", vp: 4, mode: "fixed" },
-  ],
+  text: "Score VP for units in enemy deployment zone",
+  card_type: "secondary",
+  awards: [],
 };
 
-export const mockFixedSecondary: ActiveSecondary = {
+export const mockFixedSecondary: SecondaryCard = {
   id: "sec-fixed-1",
   name: "Assassination",
-  description: "Score VP for destroying enemy characters",
-  isFixed: true,
-  maxVp: 8,
-  scoringOptions: [
-    { label: "Character destroyed", vp: 3, mode: "fixed" },
-    { label: "Warlord destroyed", vp: 5, mode: "fixed" },
-  ],
+  text: "Score VP for destroying enemy characters",
+  card_type: "secondary",
+  awards: [],
 };
 
 export const mockFactions: Faction[] = [

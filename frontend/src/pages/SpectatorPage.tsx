@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Eye, ScrollText } from "lucide-react";
 import { useGameStore } from "../stores/gameStore";
 import { useSpectatorConnection } from "../hooks/useSpectatorConnection";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
-import { useMissions, useMissionRules } from "../hooks/queries/useMissionQueries";
+import { useMissions } from "../hooks/queries/useMissionQueries";
 import { PHASE_LABELS, PHASE_ORDER, type GameEvent, type Phase } from "../types/game";
 import { type RestGameEvent, normalizeWsEvent } from "../components/game/eventFormatting";
 import { PhaseTracker } from "../components/game/PhaseTracker";
@@ -48,10 +48,7 @@ export function SpectatorPage() {
     setEvents(seeded);
   }, [historicalEvents, setEvents]);
 
-  const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
-  const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
-  const currentMission = allMissions.find((m) => m.id === gameState?.missionId) ?? null;
-  const currentTwist = allRules.find((r) => r.id === gameState?.twistId) ?? null;
+  const { data: allMissions = [] } = useMissions("chapter-approved-2025-26");
 
   const [showLog, setShowLog] = useState(false);
   const [scoringSelection, setScoringSelection] = useState<CellSelection | null>(null);
@@ -112,6 +109,10 @@ export function SpectatorPage() {
   }
 
   const [player1, player2] = gameState.players;
+
+  // Mission is per-player in 11th edition. Show the active player's mission.
+  const activeMissionPlayer = gameState.activePlayer === 1 ? player1 : player2;
+  const currentMission = allMissions.find((m) => m.id === activeMissionPlayer?.missionId) ?? null;
 
   const heatmapData = buildScoringHeatmapData(events.map(normalizeWsEvent), [player1, player2], {
     roundCount: Math.max(gameState.currentRound, 1),
@@ -181,7 +182,7 @@ export function SpectatorPage() {
             events={heatmapData.normalizedEvents}
           />
 
-          <MissionInfo mission={currentMission} twist={currentTwist} />
+          <MissionInfo mission={currentMission} />
 
           <section className="space-y-2">
             <Button

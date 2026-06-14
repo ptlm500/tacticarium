@@ -6,17 +6,16 @@ import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
 import { getToken } from "../api/client";
 import { Faction, Detachment } from "../types/faction";
-import { Mission, MissionRule } from "../types/mission";
-import { ActiveSecondary } from "../types/game";
+import { Mission } from "../types/mission";
+import { SecondaryCard } from "../types/game";
 import { FactionPicker } from "../components/setup/FactionPicker";
 import { DetachmentPicker } from "../components/setup/DetachmentPicker";
 import { MissionPicker } from "../components/setup/MissionPicker";
-import { TwistPicker } from "../components/setup/TwistPicker";
 import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
 import { ArmyPaintedToggle } from "../components/setup/ArmyPaintedToggle";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
-import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
+import { useMissions, useSecondaries } from "../hooks/queries/useMissionQueries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -39,7 +38,6 @@ export function GameSetupPage() {
 
   const { data: factions = [] } = useFactions();
   const { data: missions = [] } = useMissions(PACK_ID);
-  const { data: rules = [] } = useMissionRules(PACK_ID);
   const { data: secondaries = [] } = useSecondaries(PACK_ID);
 
   const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
@@ -106,25 +104,6 @@ export function GameSetupPage() {
     });
   }, [sendAction, missions]);
 
-  const handleSelectTwist = useCallback(
-    (rule: MissionRule) => {
-      sendAction("select_twist", {
-        twistId: rule.id,
-        twistName: rule.name,
-      });
-    },
-    [sendAction],
-  );
-
-  const handleRandomTwist = useCallback(() => {
-    if (rules.length === 0) return;
-    const r = rules[Math.floor(Math.random() * rules.length)];
-    sendAction("select_twist", {
-      twistId: r.id,
-      twistName: r.name,
-    });
-  }, [sendAction, rules]);
-
   const handleSelectFirstPlayer = useCallback(
     (playerNumber: 1 | 2) => {
       sendAction("select_first_turn_player", { firstTurnPlayer: playerNumber });
@@ -146,7 +125,7 @@ export function GameSetupPage() {
   );
 
   const handleFixedSelect = useCallback(
-    (selected: ActiveSecondary[]) => {
+    (selected: SecondaryCard[]) => {
       const ids = selected.map((s) => s.id);
       setSelectedFixedIds(ids);
       if (selected.length === 2) {
@@ -157,7 +136,7 @@ export function GameSetupPage() {
   );
 
   const handleInitDeck = useCallback(
-    (deck: ActiveSecondary[]) => {
+    (deck: SecondaryCard[]) => {
       sendAction("init_tactical_deck", { deck });
     },
     [sendAction],
@@ -197,22 +176,15 @@ export function GameSetupPage() {
 
   const hasFaction = !!myPlayer?.factionId;
   const hasDetachment = !!myPlayer?.detachmentId;
-  const hasMission = !!gameState.missionId;
-  const hasTwist = !!gameState.twistId;
+  const hasMission = !!myPlayer?.missionId;
   const hasFirstPlayer = (gameState.firstTurnPlayer ?? 0) > 0;
   const hasMode = !!myPlayer?.secondaryMode;
   const hasSecondaries =
     myPlayer?.secondaryMode === "fixed"
-      ? (myPlayer?.activeSecondaries?.length ?? 0) === 2
-      : (myPlayer?.tacticalDeck?.length ?? 0) > 0;
+      ? (myPlayer?.secondaryHand?.length ?? 0) === 2
+      : (myPlayer?.secondaryDeck?.length ?? 0) > 0;
   const canReady =
-    hasFaction &&
-    hasDetachment &&
-    hasMission &&
-    hasTwist &&
-    hasFirstPlayer &&
-    hasMode &&
-    hasSecondaries;
+    hasFaction && hasDetachment && hasMission && hasFirstPlayer && hasMode && hasSecondaries;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -305,24 +277,13 @@ export function GameSetupPage() {
         <HUDFrame label="Primary Mission">
           <MissionPicker
             missions={missions}
-            selectedId={gameState.missionId || ""}
+            selectedId={myPlayer?.missionId || ""}
             onSelect={handleSelectMission}
             onDrawRandom={handleRandomMission}
           />
         </HUDFrame>
 
-        {hasMission && (
-          <HUDFrame label="Twist">
-            <TwistPicker
-              rules={rules}
-              selectedId={gameState.twistId || ""}
-              onSelect={handleSelectTwist}
-              onDrawRandom={handleRandomTwist}
-            />
-          </HUDFrame>
-        )}
-
-        {hasTwist && myPlayer && (
+        {hasMission && myPlayer && (
           <HUDFrame label="Who Goes First?">
             <FirstPlayerPicker
               myPlayerNumber={myPlayer.playerNumber}
@@ -344,7 +305,7 @@ export function GameSetupPage() {
               selectedFixedIds={selectedFixedIds}
               onFixedSelect={handleFixedSelect}
               tacticalSecondaries={tacticalSecondaries}
-              deckInitialized={(myPlayer?.tacticalDeck?.length ?? 0) > 0}
+              deckInitialized={(myPlayer?.secondaryDeck?.length ?? 0) > 0}
               onInitDeck={handleInitDeck}
             />
           </HUDFrame>

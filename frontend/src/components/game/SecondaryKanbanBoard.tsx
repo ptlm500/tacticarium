@@ -1,23 +1,16 @@
 import { useState } from "react";
-import { ActiveSecondary } from "../../types/game";
+import { SecondaryCard as SecondaryCardType } from "../../types/game";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ACTIVE_PILE_LIMIT, Pile, filterOptions } from "./secondaryPiles";
+import { ACTIVE_PILE_LIMIT, Pile } from "./secondaryPiles";
 
 interface Props {
-  activeSecondaries: ActiveSecondary[];
-  achievedSecondaries: ActiveSecondary[];
-  discardedSecondaries: ActiveSecondary[];
-  tacticalDeck: ActiveSecondary[];
+  activeSecondaries: SecondaryCardType[];
+  achievedSecondaries: SecondaryCardType[];
+  discardedSecondaries: SecondaryCardType[];
+  tacticalDeck: SecondaryCardType[];
   onMove: (secondaryId: string, fromPile: Pile, toPile: Pile, vpScored?: number) => void;
-  onSelect: (s: ActiveSecondary) => void;
+  onSelect: (s: SecondaryCardType) => void;
 }
 
 const COLUMN_ORDER: Pile[] = ["deck", "active", "discarded", "achieved"];
@@ -40,6 +33,7 @@ const MOVE_TARGETS: { target: Pile; label: string }[] = [
   { target: "active", label: "→ Active" },
   { target: "deck", label: "→ Deck" },
   { target: "discarded", label: "→ Discard" },
+  { target: "achieved", label: "→ Achieved" },
 ];
 
 export function SecondaryKanbanBoard({
@@ -52,12 +46,8 @@ export function SecondaryKanbanBoard({
 }: Props) {
   const [dragging, setDragging] = useState<{ cardId: string; fromPile: Pile } | null>(null);
   const [overPile, setOverPile] = useState<Pile | null>(null);
-  const [achievePrompt, setAchievePrompt] = useState<{
-    card: ActiveSecondary;
-    fromPile: Pile;
-  } | null>(null);
 
-  const piles: Record<Pile, ActiveSecondary[]> = {
+  const piles: Record<Pile, SecondaryCardType[]> = {
     deck: tacticalDeck,
     active: activeSecondaries,
     discarded: discardedSecondaries,
@@ -69,7 +59,7 @@ export function SecondaryKanbanBoard({
     setOverPile(null);
   }
 
-  function handleDragStart(card: ActiveSecondary, fromPile: Pile) {
+  function handleDragStart(card: SecondaryCardType, fromPile: Pile) {
     setDragging({ cardId: card.id, fromPile });
   }
 
@@ -92,22 +82,7 @@ export function SecondaryKanbanBoard({
       endDrag();
       return;
     }
-    const fromPile = dragging.fromPile;
-
-    if (toPile === "achieved") {
-      const opts = filterOptions(card.scoringOptions, "tactical");
-      if (opts.length > 1) {
-        setAchievePrompt({ card, fromPile });
-        endDrag();
-        return;
-      }
-      const vp = opts[0]?.vp ?? card.maxVp;
-      onMove(card.id, fromPile, "achieved", vp);
-      endDrag();
-      return;
-    }
-
-    onMove(card.id, fromPile, toPile);
+    onMove(card.id, dragging.fromPile, toPile);
     endDrag();
   }
 
@@ -194,7 +169,7 @@ export function SecondaryKanbanBoard({
                   </div>
                 ) : (
                   cards.map((card) => (
-                    <SecondaryCard
+                    <SecondaryCardItem
                       key={`${card.id}-${pile}`}
                       card={card}
                       pile={pile}
@@ -218,21 +193,11 @@ export function SecondaryKanbanBoard({
       <div className="pointer-events-none absolute right-0 top-0 size-2.5 border-r-2 border-t-2 border-primary/40" />
       <div className="pointer-events-none absolute bottom-0 left-0 size-2.5 border-b-2 border-l-2 border-primary/40" />
       <div className="pointer-events-none absolute bottom-0 right-0 size-2.5 border-b-2 border-r-2 border-primary/40" />
-
-      <AchievePromptDialog
-        prompt={achievePrompt}
-        onCancel={() => setAchievePrompt(null)}
-        onPick={(vp) => {
-          if (!achievePrompt) return;
-          onMove(achievePrompt.card.id, achievePrompt.fromPile, "achieved", vp);
-          setAchievePrompt(null);
-        }}
-      />
     </div>
   );
 }
 
-function SecondaryCard({
+function SecondaryCardItem({
   card,
   pile,
   dragging,
@@ -242,7 +207,7 @@ function SecondaryCard({
   onMove,
   activeAtCapacity,
 }: {
-  card: ActiveSecondary;
+  card: SecondaryCardType;
   pile: Pile;
   dragging: boolean;
   onDragStart: () => void;
@@ -282,26 +247,16 @@ function SecondaryCard({
         className="block w-full pl-3 text-left"
         title="View full details"
       >
-        <div className="flex items-start justify-between gap-2">
-          <span
-            className={cn(
-              "text-xs font-medium",
-              pile === "achieved" ? "text-emerald-300" : "text-foreground",
-            )}
-          >
-            {card.name}
-          </span>
-          <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-            {card.maxVp} VP
-          </span>
-        </div>
-        {card.description && pile === "active" && (
-          <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{card.description}</p>
-        )}
-        {card.drawRestriction && (
-          <span className="mt-1 inline-block rounded-sm border border-amber-500/40 bg-amber-500/10 px-1 py-0.5 font-mono text-[8px] uppercase tracking-widest text-amber-300">
-            R{card.drawRestriction.round} {card.drawRestriction.mode}
-          </span>
+        <span
+          className={cn(
+            "text-xs font-medium",
+            pile === "achieved" ? "text-emerald-300" : "text-foreground",
+          )}
+        >
+          {card.name}
+        </span>
+        {card.text && pile === "active" && (
+          <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{card.text}</p>
         )}
       </button>
 
@@ -326,54 +281,5 @@ function SecondaryCard({
         })}
       </div>
     </div>
-  );
-}
-
-function AchievePromptDialog({
-  prompt,
-  onPick,
-  onCancel,
-}: {
-  prompt: { card: ActiveSecondary; fromPile: Pile } | null;
-  onPick: (vp: number) => void;
-  onCancel: () => void;
-}) {
-  const opts = filterOptions(prompt?.card.scoringOptions, "tactical");
-  return (
-    <Dialog
-      open={prompt !== null}
-      onOpenChange={(next) => {
-        if (!next) onCancel();
-      }}
-    >
-      {prompt && (
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-mono uppercase tracking-widest text-primary">
-              Achieve: {prompt.card.name}
-            </DialogTitle>
-            <DialogDescription className="font-mono text-[10px] uppercase tracking-widest">
-              Pick the scoring outcome
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            {opts.map((opt, i) => (
-              <Button
-                key={i}
-                type="button"
-                onClick={() => onPick(opt.vp)}
-                className="justify-between bg-emerald-600 text-white hover:bg-emerald-700"
-              >
-                <span>{opt.label}</span>
-                <span className="font-mono">+{opt.vp} VP</span>
-              </Button>
-            ))}
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          </div>
-        </DialogContent>
-      )}
-    </Dialog>
   );
 }

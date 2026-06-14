@@ -50,7 +50,7 @@ describe("SpectatorPage", () => {
           factionName: "Necrons",
           cp: 2,
           vpPrimary: 3,
-          activeSecondaries: [mockActiveSecondary],
+          secondaryHand: [mockActiveSecondary],
         }),
       ],
     });

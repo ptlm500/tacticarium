@@ -59,14 +59,14 @@ describe("MissionInfo", () => {
     expect(screen.queryByText(/From Battle Round/)).toBeNull();
   });
 
-  it("shows 'None' when mission or twist is null", async () => {
+  it("shows 'None' when the mission is null", async () => {
     const user = userEvent.setup();
     render(<MissionInfo mission={null} twist={null} />);
 
     await user.click(screen.getByText("Mission Info"));
 
     const noneElements = screen.getAllByText("None");
-    expect(noneElements).toHaveLength(2);
+    expect(noneElements).toHaveLength(1);
   });
 
   it("collapses when clicked again", async () => {

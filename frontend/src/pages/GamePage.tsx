@@ -1,15 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  ChevronDown,
-  ChevronUp,
-  Flag,
-  Forward,
-  Handshake,
-  ScrollText,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Flag, Forward, Handshake, ScrollText, Zap } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
@@ -34,9 +25,9 @@ import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
 import { SecondaryDetailsModal } from "../components/game/SecondaryDetailsModal";
-import type { ActiveSecondary } from "../types/game";
+import type { SecondaryCard } from "../types/game";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
-import { useMissions, useMissionRules, useSecondaries } from "../hooks/queries/useMissionQueries";
+import { useMissions } from "../hooks/queries/useMissionQueries";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
 import { type RestGameEvent, normalizeWsEvent } from "../components/game/eventFormatting";
 import { buildScoringHeatmapData } from "../components/game/vpUtils";
@@ -48,6 +39,9 @@ import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { ShareSpectateButton } from "../components/game/ShareSpectateButton";
+
+const PACK_ID = "chapter-approved-2025-26";
+
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -94,7 +88,7 @@ export function GamePage() {
   const [showAbandonModal, setShowAbandonModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
   const [showCPCapOverride, setShowCPCapOverride] = useState(false);
-  const [opponentDetailsCard, setOpponentDetailsCard] = useState<ActiveSecondary | null>(null);
+  const [opponentDetailsCard, setOpponentDetailsCard] = useState<SecondaryCard | null>(null);
   const [scoringSelection, setScoringSelection] = useState<CellSelection | null>(null);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
@@ -102,81 +96,18 @@ export function GamePage() {
   const isMyTurn = myPlayer?.playerNumber === gameState?.activePlayer;
 
   const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
-  const [opponentTurnPromptItems, setOpponentTurnPromptItems] = useState<
-    ScoringPromptItem[] | null
-  >(null);
   const [showDrawPrompt, setShowDrawPrompt] = useState(false);
-  // Tracks the previous (phase, activePlayer, status) to detect the moment the
-  // opponent's Fight phase ends and pop a reactive prompt for end-of-opponent-turn
-  // secondaries. Seeded on first observation so a page reload mid-turn doesn't
-  // retroactively trigger.
-  const prevTurnState = useRef<{
-    phase: Phase;
-    activePlayer: number;
-    status: string;
-  } | null>(null);
 
   const {
     data: stratagems = [],
     isError: stratagemsError,
     refetch: refetchStratagems,
   } = useStratagems(myPlayer?.factionId);
-  const { data: allMissions = [] } = useMissions(gameState?.missionPackId);
-  const { data: allRules = [] } = useMissionRules(gameState?.missionPackId);
-  const { data: allSecondaries = [] } = useSecondaries(gameState?.missionPackId);
+  const { data: allMissions = [] } = useMissions(PACK_ID);
 
-  // Source-of-truth scoringTiming lookup. The ActiveSecondary card embeds
-  // scoringTiming when the deck is built, but cards in flight from before the
-  // seed/admin tagging won't have it — so prefer the live secondaries query.
-  const getScoringTiming = useCallback(
-    (s: { id: string; scoringTiming?: string }): "end_of_own_turn" | "end_of_opponent_turn" => {
-      const fromSource = allSecondaries.find((src) => src.id === s.id)?.scoringTiming;
-      const value = fromSource || s.scoringTiming || "end_of_own_turn";
-      return value === "end_of_opponent_turn" ? "end_of_opponent_turn" : "end_of_own_turn";
-    },
-    [allSecondaries],
-  );
-
-  useEffect(() => {
-    if (!gameState || !myPlayer) return;
-    const prev = prevTurnState.current;
-    const opponentNum = myPlayer.playerNumber === 1 ? 2 : 1;
-
-    if (prev) {
-      const prevWasOpponentFight =
-        prev.phase === "fight" && prev.activePlayer === opponentNum && prev.status === "active";
-      const stillOpponentFight =
-        gameState.currentPhase === "fight" && gameState.activePlayer === opponentNum;
-
-      if (prevWasOpponentFight && !stillOpponentFight) {
-        const opponentTurnSecondaries = (myPlayer.activeSecondaries ?? []).filter(
-          (s) => getScoringTiming(s) === "end_of_opponent_turn",
-        );
-        if (opponentTurnSecondaries.length > 0) {
-          setOpponentTurnPromptItems(
-            myPlayer.secondaryMode === "fixed"
-              ? [
-                  {
-                    kind: "fixed_secondary",
-                    secondaries: opponentTurnSecondaries,
-                    timing: "end_of_opponent_turn",
-                  },
-                ]
-              : [{ kind: "secondary", timing: "end_of_opponent_turn" }],
-          );
-        }
-      }
-    }
-
-    prevTurnState.current = {
-      phase: gameState.currentPhase,
-      activePlayer: gameState.activePlayer,
-      status: gameState.status,
-    };
-  }, [gameState, myPlayer, getScoringTiming]);
-
-  const currentMission = allMissions.find((m) => m.id === gameState?.missionId) ?? null;
-  const currentTwist = allRules.find((r) => r.id === gameState?.twistId) ?? null;
+  // Mission is now per-player in 11th edition. Resolve it from the viewing
+  // player's missionId against the mission pack.
+  const currentMission = allMissions.find((m) => m.id === myPlayer?.missionId) ?? null;
 
   const availableStratagems = stratagems.filter((s) => {
     if (!gameState) return false;
@@ -266,46 +197,14 @@ export function GamePage() {
       }
     }
 
-    if (isFightPhase) {
-      if (myPlayer.secondaryMode === "fixed") {
-        const fixedSecondaries = (myPlayer.activeSecondaries ?? []).filter(
-          (s) => s.isFixed && getScoringTiming(s) === "end_of_own_turn",
-        );
-        if (fixedSecondaries.length > 0) {
-          items.push({
-            kind: "fixed_secondary",
-            secondaries: fixedSecondaries,
-            timing: "end_of_own_turn",
-          });
-        }
-      } else {
-        const hasOwnTurnSecondary = (myPlayer.activeSecondaries ?? []).some(
-          (s) => getScoringTiming(s) === "end_of_own_turn",
-        );
-        if (hasOwnTurnSecondary) {
-          items.push({ kind: "secondary", timing: "end_of_own_turn" });
-        }
-      }
-
-      // Block advancing on the opponent's pending end_of_opponent_turn scoring.
-      // The opponent owns the scoring; this is a read-only reminder so the
-      // active player must wait for the opponent to score before continuing.
-      const opponentPending = (opponent?.activeSecondaries ?? []).filter(
-        (s) => getScoringTiming(s) === "end_of_opponent_turn",
-      );
-      if (opponentPending.length > 0) {
-        items.push({
-          kind: "opponent_pending_secondary",
-          secondaries: opponentPending,
-          opponentName: opponent?.username ?? "Your opponent",
-        });
-      }
+    if (isFightPhase && (myPlayer.secondaryHand ?? []).length > 0) {
+      items.push({ kind: "secondary" });
     }
 
     let needsDraw = false;
     if (isCommandPhase && myPlayer.secondaryMode === "tactical") {
-      const activeCount = myPlayer.activeSecondaries?.length ?? 0;
-      const deckSize = myPlayer.tacticalDeck?.length ?? 0;
+      const activeCount = myPlayer.secondaryHand?.length ?? 0;
+      const deckSize = myPlayer.secondaryDeck?.length ?? 0;
       if (activeCount < 2 && deckSize > 0) {
         needsDraw = true;
       }
@@ -318,7 +217,7 @@ export function GamePage() {
     } else {
       doAdvancePhase();
     }
-  }, [gameState, myPlayer, opponent, currentMission, doAdvancePhase, getScoringTiming]);
+  }, [gameState, myPlayer, currentMission, doAdvancePhase]);
 
   const handleAdjustCP = useCallback(
     (delta: number) => {
@@ -399,30 +298,9 @@ export function GamePage() {
     [sendAction],
   );
 
-  const handleAchieveSecondary = useCallback(
-    (secondaryId: string, vpScored: number) => {
-      sendAction("achieve_secondary", { secondaryId, vpScored });
-    },
-    [sendAction],
-  );
-
   const handleDiscardSecondary = useCallback(
     (secondaryId: string, free: boolean) => {
       sendAction("discard_secondary", { secondaryId, free });
-    },
-    [sendAction],
-  );
-
-  const handleNewOrders = useCallback(
-    (discardSecondaryId: string) => {
-      sendAction("new_orders", { discardSecondaryId });
-    },
-    [sendAction],
-  );
-
-  const handleReshuffleSecondary = useCallback(
-    (secondaryId: string) => {
-      sendAction("reshuffle_secondary", { secondaryId });
     },
     [sendAction],
   );
@@ -443,17 +321,6 @@ export function GamePage() {
     [sendAction],
   );
 
-  const handleDrawChallengerCard = useCallback(() => {
-    sendAction("draw_challenger_card", {
-      challengerCardId: "challenger-card-generic",
-      challengerCardName: "Challenger Mission",
-    });
-  }, [sendAction]);
-
-  const handleScoreChallenger = useCallback(() => {
-    sendAction("score_challenger", {});
-  }, [sendAction]);
-
   if (!gameState || !myPlayer) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -467,7 +334,6 @@ export function GamePage() {
     );
   }
 
-  const totalVP = myPlayer.vpPrimary + myPlayer.vpSecondary + myPlayer.vpPaint;
   const opponentVP = opponent ? opponent.vpPrimary + opponent.vpSecondary + opponent.vpPaint : 0;
 
   const heatmapData = buildScoringHeatmapData(events.map(normalizeWsEvent), [myPlayer, opponent], {
@@ -652,19 +518,16 @@ export function GamePage() {
                 onScore={(vp, slot, label) => handleScoreVP("primary", vp, slot, label)}
               />
             )}
-          <PrimaryScoreHistory
-            scoredSlots={myPlayer.vpPrimaryScoredSlots ?? {}}
-            onUndo={handleUndoPrimaryScore}
-          />
+          <PrimaryScoreHistory scoredSlots={{}} onUndo={handleUndoPrimaryScore} />
 
           {/* Opponent's Active Secondaries */}
-          {opponent && (opponent.activeSecondaries ?? []).length > 0 && (
+          {opponent && (opponent.secondaryHand ?? []).length > 0 && (
             <div className="rounded-sm border border-border/40 bg-background/40 p-3">
               <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 {`${opponent.username}'s Active Secondaries (${opponent.secondaryMode === "tactical" ? "Tactical" : "Fixed"})`}
               </h3>
               <div className="mt-2 space-y-2">
-                {(opponent.activeSecondaries ?? []).map((s) => (
+                {(opponent.secondaryHand ?? []).map((s) => (
                   <button
                     type="button"
                     key={s.id}
@@ -674,13 +537,8 @@ export function GamePage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-sm font-medium text-foreground">{s.name}</span>
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {s.maxVp} VP max
-                      </span>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {s.description}
-                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{s.text}</p>
                   </button>
                 ))}
               </div>
@@ -690,69 +548,18 @@ export function GamePage() {
           {/* Secondary Missions */}
           <SecondaryPanel
             mode={myPlayer.secondaryMode}
-            activeSecondaries={myPlayer.activeSecondaries ?? []}
-            achievedSecondaries={myPlayer.achievedSecondaries ?? []}
-            discardedSecondaries={myPlayer.discardedSecondaries ?? []}
-            tacticalDeck={myPlayer.tacticalDeck ?? []}
-            currentRound={gameState.currentRound}
+            secondaryHand={myPlayer.secondaryHand ?? []}
+            secondaryScored={myPlayer.secondaryScored ?? []}
+            secondaryDeck={myPlayer.secondaryDeck ?? []}
             currentPhase={gameState.currentPhase}
             isMyTurn={isMyTurn}
-            currentCP={myPlayer.cp}
-            canGainCP={myPlayer.cpGainedThisRound < 1}
-            newOrdersUsedThisPhase={myPlayer.newOrdersUsedThisPhase ?? false}
-            onAchieve={handleAchieveSecondary}
             onDiscard={handleDiscardSecondary}
-            onNewOrders={handleNewOrders}
-            onReshuffle={handleReshuffleSecondary}
             onDraw={handleDrawSecondary}
             onMove={handleMoveSecondary}
-            onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
           />
 
-          {/* Challenger Card Banner */}
-          {opponent &&
-            gameState.currentPhase === "command" &&
-            totalVP + 6 <= opponentVP &&
-            !myPlayer.isChallenger && (
-              <div className="rounded-sm border border-amber-500/40 bg-amber-500/10 p-3 text-center">
-                <p className="text-xs text-amber-200">
-                  You are trailing by{" "}
-                  <Badge variant="outline" className="border-amber-400/60 font-mono text-amber-300">
-                    {opponentVP - totalVP} VP
-                  </Badge>{" "}
-                  — eligible for a Challenger Card!
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleDrawChallengerCard}
-                  className="mt-2 gap-1 bg-amber-600 text-white hover:bg-amber-700"
-                >
-                  <Sparkles className="size-3" />
-                  Draw Challenger Card
-                </Button>
-              </div>
-            )}
-
-          {/* Active Challenger Card */}
-          {myPlayer.isChallenger && myPlayer.challengerCardId && (
-            <div className="rounded-sm border border-purple-500/40 bg-purple-500/10 p-3">
-              <p className="font-mono text-xs uppercase tracking-widest text-purple-300">
-                Active Challenger Card
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleScoreChallenger}
-                className="mt-2 bg-purple-600 text-white hover:bg-purple-700"
-              >
-                Complete Mission (+3 VP)
-              </Button>
-            </div>
-          )}
-
           {/* Mission Info */}
-          <MissionInfo mission={currentMission} twist={currentTwist} />
+          <MissionInfo mission={currentMission} />
 
           {/* Stratagem Panel */}
           <section className="space-y-2">
@@ -934,33 +741,9 @@ export function GamePage() {
         <ScoringPrompt
           items={scoringPromptItems}
           onScore={handleScoreVP}
-          activeSecondaries={myPlayer.activeSecondaries ?? []}
-          onAchieveSecondary={handleAchieveSecondary}
-          onDiscardSecondary={handleDiscardSecondary}
-          canGainCP={myPlayer.cpGainedThisRound < 1}
-          onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
+          secondaryHand={myPlayer.secondaryHand ?? []}
           onConfirm={doAdvancePhase}
           onCancel={() => setScoringPromptItems(null)}
-        />
-      )}
-
-      {/* Reactive prompt fired when opponent's Fight phase ends — for
-          secondaries that score at the end of the opponent's turn (e.g. Sabotage). */}
-      {opponentTurnPromptItems && (
-        <ScoringPrompt
-          items={opponentTurnPromptItems}
-          onScore={handleScoreVP}
-          activeSecondaries={myPlayer.activeSecondaries ?? []}
-          onAchieveSecondary={handleAchieveSecondary}
-          onDiscardSecondary={handleDiscardSecondary}
-          canGainCP={myPlayer.cpGainedThisRound < 1}
-          onScoreFixedVP={(delta) => handleScoreVP("secondary", delta)}
-          onConfirm={() => setOpponentTurnPromptItems(null)}
-          onCancel={() => setOpponentTurnPromptItems(null)}
-          title="Opponent's Turn Ended"
-          description="Score any secondaries that resolve at the end of your opponent's turn."
-          confirmLabel="Done"
-          cancelLabel="Dismiss"
         />
       )}
 
@@ -986,8 +769,8 @@ export function GamePage() {
           onCancel={() => setShowDrawPrompt(false)}
         >
           <TacticalDrawReminder
-            deckSize={myPlayer.tacticalDeck?.length ?? 0}
-            activeCount={myPlayer.activeSecondaries?.length ?? 0}
+            deckSize={myPlayer.secondaryDeck?.length ?? 0}
+            activeCount={myPlayer.secondaryHand?.length ?? 0}
             onDraw={handleDrawSecondary}
           />
         </ReminderPrompt>

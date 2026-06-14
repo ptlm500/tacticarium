@@ -1,6 +1,6 @@
 import { Shuffle } from "lucide-react";
 import { Secondary } from "../../types/mission";
-import { ActiveSecondary } from "../../types/game";
+import { SecondaryCard } from "../../types/game";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,10 +10,10 @@ interface Props {
   onModeChange: (mode: "fixed" | "tactical") => void;
   fixedSecondaries: Secondary[];
   selectedFixedIds: string[];
-  onFixedSelect: (secondaries: ActiveSecondary[]) => void;
+  onFixedSelect: (secondaries: SecondaryCard[]) => void;
   tacticalSecondaries: Secondary[];
   deckInitialized: boolean;
-  onInitDeck: (deck: ActiveSecondary[]) => void;
+  onInitDeck: (deck: SecondaryCard[]) => void;
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -25,16 +25,13 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
-function secondaryToActive(s: Secondary): ActiveSecondary {
+function secondaryToCard(s: Secondary): SecondaryCard {
   return {
     id: s.id,
     name: s.name,
-    description: s.description,
-    isFixed: s.isFixed,
-    maxVp: s.maxVp,
-    scoringOptions: s.scoringOptions,
-    drawRestriction: s.drawRestriction,
-    scoringTiming: s.scoringTiming,
+    text: s.description,
+    card_type: "secondary",
+    awards: [],
   };
 }
 
@@ -57,12 +54,12 @@ export function SecondaryModePicker({
       if (selectedFixedIds.length >= 2) return;
       newIds = [...selectedFixedIds, secondary.id];
     }
-    const selected = fixedSecondaries.filter((s) => newIds.includes(s.id)).map(secondaryToActive);
+    const selected = fixedSecondaries.filter((s) => newIds.includes(s.id)).map(secondaryToCard);
     onFixedSelect(selected);
   };
 
   const handleInitDeck = () => {
-    const deck = shuffleArray(tacticalSecondaries.map(secondaryToActive));
+    const deck = shuffleArray(tacticalSecondaries.map(secondaryToCard));
     onInitDeck(deck);
   };
 

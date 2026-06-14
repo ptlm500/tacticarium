@@ -1,10 +1,8 @@
 import { ScoringAction } from "../../types/mission";
-import { ActiveSecondary } from "../../types/game";
+import { SecondaryCard } from "../../types/game";
 import { PrimaryScoringSlot } from "../../types/scoring";
 import { ReminderPrompt } from "./ReminderPrompt";
 import { Button } from "@/components/ui/button";
-
-export type SecondaryScoringTiming = "end_of_own_turn" | "end_of_opponent_turn";
 
 export type ScoringPromptItem =
   | {
@@ -14,16 +12,11 @@ export type ScoringPromptItem =
       currentRound: number;
       scoringSlot: PrimaryScoringSlot;
     }
-  | { kind: "secondary"; timing?: SecondaryScoringTiming }
-  | {
-      kind: "fixed_secondary";
-      secondaries: ActiveSecondary[];
-      timing?: SecondaryScoringTiming;
-    }
+  | { kind: "secondary" }
   | { kind: "end_of_round_primary"; missionName: string; note: string }
   | {
       kind: "opponent_pending_secondary";
-      secondaries: ActiveSecondary[];
+      secondaries: SecondaryCard[];
       opponentName: string;
     };
 
@@ -35,11 +28,7 @@ interface Props {
     scoringSlot?: PrimaryScoringSlot,
     scoringRuleLabel?: string,
   ) => void;
-  activeSecondaries: ActiveSecondary[];
-  onAchieveSecondary: (id: string, vp: number) => void;
-  onDiscardSecondary: (id: string, free: boolean) => void;
-  canGainCP: boolean;
-  onScoreFixedVP: (delta: number) => void;
+  secondaryHand: SecondaryCard[];
   onConfirm: () => void;
   onCancel: () => void;
   title?: string;
@@ -48,19 +37,10 @@ interface Props {
   cancelLabel?: string;
 }
 
-function matchesTiming(s: ActiveSecondary, timing: SecondaryScoringTiming): boolean {
-  const t = (s.scoringTiming as SecondaryScoringTiming | undefined) ?? "end_of_own_turn";
-  return t === timing;
-}
-
 export function ScoringPrompt({
   items,
   onScore,
-  activeSecondaries,
-  onAchieveSecondary,
-  onDiscardSecondary,
-  canGainCP,
-  onScoreFixedVP,
+  secondaryHand,
   onConfirm,
   onCancel,
   title = "Scoring Reminder",
@@ -95,24 +75,7 @@ export function ScoringPrompt({
               <p className="mt-1 text-xs text-foreground/80">{item.note}</p>
             </div>
           )}
-          {item.kind === "fixed_secondary" && (
-            <FixedSecondaryReminder
-              secondaries={item.secondaries.filter((s) =>
-                matchesTiming(s, item.timing ?? "end_of_own_turn"),
-              )}
-              onScore={onScoreFixedVP}
-            />
-          )}
-          {item.kind === "secondary" && (
-            <SecondaryReminder
-              activeSecondaries={activeSecondaries.filter((s) =>
-                matchesTiming(s, item.timing ?? "end_of_own_turn"),
-              )}
-              onAchieve={onAchieveSecondary}
-              onDiscard={onDiscardSecondary}
-              canGainCP={canGainCP}
-            />
-          )}
+          {item.kind === "secondary" && <SecondaryReminder secondaryHand={secondaryHand} />}
           {item.kind === "opponent_pending_secondary" && (
             <OpponentPendingSecondaryReminder
               secondaries={item.secondaries}
@@ -129,7 +92,7 @@ function OpponentPendingSecondaryReminder({
   secondaries,
   opponentName,
 }: {
-  secondaries: ActiveSecondary[];
+  secondaries: SecondaryCard[];
   opponentName: string;
 }) {
   return (
@@ -141,8 +104,8 @@ function OpponentPendingSecondaryReminder({
         Wait for {opponentName} to score
       </h3>
       <p className="mt-1 text-xs text-foreground/80">
-        Your opponent has secondaries that score at the end of <em>your</em> turn. Confirm they have
-        scored before continuing.
+        Your opponent has secondaries that may score at the end of <em>your</em> turn. Confirm they
+        have scored before continuing.
       </p>
       <ul className="mt-2 space-y-1 text-xs">
         {secondaries.map((s) => (
@@ -202,109 +165,24 @@ function PrimaryReminder({
   );
 }
 
-function SecondaryReminder({
-  activeSecondaries,
-  onAchieve,
-  onDiscard,
-  canGainCP,
-}: {
-  activeSecondaries: ActiveSecondary[];
-  onAchieve: (id: string, vp: number) => void;
-  onDiscard: (id: string, free: boolean) => void;
-  canGainCP: boolean;
-}) {
+function SecondaryReminder({ secondaryHand }: { secondaryHand: SecondaryCard[] }) {
   return (
     <div className="rounded-sm border border-emerald-500/40 bg-emerald-500/10 p-3">
       <h3 className="font-mono text-sm uppercase tracking-widest text-emerald-400">
-        Score / Discard Secondaries
+        Score Secondaries
       </h3>
-      {activeSecondaries.length === 0 ? (
+      {secondaryHand.length === 0 ? (
         <p className="mt-1 text-xs text-foreground/80">No active secondary missions.</p>
       ) : (
         <div className="mt-2 space-y-3">
-          {activeSecondaries.map((s) => {
-            const opts = (s.scoringOptions ?? []).filter((o) => !o.mode || o.mode === "tactical");
-            return (
-              <div key={s.id}>
-                <span className="text-xs font-medium text-foreground">{s.name}</span>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {opts.map((opt, i) => (
-                    <Button
-                      key={i}
-                      type="button"
-                      size="sm"
-                      onClick={() => onAchieve(s.id, opt.vp)}
-                      title={opt.label}
-                      className="bg-emerald-600 text-white hover:bg-emerald-700"
-                    >
-                      {opt.label} +{opt.vp}
-                    </Button>
-                  ))}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onDiscard(s.id, true)}
-                  >
-                    Discard
-                  </Button>
-                  {canGainCP && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => onDiscard(s.id, false)}
-                      className="bg-teal-700 text-white hover:bg-teal-800"
-                    >
-                      +1CP
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {secondaryHand.map((s) => (
+            <div key={s.id}>
+              <span className="text-xs font-medium text-foreground">{s.name}</span>
+              <p className="mt-1 text-xs text-muted-foreground">{s.text}</p>
+            </div>
+          ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function FixedSecondaryReminder({
-  secondaries,
-  onScore,
-}: {
-  secondaries: ActiveSecondary[];
-  onScore: (vp: number) => void;
-}) {
-  return (
-    <div className="rounded-sm border border-emerald-500/40 bg-emerald-500/10 p-3">
-      <h3 className="font-mono text-sm uppercase tracking-widest text-emerald-400">
-        Score Fixed Secondaries
-      </h3>
-      <div className="mt-2 space-y-3">
-        {secondaries.map((s) => {
-          const opts = (s.scoringOptions ?? []).filter((o) => !o.mode || o.mode === "fixed");
-          return (
-            <div key={s.id}>
-              <p className="text-xs font-medium text-foreground">{s.name}</p>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {opts.map((opt, i) => (
-                  <Button
-                    key={i}
-                    type="button"
-                    size="sm"
-                    onClick={() => onScore(opt.vp)}
-                    title={opt.label}
-                    className="bg-emerald-600 text-white hover:bg-emerald-700"
-                  >
-                    {opt.label} +{opt.vp}VP
-                  </Button>
-                ))}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">max {s.maxVp} VP total</p>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
