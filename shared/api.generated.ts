@@ -681,19 +681,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        ActiveSecondary: {
-            description: string;
-            drawRestriction?: components["schemas"]["SecondaryDrawRestriction"];
-            id: string;
-            isFixed: boolean;
-            /** Format: int64 */
-            maxVp: number;
-            name: string;
-            scoringOptions: components["schemas"]["SecondaryScoringOption"][] | null;
-            scoringTiming?: string;
-            /** Format: int64 */
-            vpScored?: number;
-        };
         AdminMeOutputBody: {
             /**
              * Format: uri
@@ -703,6 +690,34 @@ export interface components {
             readonly $schema?: string;
             githubId: string;
             githubUser: string;
+        };
+        Award: {
+            cumulative?: boolean;
+            exclusive_group?: string;
+            mode?: string;
+            per?: string;
+            /** Format: int64 */
+            per_max?: number;
+            trigger: components["schemas"]["Trigger"];
+            /** Format: int64 */
+            vp?: number;
+            /** Format: int64 */
+            vp_max?: number;
+            /** Format: int64 */
+            vp_per?: number;
+            when?: components["schemas"]["Condition"];
+        };
+        Board: {
+            deploymentPatternId: string;
+            objectives: components["schemas"]["Objective"][] | null;
+            playerSides: string[] | null;
+        };
+        Card: {
+            awards: components["schemas"]["Award"][] | null;
+            card_type: string;
+            id: string;
+            name: string;
+            text: string;
         };
         ChallengerCard: {
             /**
@@ -716,6 +731,15 @@ export interface components {
             lore?: string;
             missionPackId: string;
             name: string;
+        };
+        Condition: {
+            negated?: boolean;
+            operands?: components["schemas"]["Condition"][] | null;
+            operator?: string;
+            parameters?: {
+                [key: string]: unknown;
+            };
+            type?: string;
         };
         CreateGameOutputBody: {
             /**
@@ -857,6 +881,7 @@ export interface components {
             abandonRequestedBy?: number;
             /** Format: int64 */
             activePlayer: number;
+            board: components["schemas"]["Board"];
             /** Format: date-time */
             completedAt?: string;
             /** Format: date-time */
@@ -870,13 +895,15 @@ export interface components {
             firstTurnPlayer: number;
             gameId: string;
             inviteCode: string;
-            missionId: string;
-            missionName: string;
-            missionPackId: string;
             players: components["schemas"]["PlayerState"][] | null;
+            startOfTurnControl?: {
+                [key: string]: number;
+            };
             status: string;
-            twistId: string;
-            twistName: string;
+            /** Format: int64 */
+            vpPerGameCap: number;
+            /** Format: int64 */
+            vpPerRoundCap: number;
             winnerId?: string;
         };
         GameSummary: {
@@ -963,51 +990,77 @@ export interface components {
             missionPackId: string;
             name: string;
         };
-        PlayerState: {
-            achievedSecondaries: components["schemas"]["ActiveSecondary"][] | null;
-            activeSecondaries: components["schemas"]["ActiveSecondary"][] | null;
+        Objective: {
             /** Format: int64 */
-            adaptOrDieUses: number;
+            controlledBy: number;
+            homeSide?: string;
+            /** Format: int64 */
+            index: number;
+            point: components["schemas"]["Point"];
+            role: string;
+            tags?: string[] | null;
+            territorySide?: string;
+        };
+        PlayerState: {
             avatarUrl?: string;
-            challengerCardId?: string;
             /** Format: int64 */
             cp: number;
             /** Format: int64 */
             cpGainedThisRound: number;
             detachmentId: string;
             detachmentName: string;
-            discardedSecondaries: components["schemas"]["ActiveSecondary"][] | null;
             factionId: string;
             factionName: string;
-            /** Format: int64 */
-            gambitDeclaredRound?: number;
-            gambitId?: string;
-            isChallenger: boolean;
-            newOrdersUsedThisPhase: boolean;
+            forceDisposition?: string;
+            forceDispositionName?: string;
+            missionId?: string;
+            missionName?: string;
+            pendingScorePrompts: components["schemas"]["ScorePrompt"][] | null;
             /** Format: int64 */
             playerNumber: number;
+            primaryCard?: components["schemas"]["Card"];
+            /** Format: int64 */
+            primaryScoredThisRound: number;
             ready: boolean;
-            secondaries: components["schemas"]["SecondaryObjective"][] | null;
+            secondaryDeck: components["schemas"]["SecondaryCard"][] | null;
+            secondaryHand: components["schemas"]["SecondaryCard"][] | null;
             secondaryMode: string;
+            secondaryScored: components["schemas"]["SecondaryCard"][] | null;
+            /** Format: int64 */
+            secondaryScoredThisRound: number;
+            side?: string;
             stratagemsUsedThisPhase: string[] | null;
-            tacticalDeck: components["schemas"]["ActiveSecondary"][] | null;
             userId: string;
             username: string;
-            /** Format: int64 */
-            vpGambit: number;
             /** Format: int64 */
             vpPaint: number;
             /** Format: int64 */
             vpPrimary: number;
-            vpPrimaryScoredSlots: {
-                [key: string]: {
-                    [key: string]: {
-                        [key: string]: number;
-                    };
-                };
-            };
             /** Format: int64 */
             vpSecondary: number;
+        };
+        Point: {
+            /** Format: double */
+            x: number;
+            /** Format: double */
+            y: number;
+        };
+        RoundWindow: {
+            /** Format: int64 */
+            max?: number;
+            /** Format: int64 */
+            min?: number;
+        };
+        ScorePrompt: {
+            /** Format: int64 */
+            awardIndex: number;
+            cardId: string;
+            cardName: string;
+            category: string;
+            id: string;
+            /** Format: int64 */
+            round: number;
+            text: string;
         };
         ScoringAction: {
             description?: string;
@@ -1043,25 +1096,14 @@ export interface components {
             scoringOptions: components["schemas"]["ScoringOption"][] | null;
             scoringTiming?: string;
         };
-        SecondaryDrawRestriction: {
-            mode: string;
-            /** Format: int64 */
-            round: number;
-        };
-        SecondaryObjective: {
-            /** Format: int64 */
-            customMaxVp?: number;
-            customName?: string;
+        SecondaryCard: {
+            awards: components["schemas"]["Award"][] | null;
+            card_type: string;
             id: string;
-            secondaryId?: string;
+            name: string;
+            text: string;
             /** Format: int64 */
-            vpScored: number;
-        };
-        SecondaryScoringOption: {
-            label: string;
-            mode?: string;
-            /** Format: int64 */
-            vp: number;
+            vpScored?: number;
         };
         Stratagem: {
             /**
@@ -1082,6 +1124,12 @@ export interface components {
             phase: string;
             turn: string;
             type: string;
+        };
+        Trigger: {
+            battle_round?: components["schemas"]["RoundWindow"];
+            phase?: string;
+            player_turn?: string;
+            timing?: string;
         };
         UserStats: {
             /**

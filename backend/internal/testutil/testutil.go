@@ -336,13 +336,16 @@ func SetPlayerFaction(t *testing.T, pool *pgxpool.Pool, gameID, userID, factionI
 	}
 }
 
-// SetPlayerVP sets VP columns for a player in a game.
+// SetPlayerVP sets VP columns for a player in a game. The gambit category was
+// removed in 11th edition; the parameter is retained for call-site compatibility
+// but no longer written.
 func SetPlayerVP(t *testing.T, pool *pgxpool.Pool, gameID, userID string, primary, secondary, gambit, paint int) {
 	t.Helper()
+	_ = gambit
 	_, err := pool.Exec(context.Background(),
-		`UPDATE game_players SET vp_primary = $3, vp_secondary = $4, vp_gambit = $5, vp_paint = $6
+		`UPDATE game_players SET vp_primary = $3, vp_secondary = $4, vp_paint = $5
 		 WHERE game_id = $1 AND user_id = $2`,
-		gameID, userID, primary, secondary, gambit, paint)
+		gameID, userID, primary, secondary, paint)
 	if err != nil {
 		t.Fatalf("Failed to set player VP: %v", err)
 	}

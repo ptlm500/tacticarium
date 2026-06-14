@@ -1,55 +1,6 @@
 {
   "components": {
     "schemas": {
-      "ActiveSecondary": {
-        "additionalProperties": false,
-        "properties": {
-          "description": {
-            "type": "string"
-          },
-          "drawRestriction": {
-            "$ref": "#/components/schemas/SecondaryDrawRestriction"
-          },
-          "id": {
-            "type": "string"
-          },
-          "isFixed": {
-            "type": "boolean"
-          },
-          "maxVp": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "scoringOptions": {
-            "items": {
-              "$ref": "#/components/schemas/SecondaryScoringOption"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "scoringTiming": {
-            "type": "string"
-          },
-          "vpScored": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description",
-          "isFixed",
-          "maxVp",
-          "scoringOptions"
-        ],
-        "type": "object"
-      },
       "AdminMeOutputBody": {
         "additionalProperties": false,
         "properties": {
@@ -72,6 +23,117 @@
         "required": [
           "githubId",
           "githubUser"
+        ],
+        "type": "object"
+      },
+      "Award": {
+        "additionalProperties": false,
+        "properties": {
+          "cumulative": {
+            "type": "boolean"
+          },
+          "exclusive_group": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "per": {
+            "type": "string"
+          },
+          "per_max": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/Trigger"
+          },
+          "vp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "vp_max": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "vp_per": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "when": {
+            "$ref": "#/components/schemas/Condition"
+          }
+        },
+        "required": [
+          "trigger"
+        ],
+        "type": "object"
+      },
+      "Board": {
+        "additionalProperties": false,
+        "properties": {
+          "deploymentPatternId": {
+            "type": "string"
+          },
+          "objectives": {
+            "items": {
+              "$ref": "#/components/schemas/Objective"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "playerSides": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "deploymentPatternId",
+          "objectives",
+          "playerSides"
+        ],
+        "type": "object"
+      },
+      "Card": {
+        "additionalProperties": false,
+        "properties": {
+          "awards": {
+            "items": {
+              "$ref": "#/components/schemas/Award"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "card_type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "card_type",
+          "awards",
+          "text"
         ],
         "type": "object"
       },
@@ -108,6 +170,34 @@
           "name",
           "description"
         ],
+        "type": "object"
+      },
+      "Condition": {
+        "additionalProperties": false,
+        "properties": {
+          "negated": {
+            "type": "boolean"
+          },
+          "operands": {
+            "items": {
+              "$ref": "#/components/schemas/Condition"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "operator": {
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "CreateGameOutputBody": {
@@ -449,6 +539,9 @@
             "format": "int64",
             "type": "integer"
           },
+          "board": {
+            "$ref": "#/components/schemas/Board"
+          },
           "completedAt": {
             "format": "date-time",
             "type": "string"
@@ -478,15 +571,6 @@
           "inviteCode": {
             "type": "string"
           },
-          "missionId": {
-            "type": "string"
-          },
-          "missionName": {
-            "type": "string"
-          },
-          "missionPackId": {
-            "type": "string"
-          },
           "players": {
             "items": {
               "$ref": "#/components/schemas/PlayerState"
@@ -498,14 +582,23 @@
               "null"
             ]
           },
+          "startOfTurnControl": {
+            "additionalProperties": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "object"
+          },
           "status": {
             "type": "string"
           },
-          "twistId": {
-            "type": "string"
+          "vpPerGameCap": {
+            "format": "int64",
+            "type": "integer"
           },
-          "twistName": {
-            "type": "string"
+          "vpPerRoundCap": {
+            "format": "int64",
+            "type": "integer"
           },
           "winnerId": {
             "type": "string"
@@ -520,11 +613,9 @@
           "currentPhase",
           "activePlayer",
           "firstTurnPlayer",
-          "missionPackId",
-          "missionId",
-          "missionName",
-          "twistId",
-          "twistName",
+          "board",
+          "vpPerGameCap",
+          "vpPerRoundCap",
           "players",
           "createdAt"
         ],
@@ -768,35 +859,51 @@
         ],
         "type": "object"
       },
-      "PlayerState": {
+      "Objective": {
         "additionalProperties": false,
         "properties": {
-          "achievedSecondaries": {
-            "items": {
-              "$ref": "#/components/schemas/ActiveSecondary"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "activeSecondaries": {
-            "items": {
-              "$ref": "#/components/schemas/ActiveSecondary"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "adaptOrDieUses": {
+          "controlledBy": {
             "format": "int64",
             "type": "integer"
           },
-          "avatarUrl": {
+          "homeSide": {
             "type": "string"
           },
-          "challengerCardId": {
+          "index": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "point": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "role": {
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "territorySide": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "point",
+          "role",
+          "controlledBy"
+        ],
+        "type": "object"
+      },
+      "PlayerState": {
+        "additionalProperties": false,
+        "properties": {
+          "avatarUrl": {
             "type": "string"
           },
           "cp": {
@@ -813,44 +920,59 @@
           "detachmentName": {
             "type": "string"
           },
-          "discardedSecondaries": {
-            "items": {
-              "$ref": "#/components/schemas/ActiveSecondary"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
           "factionId": {
             "type": "string"
           },
           "factionName": {
             "type": "string"
           },
-          "gambitDeclaredRound": {
+          "forceDisposition": {
+            "type": "string"
+          },
+          "forceDispositionName": {
+            "type": "string"
+          },
+          "missionId": {
+            "type": "string"
+          },
+          "missionName": {
+            "type": "string"
+          },
+          "pendingScorePrompts": {
+            "items": {
+              "$ref": "#/components/schemas/ScorePrompt"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "playerNumber": {
             "format": "int64",
             "type": "integer"
           },
-          "gambitId": {
-            "type": "string"
+          "primaryCard": {
+            "$ref": "#/components/schemas/Card"
           },
-          "isChallenger": {
-            "type": "boolean"
-          },
-          "newOrdersUsedThisPhase": {
-            "type": "boolean"
-          },
-          "playerNumber": {
+          "primaryScoredThisRound": {
             "format": "int64",
             "type": "integer"
           },
           "ready": {
             "type": "boolean"
           },
-          "secondaries": {
+          "secondaryDeck": {
             "items": {
-              "$ref": "#/components/schemas/SecondaryObjective"
+              "$ref": "#/components/schemas/SecondaryCard"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "secondaryHand": {
+            "items": {
+              "$ref": "#/components/schemas/SecondaryCard"
             },
             "type": [
               "array",
@@ -860,18 +982,25 @@
           "secondaryMode": {
             "type": "string"
           },
-          "stratagemsUsedThisPhase": {
+          "secondaryScored": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/SecondaryCard"
             },
             "type": [
               "array",
               "null"
             ]
           },
-          "tacticalDeck": {
+          "secondaryScoredThisRound": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "side": {
+            "type": "string"
+          },
+          "stratagemsUsedThisPhase": {
             "items": {
-              "$ref": "#/components/schemas/ActiveSecondary"
+              "type": "string"
             },
             "type": [
               "array",
@@ -884,10 +1013,6 @@
           "username": {
             "type": "string"
           },
-          "vpGambit": {
-            "format": "int64",
-            "type": "integer"
-          },
           "vpPaint": {
             "format": "int64",
             "type": "integer"
@@ -895,19 +1020,6 @@
           "vpPrimary": {
             "format": "int64",
             "type": "integer"
-          },
-          "vpPrimaryScoredSlots": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "additionalProperties": {
-                  "format": "int64",
-                  "type": "integer"
-                },
-                "type": "object"
-              },
-              "type": "object"
-            },
-            "type": "object"
           },
           "vpSecondary": {
             "format": "int64",
@@ -925,21 +1037,87 @@
           "cp",
           "vpPrimary",
           "vpSecondary",
-          "vpGambit",
           "vpPaint",
           "ready",
-          "secondaries",
           "secondaryMode",
-          "tacticalDeck",
-          "activeSecondaries",
-          "achievedSecondaries",
-          "discardedSecondaries",
+          "secondaryDeck",
+          "secondaryHand",
+          "secondaryScored",
           "cpGainedThisRound",
-          "isChallenger",
-          "adaptOrDieUses",
           "stratagemsUsedThisPhase",
-          "newOrdersUsedThisPhase",
-          "vpPrimaryScoredSlots"
+          "primaryScoredThisRound",
+          "secondaryScoredThisRound",
+          "pendingScorePrompts"
+        ],
+        "type": "object"
+      },
+      "Point": {
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "format": "double",
+            "type": "number"
+          },
+          "y": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
+      "RoundWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "max": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "min": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ScorePrompt": {
+        "additionalProperties": false,
+        "properties": {
+          "awardIndex": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "cardName": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "round": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "cardId",
+          "cardName",
+          "awardIndex",
+          "round",
+          "text"
         ],
         "type": "object"
       },
@@ -1050,37 +1228,28 @@
         ],
         "type": "object"
       },
-      "SecondaryDrawRestriction": {
+      "SecondaryCard": {
         "additionalProperties": false,
         "properties": {
-          "mode": {
-            "type": "string"
+          "awards": {
+            "items": {
+              "$ref": "#/components/schemas/Award"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
           },
-          "round": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "round",
-          "mode"
-        ],
-        "type": "object"
-      },
-      "SecondaryObjective": {
-        "additionalProperties": false,
-        "properties": {
-          "customMaxVp": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "customName": {
+          "card_type": {
             "type": "string"
           },
           "id": {
             "type": "string"
           },
-          "secondaryId": {
+          "name": {
+            "type": "string"
+          },
+          "text": {
             "type": "string"
           },
           "vpScored": {
@@ -1090,27 +1259,10 @@
         },
         "required": [
           "id",
-          "vpScored"
-        ],
-        "type": "object"
-      },
-      "SecondaryScoringOption": {
-        "additionalProperties": false,
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "mode": {
-            "type": "string"
-          },
-          "vp": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "label",
-          "vp"
+          "name",
+          "card_type",
+          "awards",
+          "text"
         ],
         "type": "object"
       },
@@ -1170,6 +1322,24 @@
           "phase",
           "description"
         ],
+        "type": "object"
+      },
+      "Trigger": {
+        "additionalProperties": false,
+        "properties": {
+          "battle_round": {
+            "$ref": "#/components/schemas/RoundWindow"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "player_turn": {
+            "type": "string"
+          },
+          "timing": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "UserStats": {
