@@ -314,3 +314,71 @@ WarCom 11e coverage references a **Gambit** mechanic ("when to take a Gambit"), 
 current 40kdc-data dataset models **no gambit entity** and its 11e migration doc omits them.
 We are removing the 10e gambit system. If 11e gambits turn out to be in-scope, they'd be a
 follow-up once the data lands upstream — flag, don't block.
+
+---
+
+# PR D — current state & brief (handoff, 2026-06-14)
+
+**Status:** PR A (#48, data), PR B (#50, engine+scoring), PR C (#51, reference API +
+10e-table drop) are all merged/green. Backend is fully 11e end-to-end. The frontend +
+admin are **compile-level only** — they type-check and the app builds, but the game UI
+still renders 10e-shaped placeholders and the new 11e mechanics have **no real UI yet**.
+PR D builds that UX. PR E (admin management of 11e reference entities + docs) follows.
+
+## What PR D must build (the 11e UX), and the contract for each
+
+The live game state arrives via WebSocket as a hand-written type in
+`frontend/src/types/game.ts` (NOT the OpenAPI type). Reference data comes via REST
+(`frontend/src/api/*.ts` + `hooks/queries/*`). Actions are dispatched over WS as
+`{type, data}` — the engine's action set is in `backend/internal/game/actions.go`.
+
+1. **Setup — force-disposition picker.** Each player picks a disposition
+   (`GET /api/force-dispositions`) via the `select_force_disposition {disposition,
+   dispositionName}` action. The engine resolves each player's asymmetric mission once both
+   have chosen (mission-matchup matrix, `GET /api/mission-matchups` + `GET /api/missions`).
+   Also: `select_side {side}` (attacker/defender) and the existing `select_first_turn_player`,
+   `select_secondary_mode {mode}`, `set_paint_score`, `set_ready`. The setup page
+   (`GameSetupPage.tsx`) currently has placeholder mission/secondary logic to replace.
+2. **Board / objective-control view.** Render the deployment pattern
+   (`GET /api/deployment-patterns` → objectives + territory/zone polygons, board is 0–60 × 0–44).
+   Player state carries `board` (`scoring.Board`: objectives with role/control/tags).
+   Actions: `set_objective_control {objectiveIndex, player}` and
+   `set_objective_tag {objectiveIndex, tag, add}`. A simple top-down SVG is sufficient.
+3. **Secondary deck (draw-2-keep).** `secondaryDeck`/`secondaryHand`/`secondaryScored` on
+   player state; `draw_secondaries` action (tactical mode, Command phase, draws 2 keeps all).
+   `GET /api/secondary-cards` lists the deck. Render card `name` + `text`.
+4. **Scoring prompts.** The engine fires scoring at end-of-command / end-of-turn /
+   end-of-battle: Layer-1 awards auto-apply (a `card_scored` event); Layer-2 awards emit a
+   `score_prompt` event and land in `player.pendingScorePrompts`. The player answers with
+   `confirm_award {promptId, count}`. Build the prompt UI from `pendingScorePrompts`.
+5. **Turn stages.** `currentPhase` now includes `start_of_turn` and `end_of_turn` bookends
+   (see PHASE_ORDER/PHASE_LABELS in `types/game.ts`) — the phase tracker should show them.
+
+## Known gaps / decisions to respect
+- **Fixed-mode secondaries have no selection UI yet.** The engine supports fixed vs tactical,
+  but only tactical (draw-2-keep) is wired; fixed-mode players' deck isn't dealt to hand at
+  game start. PR D should add the fixed selection flow (or the engine `startGame` should deal
+  the chosen fixed set to hand). Flagged in PR B.
+- `MissionScoring.tsx` / `ScoringPrompt.tsx` + the local `ScoringAction` type in
+  `types/mission.ts` are a **kept UI-only scaffold** for primary scoring (not fed by the API).
+  Either wire them to the new `score_prompt`/`card_scored` flow or remove them.
+- DB tables are named `stratagems_11e` and `primary_missions` (transitional names kept to
+  avoid churn; not renamed). Other 11e tables: `force_dispositions`, `mission_matchups`,
+  `cards`, `deployment_patterns`.
+- Objective roles (home/central/expansion) derive geometrically in `internal/game/scoring/board.go`.
+- Admin manages factions/detachments + read-only stratagems only; 11e reference entities are
+  seeded from 40kdc-data, not admin-managed yet (PR E).
+
+## Local dev gotchas (see also project memory)
+- `vp` needs node on PATH: `export PATH="$HOME/.local/share/mise/installs/node/24.14.1/bin:$HOME/.local/share/mise/installs/vp/0.1.19/bin:$PATH"` then `vp check .` / `vp test` from `frontend/`.
+- **Browser tests (`vp test`) hang in local warmup** — rely on CI for them; `vp check` is the
+  reliable local gate. CI's `vp test` is authoritative (it caught a stale test `vp check` missed).
+- **Don't leave `dist/` build output around** — the pre-commit `admin-check`/`frontend-check`
+  (`vp check`) will flag it; `rm -rf admin/dist frontend/dist` before committing.
+- Backend tests need Docker (testcontainers); Docker works locally. Regenerate types with
+  `make generate-types` (deterministic) whenever Go API types change, or CI's
+  "Generated Types Up-to-Date" fails.
+- Local Postgres for manual runs: brew `postgresql@18`; throwaway cluster pattern used during
+  this migration was port 5439. `make dev-stack` (Docker) is the designed path but the Go
+  service image builds can fail on this machine's Docker IPv6 networking — run Postgres in
+  Docker + Go/Vite on the host instead.
