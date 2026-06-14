@@ -1,0 +1,233 @@
+[
+  {
+    "id": "iconoclast-fiefdom",
+    "name": "Iconoclast Fiefdom",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "wretched-thralls",
+    "enhancement_ids": [
+      "cruel-lashmaster",
+      "iconoclast-idol"
+    ],
+    "stratagem_ids": [
+      "avenge-the-masters",
+      "dark-sacrifice",
+      "coursing-thralls"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "lords-of-dread",
+    "name": "Lords of Dread",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "tyrannical-court",
+    "enhancement_ids": [
+      "throne-mechanicum-of-skulls",
+      "blade-of-celerity",
+      "warp-borne-stalker",
+      "putrid-carapace",
+      "mirror-of-fates",
+      "blessing-of-the-dark-master"
+    ],
+    "stratagem_ids": [
+      "claimed-for-the-dark-gods",
+      "spiteful-demise",
+      "titanic-duel",
+      "trophy-hunter",
+      "crushed-like-vermin",
+      "runes-of-disdain"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "infernal-lance",
+    "name": "Infernal Lance",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "malefic-surge",
+    "enhancement_ids": [
+      "knight-diabolus",
+      "blasphemous-engine",
+      "fleshmetal-fusion",
+      "bestial-aspect"
+    ],
+    "stratagem_ids": [
+      "profane-symbiosis",
+      "hellforged-construction",
+      "corrupting-taint",
+      "unleash-balefire",
+      "warp-vision",
+      "diabolic-bulwark"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "houndpack-lance",
+    "name": "Houndpack Lance",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "marked-prey",
+    "enhancement_ids": [
+      "preyslayers-mantle",
+      "final-howl-aura",
+      "loping-predator",
+      "panoply-of-the-cursed-knights"
+    ],
+    "stratagem_ids": [
+      "hungry-for-combat",
+      "animalistic-rage",
+      "vox-howl",
+      "cunning-hunter",
+      "harrying-hounds",
+      "encircling-pack"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "reconnaissance"
+    ],
+    "granted_keywords": [
+      {
+        "keyword": "Battleline",
+        "to_keywords": ["War Dog"]
+      },
+      {
+        "keyword": "Character",
+        "to_keywords": ["War Dog"],
+        "max_selected": 3
+      }
+    ],
+    "unit_minimums": [
+      {
+        "keyword": "War Dog",
+        "min": 3
+      }
+    ]
+  },
+  {
+    "id": "traitoris-lance",
+    "name": "Traitoris Lance",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "paragons-of-terror",
+    "enhancement_ids": [
+      "nightmares-master",
+      "tyrants-shadow",
+      "malevolent-heraldry",
+      "veil-of-medrengard"
+    ],
+    "stratagem_ids": [
+      "conquerors-without-mercy",
+      "imperious-advance",
+      "disdain-for-the-weak",
+      "a-long-leash",
+      "storm-of-darkness",
+      "pterrorshades"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "bastions-of-tyranny",
+    "name": "Bastions of Tyranny",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "annihilate-the-unworthy",
+    "enhancement_ids": [
+      "pterrorshade-rookery",
+      "hate-filled-dominion"
+    ],
+    "stratagem_ids": [
+      "rune-cursed-stronghold",
+      "pitiless-focus",
+      "intimidating-reminder"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "disruption"
+    ]
+  },
+  {
+    "id": "hunting-warpack",
+    "name": "Hunting Warpack",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "scenting-fear",
+    "enhancement_ids": [
+      "soul-spoor-auspicator",
+      "snarling-rivalry"
+    ],
+    "stratagem_ids": [
+      "insensate-bloodthirst",
+      "leash-of-the-masters",
+      "stalking-focus"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "reconnaissance"
+    ],
+    "tags": [
+      "war-dogs"
+    ]
+  },
+  {
+    "id": "helhunt-lance",
+    "name": "Helhunt Lance",
+    "faction_id": "chaos-knights",
+    "detachment_rule_id": "masters-of-the-pack",
+    "enhancement_ids": [
+      "hunters-helm",
+      "octagram-of-conjuration",
+      "throne-tyrannicus",
+      "aspect-of-the-beast"
+    ],
+    "stratagem_ids": [
+      "feral-arrogance",
+      "merciless-fusillade",
+      "beasthide-manifestation",
+      "flush-the-quarry",
+      "contemptuous-volleys",
+      "goaded-beast"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "disruption"
+    ]
+  }
+]

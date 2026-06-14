@@ -1,0 +1,276 @@
+[
+  {
+    "id": "haloscreed-battle-clade",
+    "name": "Haloscreed Battle Clade",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "transoracular-dyad-wafers",
+      "cognitive-reinforcement",
+      "sanctified-ordnance",
+      "inloaded-lethality"
+    ],
+    "stratagem_ids": [
+      "eradication-protocols",
+      "targeting-override",
+      "guided-retreat",
+      "neural-overload",
+      "aggressive-impulse",
+      "analytical-divination"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "cohort-cybernetica",
+    "name": "Cohort Cybernetica",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "necromechanic",
+      "lord-of-machines",
+      "emotionless-clarity",
+      "arch-negator"
+    ],
+    "stratagem_ids": [
+      "motive-imperative",
+      "auto-divinatory-targeting",
+      "benevolence-of-the-omnissiah",
+      "machine-spirit-resurgent",
+      "machine-superiority",
+      "transcendent-cogitation"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "skitarii-hunter-cohort",
+    "name": "Skitarii Hunter Cohort",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "cantic-thrallnet",
+      "clandestine-infiltrator",
+      "veiled-hunter",
+      "battle-sphere-uplink"
+    ],
+    "stratagem_ids": [
+      "isolate-and-destroy",
+      "shroud-protocols",
+      "programmed-withdrawal",
+      "bionic-endurance",
+      "expedited-purge-protocol",
+      "binharic-offence"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "data-psalm-conclave",
+    "name": "Data-psalm Conclave",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "mechanicus-locum",
+      "mantle-of-the-gnosticarch",
+      "data-blessed-autosermon",
+      "temporcopia"
+    ],
+    "stratagem_ids": [
+      "incantation-of-the-iron-soul",
+      "chant-of-the-remorseless-fist",
+      "luminescent-blessing",
+      "verse-of-vengeance",
+      "tribute-of-emphatic-veneration",
+      "litany-of-the-electromancer"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "disruption"
+    ],
+    "tags": [
+      "data-psalm"
+    ]
+  },
+  {
+    "id": "explorator-maniple",
+    "name": "Explorator Maniple",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "magos",
+      "genetor",
+      "logis",
+      "artisan"
+    ],
+    "stratagem_ids": [
+      "priority-reclamation",
+      "auto-oracular-retrieval",
+      "cached-acquisition",
+      "reactive-safeguard",
+      "infoslave-skull",
+      "incense-exhausts"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "rad-zone-corps",
+    "name": "Rad-Zone Corps",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "radial-suffusion",
+      "malphonic-susurrus",
+      "peerless-eradicator",
+      "autoclavic-denunciation"
+    ],
+    "stratagem_ids": [
+      "aggressor-imperative",
+      "pre-calibrated-purge-solution",
+      "baleful-halo",
+      "bulwark-imperative",
+      "extinction-order",
+      "lethal-dosage"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "cohort-acquisitus",
+    "name": "Cohort Acquisitus",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": "noospheric-recon",
+    "enhancement_ids": [
+      "explorator-dispensation",
+      "stealth-screened-cybercanids"
+    ],
+    "stratagem_ids": [
+      "defect-scrutiny",
+      "repolarised-augurs",
+      "clandestine-reposition"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "lords-of-the-forge",
+    "name": "Lords of the Forge",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": "war-form-mantles",
+    "enhancement_ids": [
+      "vinghs-wafers-of-dynamism",
+      "tl-409"
+    ],
+    "stratagem_ids": [
+      "scriptural-prognosis",
+      "overloaded-safeguards",
+      "holy-avarice"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "priority-assets"
+    ],
+    "tags": [
+      "data-psalm"
+    ]
+  },
+  {
+    "id": "luminen-auto-choir",
+    "name": "Luminen Auto-choir",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": "cyber-static-canticles",
+    "enhancement_ids": [
+      "voltagheist-reliquary",
+      "electromiasmic-brazier"
+    ],
+    "stratagem_ids": [
+      "echoes-of-the-conduit-wars",
+      "chant-of-electrotraction",
+      "momentum-feedback"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "disruption"
+    ],
+    "tags": [
+      "data-psalm"
+    ]
+  },
+  {
+    "id": "eradication-cohort",
+    "name": "Eradication Cohort",
+    "faction_id": "adeptus-mechanicus",
+    "detachment_rule_id": "murderous-imperative",
+    "enhancement_ids": [
+      "omnicogitator",
+      "martial-signatum-amplificator",
+      "belicosa-class-capacitor-vanes",
+      "omnissiahs-fury"
+    ],
+    "stratagem_ids": [
+      "servo-driven-charge",
+      "threat-cogitation-targeters",
+      "unrelenting-aggression",
+      "precision-onslaught",
+      "unshackled-wrath",
+      "analytic-reprisals"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  }
+]

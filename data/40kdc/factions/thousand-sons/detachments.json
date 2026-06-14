@@ -1,0 +1,253 @@
+[
+  {
+    "id": "changehost-of-deceit",
+    "name": "Changehost of Deceit",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "nethershriek-mind-eater",
+      "diabolic-savant",
+      "duplicitous-malediction",
+      "tome-of-true-names"
+    ],
+    "stratagem_ids": [
+      "sulphurous-veil",
+      "ethereal-phantasm",
+      "fractal-disjunction",
+      "chronosorcerous-bleed",
+      "glimmershift-portal",
+      "deceptive-glamour"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "warpforged-cabal",
+    "name": "Warpforged Cabal",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "warp-syphon",
+      "perplexing-cloak",
+      "biomechanical-mutation",
+      "warp-cursed-runemaster"
+    ],
+    "stratagem_ids": [
+      "hex-marked-armour",
+      "ensorcelled-infusion",
+      "mutate-landscape",
+      "malevolent-animus",
+      "cyberspirit-machinations",
+      "warpflame-gargoyles"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "disruption"
+    ]
+  },
+  {
+    "id": "hexwarp-thrallband",
+    "name": "Hexwarp Thrallband",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "arcane-might",
+      "empowered-manifestation",
+      "empyric-onslaught",
+      "noctilith-mantle"
+    ],
+    "stratagem_ids": [
+      "kaleidoscopic-tempest",
+      "through-the-veil",
+      "warding-hex",
+      "scouring-warpflame",
+      "wrath-of-the-doomed",
+      "strands-of-time"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "grand-coven",
+    "name": "Grand Coven",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "lord-of-forbidden-lore",
+      "incandaeum",
+      "umbralefic-crystal",
+      "eldritch-vortex-of-etaph"
+    ],
+    "stratagem_ids": [
+      "devastating-sorcery",
+      "psychic-dominion",
+      "destined-by-fate",
+      "desecration-of-worlds",
+      "arcane-focus",
+      "egotistical-power"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "warpmeld-pact",
+    "name": "Warpmeld Pact",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "warpmeld-dagger",
+      "diamond-of-distortion",
+      "bray-lord",
+      "flowing-flesh"
+    ],
+    "stratagem_ids": [
+      "gift-of-change",
+      "warped-vicissitude",
+      "deranged-ferocity",
+      "blessed-transmutations",
+      "touched-by-tzeentch",
+      "twisted-mirage"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "rubricae-phalanx",
+    "name": "Rubricae Phalanx",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "risen-rubricae",
+      "arcane-thralls-aura",
+      "lord-of-the-rubricae",
+      "stave-abominus"
+    ],
+    "stratagem_ids": [
+      "unwavering-phalanx",
+      "ardent-automata",
+      "inexorable-advance",
+      "revenge-of-the-rubricae",
+      "implacable-guardians",
+      "infernal-fusillade"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "ritual-of-regeneration",
+    "name": "Ritual of Regeneration",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": "sorcerous-invigoration",
+    "enhancement_ids": [
+      "eruption-of-vitality",
+      "curse-of-life"
+    ],
+    "stratagem_ids": [
+      "relentless-rebirth",
+      "mutagenic-magicks",
+      "multitudinous-limbs"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "sekhetar-cohort",
+    "name": "Sekhetar Cohort",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": "ensorcelled-animus",
+    "enhancement_ids": [
+      "walking-rampart",
+      "occulus-infernum"
+    ],
+    "stratagem_ids": [
+      "arcane-venting",
+      "ectoplasmic-extrusion",
+      "warp-fields"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "priority-assets"
+    ],
+    "tags": [
+      "mutant"
+    ]
+  },
+  {
+    "id": "servants-of-change",
+    "name": "Servants of Change",
+    "faction_id": "thousand-sons",
+    "detachment_rule_id": "all-seeing-mutant-hordes",
+    "enhancement_ids": [
+      "unravelled-fates",
+      "thicket-of-bladed-bone"
+    ],
+    "stratagem_ids": [
+      "prismatic-displacement",
+      "temporal-instability",
+      "the-land-writhes"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "reconnaissance"
+    ],
+    "tags": [
+      "mutant"
+    ],
+    "granted_keywords": [
+      {
+        "keyword": "Battleline",
+        "to_keywords": [
+          "Tzaangors"
+        ]
+      }
+    ]
+  }
+]

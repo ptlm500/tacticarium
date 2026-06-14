@@ -21,7 +21,7 @@ func (h *AdminHandler) ImportFactions(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = file.Close() }()
 
-	tmpFile, err := writeTempFile(file, "factions-*.csv")
+	tmpFile, err := writeTempFile(file, "factions-*.json")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
@@ -49,7 +49,7 @@ func (h *AdminHandler) ImportDetachments(w http.ResponseWriter, r *http.Request)
 	}
 	defer func() { _ = file.Close() }()
 
-	tmpFile, err := writeTempFile(file, "detachments-*.csv")
+	tmpFile, err := writeTempFile(file, "detachments-*.json")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
@@ -77,7 +77,7 @@ func (h *AdminHandler) ImportStratagems(w http.ResponseWriter, r *http.Request) 
 	}
 	defer func() { _ = file.Close() }()
 
-	tmpFile, err := writeTempFile(file, "stratagems-*.csv")
+	tmpFile, err := writeTempFile(file, "stratagems-*.json")
 	if err != nil {
 		http.Error(w, "failed to process upload", http.StatusInternalServerError)
 		return
@@ -112,7 +112,7 @@ func (h *AdminHandler) ImportMissions(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = os.Remove(tmpFile) }()
 
-	stats, err := seed.SeedMissions(r.Context(), h.db, tmpFile)
+	count, err := seed.SeedMissions(r.Context(), h.db, tmpFile)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Import missions error", "error", err)
 		http.Error(w, "import failed: "+err.Error(), http.StatusInternalServerError)
@@ -120,12 +120,8 @@ func (h *AdminHandler) ImportMissions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"missions":        stats.Missions,
-		"missionRules":    stats.MissionRules,
-		"secondaries":     stats.Secondaries,
-		"challengerCards": stats.ChallengerCards,
-		"gambits":         stats.Gambits,
-		"entity":          "missions",
+		"missions": count,
+		"entity":   "missions",
 	})
 }
 

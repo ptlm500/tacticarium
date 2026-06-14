@@ -1,0 +1,85 @@
+name: Update 40kdc-data
+
+# Keeps the vendored data/40kdc snapshot in sync with the upstream
+# wn-mitch/40kdc-data `main` branch. Runs weekly (and on demand): refreshes the
+# snapshot, fails loudly if the data introduces a scoring construct the
+# evaluator doesn't handle (conformance test), smoke-seeds it into Postgres, and
+# opens a PR if anything changed.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    name: Refresh vendored data
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tacticarium
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: backend/go.sum
+
+      - name: Refresh vendored snapshot
+        run: scripts/vendor-40kdc-data.sh
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- data/40kdc; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No upstream changes."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "commit=$(jq -r .commit data/40kdc/SOURCE.json)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Conformance check (evaluator handles all card constructs)
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: backend
+        run: go test ./internal/game/scoring/... -timeout 60s
+
+      - name: Smoke-seed into Postgres
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/tacticarium?sslmode=disable
+        run: go run ./cmd/seed --migrate --all
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/update-40kdc-data
+          commit-message: 'chore: update 40kdc-data snapshot to ${{ steps.diff.outputs.commit }}'
+          title: 'chore: update 40kdc-data snapshot'
+          body: |
+            Automated refresh of the vendored `data/40kdc` snapshot from
+            [wn-mitch/40kdc-data](https://github.com/wn-mitch/40kdc-data) `main`.
+
+            Pinned commit: `${{ steps.diff.outputs.commit }}`
+
+            The scoring-evaluator conformance test and a Postgres smoke-seed
+            passed on this data. Review the diff (especially new/renamed
+            missions, cards, dispositions, and stratagems) before merging.
+          labels: data, automated
+          delete-branch: true

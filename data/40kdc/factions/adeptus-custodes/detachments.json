@@ -1,0 +1,245 @@
+[
+  {
+    "id": "lions-of-the-emperor",
+    "name": "Lions of the Emperor",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "superior-creation",
+      "praesidius",
+      "fierce-conqueror",
+      "admonimortis"
+    ],
+    "stratagem_ids": [
+      "peerless-warrior",
+      "gilded-champion",
+      "defiant-to-the-last",
+      "unleash-the-lions",
+      "manoeuvre-and-fire",
+      "swift-as-the-eagle"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "disruption"
+    ]
+  },
+  {
+    "id": "auric-champions",
+    "name": "Auric Champions",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "blade-imperator",
+      "inspirational-exemplar",
+      "veiled-blade",
+      "martial-philosopher"
+    ],
+    "stratagem_ids": [
+      "slayer-of-champions",
+      "the-emperors-auspice",
+      "earning-of-a-name",
+      "shoulder-the-mantle",
+      "superhuman-reserves",
+      "vigil-unending"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "priority-assets"
+    ]
+  },
+  {
+    "id": "solar-spearhead",
+    "name": "Solar Spearhead",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "adamantine-talisman",
+      "augury-uplink",
+      "honoured-fallen-aura",
+      "veteran-of-the-kataphraktoi"
+    ],
+    "stratagem_ids": [
+      "flawless-construction",
+      "emperors-vengeance",
+      "wrathful-advance",
+      "unstoppable",
+      "relentless-persecution",
+      "punishment-inescapable"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "shield-host",
+    "name": "Shield Host",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "from-the-hall-of-armouries",
+      "castellans-mark",
+      "auric-mantle",
+      "panoptispex"
+    ],
+    "stratagem_ids": [
+      "arcane-genetic-alchemy",
+      "avenge-the-fallen",
+      "unwavering-sentinels",
+      "multipotentiality",
+      "vigilance-eternal",
+      "archeotech-munitions"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "purge-the-foe"
+    ]
+  },
+  {
+    "id": "null-maiden-vigil",
+    "name": "Null Maiden Vigil",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "raptor-blade",
+      "enhanced-voidsheen-cloak",
+      "huntress-eye",
+      "oblivion-knight"
+    ],
+    "stratagem_ids": [
+      "witch-hunters",
+      "anathema-blademastery",
+      "purgation-sweep",
+      "desperations-price",
+      "psy-chaff-volley",
+      "psychic-abominations"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 2,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "talons-of-the-emperor",
+    "name": "Talons of the Emperor",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": null,
+    "enhancement_ids": [
+      "radiant-mantle",
+      "gift-of-terran-artifice",
+      "champion-of-the-imperium",
+      "aegis-projector"
+    ],
+    "stratagem_ids": [
+      "talons-interlocked",
+      "empyric-severance",
+      "taloned-pincer",
+      "emperors-executioners",
+      "shield-of-honour",
+      "hunt-as-one"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 3,
+    "force_dispositions": [
+      "take-and-hold"
+    ]
+  },
+  {
+    "id": "might-of-the-moritoi",
+    "name": "Might of the Moritoi",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": "march-of-the-honoured-dead",
+    "enhancement_ids": [
+      "interred-expertise",
+      "auramite-sarcophagus"
+    ],
+    "stratagem_ids": [
+      "flawless-construction-moritoi",
+      "unstoppable-advance",
+      "prioritised-eradication-moritoi"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "purge-the-foe"
+    ],
+    "tags": [
+      "armoury"
+    ]
+  },
+  {
+    "id": "silent-hunters",
+    "name": "Silent Hunters",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": "skin-crawling-disorientation",
+    "enhancement_ids": [
+      "encircling-hunter",
+      "psyk-out-grenades"
+    ],
+    "stratagem_ids": [
+      "deathsong-scythes",
+      "umbral-prosecution",
+      "synchronised-inferno"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "reconnaissance"
+    ]
+  },
+  {
+    "id": "tharanatoi-hammerblow",
+    "name": "Tharanatoi Hammerblow",
+    "faction_id": "adeptus-custodes",
+    "detachment_rule_id": "the-hammer-falls",
+    "enhancement_ids": [
+      "mnemo-locked-shrine-cipher",
+      "efficient-aggression"
+    ],
+    "stratagem_ids": [
+      "hardened-resolve",
+      "unleash-the-lions-tharanatoi",
+      "electroexorcist-saturation"
+    ],
+    "game_version": {
+      "edition": "11th",
+      "dataslate": "pre-launch-provisional"
+    },
+    "detachment_points": 1,
+    "force_dispositions": [
+      "priority-assets"
+    ],
+    "tags": [
+      "lions"
+    ]
+  }
+]

@@ -34,10 +34,9 @@ npm-debug.log*
 pgdata/
 
 
-# Seed data
-Factions.csv
-Stratagems.csv
-Detachments.csv
+# Reference rulebook PDFs (large binary artifacts; not source).
+# 11e reference data is vendored as JSON under data/40kdc (committed).
+*.pdf
 
 # Claude
 .claude/settings.local.json
