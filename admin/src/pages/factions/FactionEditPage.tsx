@@ -7,7 +7,7 @@ export function FactionEditPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
 
-  const [form, setForm] = useState<Faction>({ id: "", name: "", wahapediaLink: "" });
+  const [form, setForm] = useState<Faction>({ id: "", name: "" });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -64,11 +64,20 @@ export function FactionEditPage() {
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Wahapedia Link</label>
+          <label className="block text-sm text-gray-400 mb-1">Parent Faction ID</label>
           <input
-            type="url"
-            value={form.wahapediaLink || ""}
-            onChange={(e) => setForm({ ...form, wahapediaLink: e.target.value })}
+            type="text"
+            value={form.parentFactionId || ""}
+            onChange={(e) => setForm({ ...form, parentFactionId: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Faction Rule ID</label>
+          <input
+            type="text"
+            value={form.factionRuleId || ""}
+            onChange={(e) => setForm({ ...form, factionRuleId: e.target.value })}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
           />
         </div>

@@ -45,21 +45,14 @@ export function FactionListPage() {
           { key: "id", label: "ID" },
           { key: "name", label: "Name" },
           {
-            key: "wahapediaLink",
-            label: "Link",
-            render: (f) =>
-              f.wahapediaLink ? (
-                <a
-                  href={f.wahapediaLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-400 hover:underline text-xs truncate block max-w-xs"
-                >
-                  {f.wahapediaLink}
-                </a>
-              ) : (
-                "-"
-              ),
+            key: "parentFactionId",
+            label: "Parent",
+            render: (f) => f.parentFactionId || "-",
+          },
+          {
+            key: "factionRuleId",
+            label: "Rule",
+            render: (f) => f.factionRuleId || "-",
           },
         ]}
         data={data}

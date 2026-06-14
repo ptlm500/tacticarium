@@ -126,8 +126,9 @@ func CleanAllTables(t *testing.T, pool *pgxpool.Pool) {
 	ctx := context.Background()
 	_, err := pool.Exec(ctx, `
 		TRUNCATE stratagem_usage, game_events, game_players, games,
-		         stratagems, detachments, factions, gambits, secondaries, missions,
-		         mission_rules, challenger_cards, mission_packs, users CASCADE
+		         stratagems_11e, mission_matchups, cards,
+		         primary_missions, force_dispositions, deployment_patterns,
+		         detachments, factions, users CASCADE
 	`)
 	if err != nil {
 		t.Fatalf("Failed to clean all tables: %v", err)
@@ -220,87 +221,82 @@ func SeedDetachment(t *testing.T, pool *pgxpool.Pool, id, factionID, name string
 	}
 }
 
-// SeedStratagem inserts a stratagem for testing.
+// SeedStratagem inserts an 11e stratagem into stratagems_11e for testing.
+// The surrogate primary key mirrors the seeder: coalesce(detachment_id,'core')||'/'||id.
 func SeedStratagem(t *testing.T, pool *pgxpool.Pool, id, factionID, detachmentID, name string) {
 	t.Helper()
 	var detID *string
+	pkPrefix := "core"
 	if detachmentID != "" {
 		detID = &detachmentID
+		pkPrefix = detachmentID
 	}
+	pk := pkPrefix + "/" + id
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO stratagems (id, faction_id, detachment_id, name, type, cp_cost, turn, phase, description)
-		 VALUES ($1, $2, $3, $4, 'Battle Tactic', 1, 'Your turn', 'Shooting phase', 'Test stratagem')
-		 ON CONFLICT DO NOTHING`,
-		id, factionID, detID, name)
+		`INSERT INTO stratagems_11e
+		   (pk, id, faction_id, detachment_id, name, type, category, cp_cost, phases, player_turn, timing)
+		 VALUES ($1, $2, $3, $4, $5, 'Battle Tactic', 'Battle Tactic', 1, '{Shooting}', 'Your turn', 'Reactive')
+		 ON CONFLICT (pk) DO NOTHING`,
+		pk, id, factionID, detID, name)
 	if err != nil {
 		t.Fatalf("Failed to seed stratagem: %v", err)
 	}
 }
 
-// SeedMissionPack inserts a mission pack.
-func SeedMissionPack(t *testing.T, pool *pgxpool.Pool, id, name string) {
+// SeedForceDisposition inserts an 11e force disposition.
+func SeedForceDisposition(t *testing.T, pool *pgxpool.Pool, id, name string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO mission_packs (id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING`, id, name)
+		`INSERT INTO force_dispositions (id, name, text) VALUES ($1, $2, 'Test disposition')
+		 ON CONFLICT DO NOTHING`, id, name)
 	if err != nil {
-		t.Fatalf("Failed to seed mission pack: %v", err)
+		t.Fatalf("Failed to seed force disposition: %v", err)
 	}
 }
 
-// SeedMission inserts a mission with a TEXT PK.
-func SeedMission(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
+// SeedPrimaryMission inserts an 11e primary mission objective record.
+func SeedPrimaryMission(t *testing.T, pool *pgxpool.Pool, id, name string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO missions (id, mission_pack_id, name, description, scoring_rules) VALUES ($1, $2, $3, 'Test mission', '[]') ON CONFLICT DO NOTHING`,
-		id, packID, name)
+		`INSERT INTO primary_missions (id, name, vp_per_game_cap, vp_per_round_cap)
+		 VALUES ($1, $2, 45, 15) ON CONFLICT DO NOTHING`, id, name)
 	if err != nil {
-		t.Fatalf("Failed to seed mission: %v", err)
+		t.Fatalf("Failed to seed primary mission: %v", err)
 	}
 }
 
-// SeedSecondary inserts a secondary objective with a TEXT PK.
-func SeedSecondary(t *testing.T, pool *pgxpool.Pool, id, packID, name string, isFixed bool) {
+// SeedMissionMatchup inserts a row into the disposition selector matrix. The
+// referenced dispositions and primary mission must already exist.
+func SeedMissionMatchup(t *testing.T, pool *pgxpool.Pool, id, disposition, opponentDisposition, missionID string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO secondaries (id, mission_pack_id, name, description, max_vp, is_fixed)
-		 VALUES ($1, $2, $3, 'Test secondary', 5, $4) ON CONFLICT DO NOTHING`,
-		id, packID, name, isFixed)
+		`INSERT INTO mission_matchups (id, disposition, opponent_disposition, mission_id)
+		 VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+		id, disposition, opponentDisposition, missionID)
 	if err != nil {
-		t.Fatalf("Failed to seed secondary: %v", err)
+		t.Fatalf("Failed to seed mission matchup: %v", err)
 	}
 }
 
-// SeedMissionRule inserts a mission rule (twist) with a TEXT PK.
-func SeedMissionRule(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
+// SeedSecondaryCard inserts a secondary mission card into the unified cards table.
+func SeedSecondaryCard(t *testing.T, pool *pgxpool.Pool, id, name string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO mission_rules (id, mission_pack_id, name, description) VALUES ($1, $2, $3, 'Test rule') ON CONFLICT DO NOTHING`,
-		id, packID, name)
+		`INSERT INTO cards (id, name, card_type, text) VALUES ($1, $2, 'secondary', 'Test card')
+		 ON CONFLICT DO NOTHING`, id, name)
 	if err != nil {
-		t.Fatalf("Failed to seed mission rule: %v", err)
+		t.Fatalf("Failed to seed secondary card: %v", err)
 	}
 }
 
-// SeedChallengerCard inserts a challenger card with a TEXT PK.
-func SeedChallengerCard(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
+// SeedDeploymentPattern inserts a board deployment pattern.
+func SeedDeploymentPattern(t *testing.T, pool *pgxpool.Pool, id, name string) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`INSERT INTO challenger_cards (id, mission_pack_id, name, description) VALUES ($1, $2, $3, 'Test card') ON CONFLICT DO NOTHING`,
-		id, packID, name)
+		`INSERT INTO deployment_patterns (id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+		id, name)
 	if err != nil {
-		t.Fatalf("Failed to seed challenger card: %v", err)
-	}
-}
-
-// SeedGambit inserts a gambit.
-func SeedGambit(t *testing.T, pool *pgxpool.Pool, id, packID, name string) {
-	t.Helper()
-	_, err := pool.Exec(context.Background(),
-		`INSERT INTO gambits (id, mission_pack_id, name, description, vp_value)
-		 VALUES ($1, $2, $3, 'Test gambit', 12) ON CONFLICT DO NOTHING`,
-		id, packID, name)
-	if err != nil {
-		t.Fatalf("Failed to seed gambit: %v", err)
+		t.Fatalf("Failed to seed deployment pattern: %v", err)
 	}
 }
 

@@ -759,12 +759,10 @@ func (h *GameHandler) buildSecondaryDeck(mode string) []game.SecondaryCard {
 
 func (h *GameHandler) lookupStratagem(id string) (*game.StratagemInfo, error) {
 	var info game.StratagemInfo
+	// A stratagem id can recur across detachments with the same name/cost; any
+	// matching row resolves the canonical name + default CP cost.
 	err := h.db.QueryRow(context.Background(),
-		// Defense in depth: the player-facing list endpoints already hide
-		// alternate game-mode content, so boarding-actions stratagem IDs should
-		// never reach a client. Filter here too so a crafted action can't bypass
-		// the exclusion.
-		`SELECT name, cp_cost FROM stratagems WHERE id = $1 AND game_mode = 'core'`, id,
+		`SELECT name, cp_cost FROM stratagems_11e WHERE id = $1 LIMIT 1`, id,
 	).Scan(&info.Name, &info.CPCost)
 	if err != nil {
 		return nil, err

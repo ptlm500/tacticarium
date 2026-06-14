@@ -1,17 +1,16 @@
 import { Shuffle } from "lucide-react";
-import { Secondary } from "../../types/mission";
+import { MissionCard } from "../../types/mission";
 import { SecondaryCard } from "../../types/game";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Props {
   mode: string;
   onModeChange: (mode: "fixed" | "tactical") => void;
-  fixedSecondaries: Secondary[];
+  fixedSecondaries: MissionCard[];
   selectedFixedIds: string[];
   onFixedSelect: (secondaries: SecondaryCard[]) => void;
-  tacticalSecondaries: Secondary[];
+  tacticalSecondaries: MissionCard[];
   deckInitialized: boolean;
   onInitDeck: (deck: SecondaryCard[]) => void;
 }
@@ -25,11 +24,11 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
-function secondaryToCard(s: Secondary): SecondaryCard {
+function secondaryToCard(s: MissionCard): SecondaryCard {
   return {
     id: s.id,
     name: s.name,
-    text: s.description,
+    text: s.text ?? "",
     card_type: "secondary",
     awards: [],
   };
@@ -45,7 +44,7 @@ export function SecondaryModePicker({
   deckInitialized,
   onInitDeck,
 }: Props) {
-  const handleFixedToggle = (secondary: Secondary) => {
+  const handleFixedToggle = (secondary: MissionCard) => {
     const isSelected = selectedFixedIds.includes(secondary.id);
     let newIds: string[];
     if (isSelected) {
@@ -111,9 +110,6 @@ export function SecondaryModePicker({
                   )}
                 >
                   <span className="font-medium">{s.name}</span>
-                  <Badge variant="outline" className="font-mono uppercase tracking-widest">
-                    {s.maxVp} VP
-                  </Badge>
                 </button>
               );
             })}

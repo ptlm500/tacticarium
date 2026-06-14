@@ -5,12 +5,6 @@ const navItems = [
   { to: "/factions", label: "Factions" },
   { to: "/detachments", label: "Detachments" },
   { to: "/stratagems", label: "Stratagems" },
-  { to: "/mission-packs", label: "Mission Packs" },
-  { to: "/missions", label: "Missions" },
-  { to: "/secondaries", label: "Secondaries" },
-  { to: "/gambits", label: "Gambits" },
-  { to: "/challenger-cards", label: "Challenger Cards" },
-  { to: "/mission-rules", label: "Mission Rules" },
 ];
 
 export function Layout() {

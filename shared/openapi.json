@@ -137,41 +137,6 @@
         ],
         "type": "object"
       },
-      "ChallengerCard": {
-        "additionalProperties": false,
-        "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/ChallengerCard.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "lore": {
-            "type": "string"
-          },
-          "missionPackId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "missionPackId",
-          "name",
-          "description"
-        ],
-        "type": "object"
-      },
       "Condition": {
         "additionalProperties": false,
         "properties": {
@@ -225,6 +190,45 @@
         ],
         "type": "object"
       },
+      "DeploymentPattern": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "objectives": {
+            "description": "Objective coordinates"
+          },
+          "recommendedTerrainLayoutIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "territories": {},
+          "zones": {}
+        },
+        "required": [
+          "name",
+          "objectives",
+          "territories",
+          "zones",
+          "recommendedTerrainLayoutIds"
+        ],
+        "type": "object"
+      },
       "Detachment": {
         "additionalProperties": false,
         "properties": {
@@ -237,11 +241,21 @@
             "readOnly": true,
             "type": "string"
           },
+          "detachmentPoints": {
+            "format": "int64",
+            "type": "integer"
+          },
           "factionId": {
             "type": "string"
           },
-          "gameMode": {
-            "type": "string"
+          "forceDispositions": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "id": {
             "type": "string"
@@ -252,24 +266,8 @@
         },
         "required": [
           "factionId",
-          "name"
-        ],
-        "type": "object"
-      },
-      "DrawRestriction": {
-        "additionalProperties": false,
-        "properties": {
-          "mode": {
-            "type": "string"
-          },
-          "round": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "round",
-          "mode"
+          "name",
+          "forceDispositions"
         ],
         "type": "object"
       },
@@ -366,13 +364,16 @@
             "readOnly": true,
             "type": "string"
           },
+          "factionRuleId": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "wahapediaLink": {
+          "parentFactionId": {
             "type": "string"
           }
         },
@@ -403,40 +404,21 @@
         ],
         "type": "object"
       },
-      "Gambit": {
+      "ForceDisposition": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/Gambit.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
           "id": {
-            "type": "string"
-          },
-          "missionPackId": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "vpValue": {
-            "format": "int64",
-            "type": "integer"
+          "text": {
+            "type": "string"
           }
         },
         "required": [
-          "missionPackId",
-          "name",
-          "description",
-          "vpValue"
+          "name"
         ],
         "type": "object"
       },
@@ -751,65 +733,42 @@
       "Mission": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/Mission.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "lore": {
-            "type": "string"
-          },
-          "missionPackId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "scoringRules": {
+          "deploymentPatternIds": {
             "items": {
-              "$ref": "#/components/schemas/ScoringAction"
+              "type": "string"
             },
             "type": [
               "array",
               "null"
             ]
           },
-          "scoringTiming": {
+          "id": {
             "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vpPerGameCap": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "vpPerRoundCap": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "required": [
-          "missionPackId",
           "name",
-          "description",
-          "scoringRules",
-          "scoringTiming"
+          "vpPerGameCap",
+          "vpPerRoundCap",
+          "deploymentPatternIds"
         ],
         "type": "object"
       },
-      "MissionPack": {
+      "MissionCard": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/MissionPack.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
-          "description": {
+          "cardType": {
             "type": "string"
           },
           "id": {
@@ -817,45 +776,40 @@
           },
           "name": {
             "type": "string"
+          },
+          "subtype": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
           }
         },
         "required": [
-          "name"
+          "name",
+          "cardType"
         ],
         "type": "object"
       },
-      "MissionRule": {
+      "MissionMatchup": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/MissionRule.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
-          "description": {
+          "disposition": {
             "type": "string"
           },
           "id": {
             "type": "string"
           },
-          "lore": {
+          "missionId": {
             "type": "string"
           },
-          "missionPackId": {
-            "type": "string"
-          },
-          "name": {
+          "opponentDisposition": {
             "type": "string"
           }
         },
         "required": [
-          "missionPackId",
-          "name",
-          "description"
+          "disposition",
+          "opponentDisposition",
+          "missionId"
         ],
         "type": "object"
       },
@@ -1121,113 +1075,6 @@
         ],
         "type": "object"
       },
-      "ScoringAction": {
-        "additionalProperties": false,
-        "properties": {
-          "description": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "minRound": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "scoringTiming": {
-            "type": "string"
-          },
-          "vp": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "label",
-          "vp"
-        ],
-        "type": "object"
-      },
-      "ScoringOption": {
-        "additionalProperties": false,
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "mode": {
-            "type": "string"
-          },
-          "vp": {
-            "format": "int64",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "label",
-          "vp"
-        ],
-        "type": "object"
-      },
-      "Secondary": {
-        "additionalProperties": false,
-        "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/Secondary.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "drawRestriction": {
-            "$ref": "#/components/schemas/DrawRestriction"
-          },
-          "id": {
-            "type": "string"
-          },
-          "isFixed": {
-            "type": "boolean"
-          },
-          "lore": {
-            "type": "string"
-          },
-          "maxVp": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "missionPackId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "scoringOptions": {
-            "items": {
-              "$ref": "#/components/schemas/ScoringOption"
-            },
-            "type": [
-              "array",
-              "null"
-            ]
-          },
-          "scoringTiming": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "missionPackId",
-          "name",
-          "description",
-          "maxVp",
-          "isFixed",
-          "scoringOptions"
-        ],
-        "type": "object"
-      },
       "SecondaryCard": {
         "additionalProperties": false,
         "properties": {
@@ -1269,21 +1116,12 @@
       "Stratagem": {
         "additionalProperties": false,
         "properties": {
-          "$schema": {
-            "description": "A URL to the JSON Schema for this object.",
-            "examples": [
-              "https://example.com/schemas/Stratagem.json"
-            ],
-            "format": "uri",
-            "readOnly": true,
+          "category": {
             "type": "string"
           },
           "cpCost": {
             "format": "int64",
             "type": "integer"
-          },
-          "description": {
-            "type": "string"
           },
           "detachmentId": {
             "type": "string"
@@ -1291,22 +1129,25 @@
           "factionId": {
             "type": "string"
           },
-          "gameMode": {
-            "type": "string"
-          },
           "id": {
-            "type": "string"
-          },
-          "legend": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "phase": {
+          "phases": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "playerTurn": {
             "type": "string"
           },
-          "turn": {
+          "timing": {
             "type": "string"
           },
           "type": {
@@ -1314,13 +1155,9 @@
           }
         },
         "required": [
-          "factionId",
           "name",
-          "type",
           "cpCost",
-          "turn",
-          "phase",
-          "description"
+          "phases"
         ],
         "type": "object"
       },
@@ -1417,247 +1254,6 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/admin/challenger-cards": {
-      "get": {
-        "operationId": "admin-list-challenger-cards",
-        "parameters": [
-          {
-            "description": "Filter by mission pack ID",
-            "explode": false,
-            "in": "query",
-            "name": "pack_id",
-            "schema": {
-              "description": "Filter by mission pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ChallengerCard"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "List challenger cards",
-        "tags": [
-          "Admin Challenger Cards"
-        ]
-      },
-      "post": {
-        "operationId": "admin-create-challenger-card",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChallengerCard"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChallengerCard"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a challenger card",
-        "tags": [
-          "Admin Challenger Cards"
-        ]
-      }
-    },
-    "/api/admin/challenger-cards/{id}": {
-      "delete": {
-        "operationId": "admin-delete-challenger-card",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a challenger card",
-        "tags": [
-          "Admin Challenger Cards"
-        ]
-      },
-      "get": {
-        "operationId": "admin-get-challenger-card",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChallengerCard"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Get a challenger card",
-        "tags": [
-          "Admin Challenger Cards"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-challenger-card",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChallengerCard"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChallengerCard"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a challenger card",
-        "tags": [
-          "Admin Challenger Cards"
-        ]
-      }
-    },
     "/api/admin/detachments": {
       "get": {
         "operationId": "admin-list-detachments",
@@ -2128,247 +1724,6 @@
         ]
       }
     },
-    "/api/admin/gambits": {
-      "get": {
-        "operationId": "admin-list-gambits",
-        "parameters": [
-          {
-            "description": "Filter by mission pack ID",
-            "explode": false,
-            "in": "query",
-            "name": "pack_id",
-            "schema": {
-              "description": "Filter by mission pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Gambit"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "List gambits",
-        "tags": [
-          "Admin Gambits"
-        ]
-      },
-      "post": {
-        "operationId": "admin-create-gambit",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Gambit"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Gambit"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a gambit",
-        "tags": [
-          "Admin Gambits"
-        ]
-      }
-    },
-    "/api/admin/gambits/{id}": {
-      "delete": {
-        "operationId": "admin-delete-gambit",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a gambit",
-        "tags": [
-          "Admin Gambits"
-        ]
-      },
-      "get": {
-        "operationId": "admin-get-gambit",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Gambit"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Get a gambit",
-        "tags": [
-          "Admin Gambits"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-gambit",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Gambit"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Gambit"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a gambit",
-        "tags": [
-          "Admin Gambits"
-        ]
-      }
-    },
     "/api/admin/me": {
       "get": {
         "operationId": "get-admin-me",
@@ -2402,912 +1757,6 @@
         "summary": "Get current admin info",
         "tags": [
           "Admin Auth"
-        ]
-      }
-    },
-    "/api/admin/mission-packs": {
-      "get": {
-        "operationId": "admin-list-mission-packs",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MissionPack"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "List mission packs",
-        "tags": [
-          "Admin Mission Packs"
-        ]
-      },
-      "post": {
-        "operationId": "admin-create-mission-pack",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MissionPack"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MissionPack"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a mission pack",
-        "tags": [
-          "Admin Mission Packs"
-        ]
-      }
-    },
-    "/api/admin/mission-packs/{id}": {
-      "delete": {
-        "operationId": "admin-delete-mission-pack",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a mission pack",
-        "tags": [
-          "Admin Mission Packs"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-mission-pack",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MissionPack"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MissionPack"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a mission pack",
-        "tags": [
-          "Admin Mission Packs"
-        ]
-      }
-    },
-    "/api/admin/mission-rules": {
-      "get": {
-        "operationId": "admin-list-mission-rules",
-        "parameters": [
-          {
-            "description": "Filter by mission pack ID",
-            "explode": false,
-            "in": "query",
-            "name": "pack_id",
-            "schema": {
-              "description": "Filter by mission pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MissionRule"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "List mission rules",
-        "tags": [
-          "Admin Mission Rules"
-        ]
-      },
-      "post": {
-        "operationId": "admin-create-mission-rule",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MissionRule"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MissionRule"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a mission rule",
-        "tags": [
-          "Admin Mission Rules"
-        ]
-      }
-    },
-    "/api/admin/mission-rules/{id}": {
-      "delete": {
-        "operationId": "admin-delete-mission-rule",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a mission rule",
-        "tags": [
-          "Admin Mission Rules"
-        ]
-      },
-      "get": {
-        "operationId": "admin-get-mission-rule",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MissionRule"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Get a mission rule",
-        "tags": [
-          "Admin Mission Rules"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-mission-rule",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MissionRule"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MissionRule"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a mission rule",
-        "tags": [
-          "Admin Mission Rules"
-        ]
-      }
-    },
-    "/api/admin/missions": {
-      "get": {
-        "operationId": "admin-list-missions",
-        "parameters": [
-          {
-            "description": "Filter by mission pack ID",
-            "explode": false,
-            "in": "query",
-            "name": "pack_id",
-            "schema": {
-              "description": "Filter by mission pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Mission"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "List missions",
-        "tags": [
-          "Admin Missions"
-        ]
-      },
-      "post": {
-        "operationId": "admin-create-mission",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Mission"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Mission"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a mission",
-        "tags": [
-          "Admin Missions"
-        ]
-      }
-    },
-    "/api/admin/missions/{id}": {
-      "delete": {
-        "operationId": "admin-delete-mission",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a mission",
-        "tags": [
-          "Admin Missions"
-        ]
-      },
-      "get": {
-        "operationId": "admin-get-mission",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Mission"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Get a mission",
-        "tags": [
-          "Admin Missions"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-mission",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Mission"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Mission"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a mission",
-        "tags": [
-          "Admin Missions"
-        ]
-      }
-    },
-    "/api/admin/secondaries": {
-      "get": {
-        "operationId": "admin-list-secondaries",
-        "parameters": [
-          {
-            "description": "Filter by mission pack ID",
-            "explode": false,
-            "in": "query",
-            "name": "pack_id",
-            "schema": {
-              "description": "Filter by mission pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Secondary"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "List secondaries",
-        "tags": [
-          "Admin Secondaries"
-        ]
-      },
-      "post": {
-        "operationId": "admin-create-secondary",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Secondary"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Secondary"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a secondary",
-        "tags": [
-          "Admin Secondaries"
-        ]
-      }
-    },
-    "/api/admin/secondaries/{id}": {
-      "delete": {
-        "operationId": "admin-delete-secondary",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a secondary",
-        "tags": [
-          "Admin Secondaries"
-        ]
-      },
-      "get": {
-        "operationId": "admin-get-secondary",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Secondary"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Get a secondary",
-        "tags": [
-          "Admin Secondaries"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-secondary",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Secondary"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Secondary"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a secondary",
-        "tags": [
-          "Admin Secondaries"
         ]
       }
     },
@@ -3373,193 +1822,6 @@
         "tags": [
           "Admin Stratagems"
         ]
-      },
-      "post": {
-        "operationId": "admin-create-stratagem",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Stratagem"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Stratagem"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Create a stratagem",
-        "tags": [
-          "Admin Stratagems"
-        ]
-      }
-    },
-    "/api/admin/stratagems/{id}": {
-      "delete": {
-        "operationId": "admin-delete-stratagem",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Delete a stratagem",
-        "tags": [
-          "Admin Stratagems"
-        ]
-      },
-      "get": {
-        "operationId": "admin-get-stratagem",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Stratagem"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Get a stratagem",
-        "tags": [
-          "Admin Stratagems"
-        ]
-      },
-      "put": {
-        "operationId": "admin-update-stratagem",
-        "parameters": [
-          {
-            "description": "Resource ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "description": "Resource ID",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Stratagem"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Stratagem"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "adminBearerAuth": []
-          }
-        ],
-        "summary": "Update a stratagem",
-        "tags": [
-          "Admin Stratagems"
-        ]
       }
     },
     "/api/auth/me": {
@@ -3595,6 +1857,48 @@
         "summary": "Get current user info",
         "tags": [
           "Auth"
+        ]
+      }
+    },
+    "/api/deployment-patterns": {
+      "get": {
+        "operationId": "list-deployment-patterns",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DeploymentPattern"
+                  },
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List deployment patterns",
+        "tags": [
+          "Missions"
         ]
       }
     },
@@ -3799,6 +2103,48 @@
         "summary": "List stratagems for a faction",
         "tags": [
           "Factions"
+        ]
+      }
+    },
+    "/api/force-dispositions": {
+      "get": {
+        "operationId": "list-force-dispositions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ForceDisposition"
+                  },
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List force dispositions",
+        "tags": [
+          "Missions"
         ]
       }
     },
@@ -4100,16 +2446,16 @@
         ]
       }
     },
-    "/api/mission-packs": {
+    "/api/mission-matchups": {
       "get": {
-        "operationId": "list-mission-packs",
+        "operationId": "list-mission-matchups",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/MissionPack"
+                    "$ref": "#/components/schemas/MissionMatchup"
                   },
                   "type": [
                     "array",
@@ -4136,135 +2482,15 @@
             "bearerAuth": []
           }
         ],
-        "summary": "List all mission packs",
+        "summary": "List the disposition matchup matrix",
         "tags": [
           "Missions"
         ]
       }
     },
-    "/api/mission-packs/{packId}/challenger-cards": {
-      "get": {
-        "operationId": "list-challenger-cards",
-        "parameters": [
-          {
-            "description": "Mission Pack ID",
-            "in": "path",
-            "name": "packId",
-            "required": true,
-            "schema": {
-              "description": "Mission Pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ChallengerCard"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List challenger cards in a pack",
-        "tags": [
-          "Missions"
-        ]
-      }
-    },
-    "/api/mission-packs/{packId}/gambits": {
-      "get": {
-        "operationId": "list-gambits",
-        "parameters": [
-          {
-            "description": "Mission Pack ID",
-            "in": "path",
-            "name": "packId",
-            "required": true,
-            "schema": {
-              "description": "Mission Pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Gambit"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List gambits in a pack",
-        "tags": [
-          "Missions"
-        ]
-      }
-    },
-    "/api/mission-packs/{packId}/missions": {
+    "/api/missions": {
       "get": {
         "operationId": "list-missions",
-        "parameters": [
-          {
-            "description": "Mission Pack ID",
-            "in": "path",
-            "name": "packId",
-            "required": true,
-            "schema": {
-              "description": "Mission Pack ID",
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -4298,34 +2524,22 @@
             "bearerAuth": []
           }
         ],
-        "summary": "List missions in a pack",
+        "summary": "List primary missions",
         "tags": [
           "Missions"
         ]
       }
     },
-    "/api/mission-packs/{packId}/rules": {
+    "/api/secondary-cards": {
       "get": {
-        "operationId": "list-mission-rules",
-        "parameters": [
-          {
-            "description": "Mission Pack ID",
-            "in": "path",
-            "name": "packId",
-            "required": true,
-            "schema": {
-              "description": "Mission Pack ID",
-              "type": "string"
-            }
-          }
-        ],
+        "operationId": "list-secondary-cards",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/MissionRule"
+                    "$ref": "#/components/schemas/MissionCard"
                   },
                   "type": [
                     "array",
@@ -4352,61 +2566,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "List mission rules in a pack",
-        "tags": [
-          "Missions"
-        ]
-      }
-    },
-    "/api/mission-packs/{packId}/secondaries": {
-      "get": {
-        "operationId": "list-secondaries",
-        "parameters": [
-          {
-            "description": "Mission Pack ID",
-            "in": "path",
-            "name": "packId",
-            "required": true,
-            "schema": {
-              "description": "Mission Pack ID",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Secondary"
-                  },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
-                }
-              }
-            },
-            "description": "Error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "List secondary objectives in a pack",
+        "summary": "List secondary mission cards",
         "tags": [
           "Missions"
         ]

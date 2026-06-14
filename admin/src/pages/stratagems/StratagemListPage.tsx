@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { adminApi, Stratagem, Faction } from "../../api/admin";
 import { DataTable } from "../../components/DataTable";
 import { ImportDialog } from "../../components/ImportDialog";
 
 export function StratagemListPage() {
-  const navigate = useNavigate();
   const [data, setData] = useState<Stratagem[]>([]);
   const [factions, setFactions] = useState<Faction[]>([]);
   const [filter, setFilter] = useState("");
-  const [gameModeFilter, setGameModeFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
 
@@ -39,12 +36,6 @@ export function StratagemListPage() {
           >
             Import CSV
           </button>
-          <button
-            onClick={() => navigate("/stratagems/new")}
-            className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 rounded"
-          >
-            Create
-          </button>
         </div>
       </div>
       <div className="flex gap-2 mb-4">
@@ -60,37 +51,23 @@ export function StratagemListPage() {
             </option>
           ))}
         </select>
-        <select
-          value={gameModeFilter}
-          onChange={(e) => setGameModeFilter(e.target.value)}
-          className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
-        >
-          <option value="">All Game Modes</option>
-          <option value="core">Core</option>
-          <option value="boarding_actions">Boarding Actions</option>
-        </select>
       </div>
       <DataTable
         columns={[
           { key: "name", label: "Name" },
-          { key: "type", label: "Type" },
+          { key: "type", label: "Type", render: (s) => s.type ?? "-" },
+          { key: "category", label: "Category", render: (s) => s.category ?? "-" },
           { key: "cpCost", label: "CP" },
-          { key: "phase", label: "Phase" },
-          { key: "factionId", label: "Faction" },
           {
-            key: "gameMode",
-            label: "Game Mode",
-            render: (s) => s.gameMode ?? "core",
+            key: "phases",
+            label: "Phases",
+            render: (s) => (s.phases ?? []).join(", ") || "-",
           },
+          { key: "factionId", label: "Faction", render: (s) => s.factionId ?? "-" },
         ]}
-        data={gameModeFilter ? data.filter((s) => (s.gameMode ?? "core") === gameModeFilter) : data}
+        data={data}
         getKey={(s) => s.id}
         searchField="name"
-        onEdit={(s) => navigate(`/stratagems/${s.id}/edit`)}
-        onDelete={async (s) => {
-          await adminApi.stratagems.delete(s.id);
-          load();
-        }}
       />
       {showImport && (
         <ImportDialog

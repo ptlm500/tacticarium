@@ -1,6 +1,6 @@
 import { GameState, PlayerState, GameEvent, SecondaryCard, Board } from "../types/game";
 import { Faction, Detachment, Stratagem } from "../types/faction";
-import { Mission, Secondary, MissionRule } from "../types/mission";
+import { Mission, MissionCard } from "../types/mission";
 import { User } from "../api/auth";
 
 export const mockUser: User = {
@@ -103,8 +103,18 @@ export const mockFactions: Faction[] = [
 ];
 
 export const mockDetachments: Detachment[] = [
-  { id: "det-gladius", factionId: "faction-sm", name: "Gladius Task Force" },
-  { id: "det-ironstorm", factionId: "faction-sm", name: "Ironstorm Spearhead" },
+  {
+    id: "det-gladius",
+    factionId: "faction-sm",
+    name: "Gladius Task Force",
+    forceDispositions: [],
+  },
+  {
+    id: "det-ironstorm",
+    factionId: "faction-sm",
+    name: "Ironstorm Spearhead",
+    forceDispositions: [],
+  },
 ];
 
 export const mockStratagems: Stratagem[] = [
@@ -114,9 +124,8 @@ export const mockStratagems: Stratagem[] = [
     name: "Command Re-roll",
     type: "Core",
     cpCost: 1,
-    turn: "Either player's turn",
-    phase: "Any phase",
-    description: "Re-roll one hit roll, wound roll, or saving throw.",
+    playerTurn: "Either player's turn",
+    phases: ["Any phase"],
   },
   {
     id: "strat-2",
@@ -125,9 +134,8 @@ export const mockStratagems: Stratagem[] = [
     name: "Storm of Fire",
     type: "Battle Tactic",
     cpCost: 1,
-    turn: "Your turn",
-    phase: "Shooting phase",
-    description: "Improve AP of ranged weapons by 1.",
+    playerTurn: "Your turn",
+    phases: ["Shooting phase"],
   },
   {
     id: "strat-3",
@@ -135,9 +143,8 @@ export const mockStratagems: Stratagem[] = [
     name: "Heroic Intervention",
     type: "Strategic Ploy",
     cpCost: 2,
-    turn: "Opponent's turn",
-    phase: "Charge phase",
-    description: "Heroically intervene with a character.",
+    playerTurn: "Opponent's turn",
+    phases: ["Charge phase"],
   },
   {
     id: "strat-challenger",
@@ -145,82 +152,40 @@ export const mockStratagems: Stratagem[] = [
     name: "Banner of Defiance",
     type: "Challenger \u2013 Battle Tactic Stratagem",
     cpCost: 1,
-    turn: "Your turn",
-    phase: "Any phase",
-    description: "Challenger stratagem that should not appear in the general panel.",
+    playerTurn: "Your turn",
+    phases: ["Any phase"],
   },
 ];
 
 export const mockMissions: Mission[] = [
   {
     id: "mission-1",
-    missionPackId: "chapter-approved-2025-26",
     name: "Supply Drop",
-    lore: "Secure the supply crates.",
-    description: "Control objectives to score VP.",
-    scoringRules: [
-      { label: "2 objectives", vp: 5, minRound: 2, scoringTiming: "end_of_command_phase" },
-      { label: "3+ objectives", vp: 10, minRound: 2, scoringTiming: "end_of_command_phase" },
-    ],
-    scoringTiming: "end_of_command_phase",
+    vpPerGameCap: 50,
+    vpPerRoundCap: 15,
+    deploymentPatternIds: [],
   },
   {
     id: "mission-2",
-    missionPackId: "chapter-approved-2025-26",
     name: "Scorched Earth",
-    lore: "Burn it all.",
-    description: "Destroy objectives to score VP.",
-    scoringRules: [
-      { label: "Burned 1", vp: 4 },
-      { label: "Burned 2+", vp: 8 },
-    ],
-    scoringTiming: "end_of_command_phase",
+    vpPerGameCap: 50,
+    vpPerRoundCap: 15,
+    deploymentPatternIds: [],
   },
 ];
 
-export const mockRules: MissionRule[] = [
-  {
-    id: "twist-1",
-    missionPackId: "chapter-approved-2025-26",
-    name: "Hidden Supplies",
-    lore: "Supplies are scattered.",
-    description: "Additional objectives appear.",
-  },
-  {
-    id: "twist-2",
-    missionPackId: "chapter-approved-2025-26",
-    name: "Chilling Rain",
-    lore: "Rain falls.",
-    description: "Reduce visibility.",
-  },
-];
-
-export const mockSecondaries: Secondary[] = [
+export const mockSecondaryCards: MissionCard[] = [
   {
     id: "sec-behind-lines",
-    missionPackId: "chapter-approved-2025-26",
     name: "Behind Enemy Lines",
-    lore: "Infiltrate.",
-    description: "Score VP for units in enemy deployment zone.",
-    maxVp: 5,
-    isFixed: false,
-    scoringOptions: [
-      { label: "1 unit", vp: 2 },
-      { label: "2+ units", vp: 5, mode: "tactical" },
-    ],
+    cardType: "secondary",
+    text: "Score VP for units in enemy deployment zone.",
   },
   {
     id: "sec-assassination",
-    missionPackId: "chapter-approved-2025-26",
     name: "Assassination",
-    lore: "Kill their leaders.",
-    description: "Score VP for destroying enemy characters.",
-    maxVp: 8,
-    isFixed: true,
-    scoringOptions: [
-      { label: "Character", vp: 3, mode: "fixed" },
-      { label: "Warlord", vp: 5, mode: "fixed" },
-    ],
+    cardType: "secondary",
+    text: "Score VP for destroying enemy characters.",
   },
 ];
 

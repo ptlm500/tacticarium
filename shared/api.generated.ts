@@ -4,43 +4,6 @@
  */
 
 export interface paths {
-    "/api/admin/challenger-cards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List challenger cards */
-        get: operations["admin-list-challenger-cards"];
-        put?: never;
-        /** Create a challenger card */
-        post: operations["admin-create-challenger-card"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/challenger-cards/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a challenger card */
-        get: operations["admin-get-challenger-card"];
-        /** Update a challenger card */
-        put: operations["admin-update-challenger-card"];
-        post?: never;
-        /** Delete a challenger card */
-        delete: operations["admin-delete-challenger-card"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/detachments": {
         parameters: {
             query?: never;
@@ -115,43 +78,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/gambits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List gambits */
-        get: operations["admin-list-gambits"];
-        put?: never;
-        /** Create a gambit */
-        post: operations["admin-create-gambit"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/gambits/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a gambit */
-        get: operations["admin-get-gambit"];
-        /** Update a gambit */
-        put: operations["admin-update-gambit"];
-        post?: never;
-        /** Delete a gambit */
-        delete: operations["admin-delete-gambit"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/me": {
         parameters: {
             query?: never;
@@ -169,153 +95,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/mission-packs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List mission packs */
-        get: operations["admin-list-mission-packs"];
-        put?: never;
-        /** Create a mission pack */
-        post: operations["admin-create-mission-pack"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/mission-packs/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update a mission pack */
-        put: operations["admin-update-mission-pack"];
-        post?: never;
-        /** Delete a mission pack */
-        delete: operations["admin-delete-mission-pack"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/mission-rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List mission rules */
-        get: operations["admin-list-mission-rules"];
-        put?: never;
-        /** Create a mission rule */
-        post: operations["admin-create-mission-rule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/mission-rules/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a mission rule */
-        get: operations["admin-get-mission-rule"];
-        /** Update a mission rule */
-        put: operations["admin-update-mission-rule"];
-        post?: never;
-        /** Delete a mission rule */
-        delete: operations["admin-delete-mission-rule"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/missions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List missions */
-        get: operations["admin-list-missions"];
-        put?: never;
-        /** Create a mission */
-        post: operations["admin-create-mission"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/missions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a mission */
-        get: operations["admin-get-mission"];
-        /** Update a mission */
-        put: operations["admin-update-mission"];
-        post?: never;
-        /** Delete a mission */
-        delete: operations["admin-delete-mission"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/secondaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List secondaries */
-        get: operations["admin-list-secondaries"];
-        put?: never;
-        /** Create a secondary */
-        post: operations["admin-create-secondary"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/secondaries/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a secondary */
-        get: operations["admin-get-secondary"];
-        /** Update a secondary */
-        put: operations["admin-update-secondary"];
-        post?: never;
-        /** Delete a secondary */
-        delete: operations["admin-delete-secondary"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/stratagems": {
         parameters: {
             query?: never;
@@ -326,28 +105,8 @@ export interface paths {
         /** List stratagems */
         get: operations["admin-list-stratagems"];
         put?: never;
-        /** Create a stratagem */
-        post: operations["admin-create-stratagem"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/stratagems/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a stratagem */
-        get: operations["admin-get-stratagem"];
-        /** Update a stratagem */
-        put: operations["admin-update-stratagem"];
         post?: never;
-        /** Delete a stratagem */
-        delete: operations["admin-delete-stratagem"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -362,6 +121,23 @@ export interface paths {
         };
         /** Get current user info */
         get: operations["get-me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/deployment-patterns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List deployment patterns */
+        get: operations["list-deployment-patterns"];
         put?: never;
         post?: never;
         delete?: never;
@@ -430,6 +206,23 @@ export interface paths {
         };
         /** List stratagems for a faction */
         get: operations["list-faction-stratagems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/force-dispositions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List force dispositions */
+        get: operations["list-force-dispositions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -541,15 +334,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/mission-packs": {
+    "/api/mission-matchups": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List all mission packs */
-        get: operations["list-mission-packs"];
+        /** List the disposition matchup matrix */
+        get: operations["list-mission-matchups"];
         put?: never;
         post?: never;
         delete?: never;
@@ -558,48 +351,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/mission-packs/{packId}/challenger-cards": {
+    "/api/missions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List challenger cards in a pack */
-        get: operations["list-challenger-cards"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/mission-packs/{packId}/gambits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List gambits in a pack */
-        get: operations["list-gambits"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/mission-packs/{packId}/missions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List missions in a pack */
+        /** List primary missions */
         get: operations["list-missions"];
         put?: never;
         post?: never;
@@ -609,32 +368,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/mission-packs/{packId}/rules": {
+    "/api/secondary-cards": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List mission rules in a pack */
-        get: operations["list-mission-rules"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/mission-packs/{packId}/secondaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List secondary objectives in a pack */
-        get: operations["list-secondaries"];
+        /** List secondary mission cards */
+        get: operations["list-secondary-cards"];
         put?: never;
         post?: never;
         delete?: never;
@@ -719,19 +461,6 @@ export interface components {
             name: string;
             text: string;
         };
-        ChallengerCard: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/ChallengerCard.json
-             */
-            readonly $schema?: string;
-            description: string;
-            id?: string;
-            lore?: string;
-            missionPackId: string;
-            name: string;
-        };
         Condition: {
             negated?: boolean;
             operands?: components["schemas"]["Condition"][] | null;
@@ -751,6 +480,17 @@ export interface components {
             id: string;
             inviteCode: string;
         };
+        DeploymentPattern: {
+            description?: string;
+            id?: string;
+            name: string;
+            /** @description Objective coordinates */
+            objectives: unknown;
+            recommendedTerrainLayoutIds: string[] | null;
+            source?: string;
+            territories: unknown;
+            zones: unknown;
+        };
         Detachment: {
             /**
              * Format: uri
@@ -758,15 +498,12 @@ export interface components {
              * @example https://example.com/schemas/Detachment.json
              */
             readonly $schema?: string;
+            /** Format: int64 */
+            detachmentPoints?: number;
             factionId: string;
-            gameMode?: string;
+            forceDispositions: string[] | null;
             id?: string;
             name: string;
-        };
-        DrawRestriction: {
-            mode: string;
-            /** Format: int64 */
-            round: number;
         };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
@@ -822,9 +559,10 @@ export interface components {
              * @example https://example.com/schemas/Faction.json
              */
             readonly $schema?: string;
+            factionRuleId?: string;
             id?: string;
             name: string;
-            wahapediaLink?: string;
+            parentFactionId?: string;
         };
         FactionStat: {
             factionName: string;
@@ -833,19 +571,10 @@ export interface components {
             /** Format: int64 */
             wins: number;
         };
-        Gambit: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/Gambit.json
-             */
-            readonly $schema?: string;
-            description: string;
+        ForceDisposition: {
             id?: string;
-            missionPackId: string;
             name: string;
-            /** Format: int64 */
-            vpValue: number;
+            text?: string;
         };
         GameEvent: {
             /** Format: date-time */
@@ -952,43 +681,26 @@ export interface components {
             username: string;
         };
         Mission: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/Mission.json
-             */
-            readonly $schema?: string;
-            description: string;
+            deploymentPatternIds: string[] | null;
             id?: string;
-            lore?: string;
-            missionPackId: string;
             name: string;
-            scoringRules: components["schemas"]["ScoringAction"][] | null;
-            scoringTiming: string;
+            /** Format: int64 */
+            vpPerGameCap: number;
+            /** Format: int64 */
+            vpPerRoundCap: number;
         };
-        MissionPack: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/MissionPack.json
-             */
-            readonly $schema?: string;
-            description?: string;
+        MissionCard: {
+            cardType: string;
             id?: string;
             name: string;
+            subtype?: string;
+            text?: string;
         };
-        MissionRule: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/MissionRule.json
-             */
-            readonly $schema?: string;
-            description: string;
+        MissionMatchup: {
+            disposition: string;
             id?: string;
-            lore?: string;
-            missionPackId: string;
-            name: string;
+            missionId: string;
+            opponentDisposition: string;
         };
         Objective: {
             /** Format: int64 */
@@ -1062,40 +774,6 @@ export interface components {
             round: number;
             text: string;
         };
-        ScoringAction: {
-            description?: string;
-            label: string;
-            /** Format: int64 */
-            minRound?: number;
-            scoringTiming?: string;
-            /** Format: int64 */
-            vp: number;
-        };
-        ScoringOption: {
-            label: string;
-            mode?: string;
-            /** Format: int64 */
-            vp: number;
-        };
-        Secondary: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/Secondary.json
-             */
-            readonly $schema?: string;
-            description: string;
-            drawRestriction?: components["schemas"]["DrawRestriction"];
-            id?: string;
-            isFixed: boolean;
-            lore?: string;
-            /** Format: int64 */
-            maxVp: number;
-            missionPackId: string;
-            name: string;
-            scoringOptions: components["schemas"]["ScoringOption"][] | null;
-            scoringTiming?: string;
-        };
         SecondaryCard: {
             awards: components["schemas"]["Award"][] | null;
             card_type: string;
@@ -1106,24 +784,17 @@ export interface components {
             vpScored?: number;
         };
         Stratagem: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/Stratagem.json
-             */
-            readonly $schema?: string;
+            category?: string;
             /** Format: int64 */
             cpCost: number;
-            description: string;
             detachmentId?: string;
-            factionId: string;
-            gameMode?: string;
+            factionId?: string;
             id?: string;
-            legend?: string;
             name: string;
-            phase: string;
-            turn: string;
-            type: string;
+            phases: string[] | null;
+            playerTurn?: string;
+            timing?: string;
+            type?: string;
         };
         Trigger: {
             battle_round?: components["schemas"]["RoundWindow"];
@@ -1159,169 +830,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    "admin-list-challenger-cards": {
-        parameters: {
-            query?: {
-                /** @description Filter by mission pack ID */
-                pack_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChallengerCard"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-create-challenger-card": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChallengerCard"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChallengerCard"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-get-challenger-card": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChallengerCard"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-challenger-card": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChallengerCard"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChallengerCard"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-challenger-card": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "admin-list-detachments": {
         parameters: {
             query?: {
@@ -1645,169 +1153,6 @@ export interface operations {
             };
         };
     };
-    "admin-list-gambits": {
-        parameters: {
-            query?: {
-                /** @description Filter by mission pack ID */
-                pack_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Gambit"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-create-gambit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Gambit"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Gambit"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-get-gambit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Gambit"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-gambit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Gambit"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Gambit"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-gambit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "get-admin-me": {
         parameters: {
             query?: never;
@@ -1825,623 +1170,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminMeOutputBody"];
                 };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-list-mission-packs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionPack"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-create-mission-pack": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MissionPack"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionPack"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-mission-pack": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MissionPack"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionPack"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-mission-pack": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-list-mission-rules": {
-        parameters: {
-            query?: {
-                /** @description Filter by mission pack ID */
-                pack_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionRule"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-create-mission-rule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MissionRule"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionRule"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-get-mission-rule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionRule"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-mission-rule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MissionRule"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionRule"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-mission-rule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-list-missions": {
-        parameters: {
-            query?: {
-                /** @description Filter by mission pack ID */
-                pack_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Mission"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-create-mission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Mission"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Mission"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-get-mission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Mission"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-mission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Mission"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Mission"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-mission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-list-secondaries": {
-        parameters: {
-            query?: {
-                /** @description Filter by mission pack ID */
-                pack_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Secondary"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-create-secondary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Secondary"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Secondary"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-get-secondary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Secondary"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-secondary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Secondary"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Secondary"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-secondary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Error */
             default: {
@@ -2488,137 +1216,6 @@ export interface operations {
             };
         };
     };
-    "admin-create-stratagem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Stratagem"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Stratagem"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-get-stratagem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Stratagem"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-update-stratagem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Stratagem"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Stratagem"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "admin-delete-stratagem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Resource ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     "get-me": {
         parameters: {
             query?: never;
@@ -2635,6 +1232,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOutputBody"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "list-deployment-patterns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentPattern"][] | null;
                 };
             };
             /** @description Error */
@@ -2760,6 +1386,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Stratagem"][] | null;
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "list-force-dispositions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForceDisposition"][] | null;
                 };
             };
             /** @description Error */
@@ -2986,7 +1641,7 @@ export interface operations {
             };
         };
     };
-    "list-mission-packs": {
+    "list-mission-matchups": {
         parameters: {
             query?: never;
             header?: never;
@@ -3001,71 +1656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MissionPack"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "list-challenger-cards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Mission Pack ID */
-                packId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChallengerCard"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "list-gambits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Mission Pack ID */
-                packId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Gambit"][] | null;
+                    "application/json": components["schemas"]["MissionMatchup"][] | null;
                 };
             };
             /** @description Error */
@@ -3083,10 +1674,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Mission Pack ID */
-                packId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -3111,14 +1699,11 @@ export interface operations {
             };
         };
     };
-    "list-mission-rules": {
+    "list-secondary-cards": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Mission Pack ID */
-                packId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -3129,39 +1714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MissionRule"][] | null;
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "list-secondaries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Mission Pack ID */
-                packId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Secondary"][] | null;
+                    "application/json": components["schemas"]["MissionCard"][] | null;
                 };
             };
             /** @description Error */

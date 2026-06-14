@@ -17,8 +17,6 @@ interface Props {
 }
 
 export function MissionPicker({ missions, selectedId, onSelect, onDrawRandom }: Props) {
-  const selected = missions.find((m) => m.id === selectedId);
-
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
@@ -50,12 +48,6 @@ export function MissionPicker({ missions, selectedId, onSelect, onDrawRandom }: 
           Random
         </Button>
       </div>
-      {selected && (
-        <div className="rounded-sm border border-border/60 bg-background/40 p-3 text-sm text-foreground/90">
-          {selected.lore && <p className="mb-2 italic text-muted-foreground">{selected.lore}</p>}
-          <p className="whitespace-pre-wrap">{selected.description}</p>
-        </div>
-      )}
     </div>
   );
 }

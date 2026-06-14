@@ -9,7 +9,6 @@ export function DetachmentListPage() {
   const [data, setData] = useState<Detachment[]>([]);
   const [factions, setFactions] = useState<Faction[]>([]);
   const [filter, setFilter] = useState("");
-  const [gameModeFilter, setGameModeFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
 
@@ -27,10 +26,6 @@ export function DetachmentListPage() {
   useEffect(load, [filter]);
 
   if (loading) return <div className="p-6">Loading...</div>;
-
-  const filtered = gameModeFilter
-    ? data.filter((d) => (d.gameMode ?? "core") === gameModeFilter)
-    : data;
 
   return (
     <div className="p-6">
@@ -64,15 +59,6 @@ export function DetachmentListPage() {
             </option>
           ))}
         </select>
-        <select
-          value={gameModeFilter}
-          onChange={(e) => setGameModeFilter(e.target.value)}
-          className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
-        >
-          <option value="">All Game Modes</option>
-          <option value="core">Core</option>
-          <option value="boarding_actions">Boarding Actions</option>
-        </select>
       </div>
       <DataTable
         columns={[
@@ -80,12 +66,17 @@ export function DetachmentListPage() {
           { key: "factionId", label: "Faction" },
           { key: "name", label: "Name" },
           {
-            key: "gameMode",
-            label: "Game Mode",
-            render: (d) => d.gameMode ?? "core",
+            key: "detachmentPoints",
+            label: "Points",
+            render: (d) => (d.detachmentPoints != null ? String(d.detachmentPoints) : "-"),
+          },
+          {
+            key: "forceDispositions",
+            label: "Dispositions",
+            render: (d) => (d.forceDispositions ?? []).join(", ") || "-",
           },
         ]}
-        data={filtered}
+        data={data}
         getKey={(d) => d.id}
         searchField="name"
         onEdit={(d) => navigate(`/detachments/${d.id}/edit`)}

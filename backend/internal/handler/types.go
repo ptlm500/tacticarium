@@ -61,34 +61,26 @@ type StratagemListOutput struct {
 	Body []models.Stratagem
 }
 
-// --- Missions ---
+// --- Missions / 11e reference data (read-only player endpoints) ---
 
-type PackIDParam struct {
-	PackID string `path:"packId" doc:"Mission Pack ID"`
-}
-
-type MissionPackListOutput struct {
-	Body []models.MissionPack
+type ForceDispositionListOutput struct {
+	Body []models.ForceDisposition
 }
 
 type MissionListOutput struct {
 	Body []models.Mission
 }
 
-type SecondaryListOutput struct {
-	Body []models.Secondary
+type MissionMatchupListOutput struct {
+	Body []models.MissionMatchup
 }
 
-type GambitListOutput struct {
-	Body []models.Gambit
+type CardListOutput struct {
+	Body []models.MissionCard
 }
 
-type MissionRuleListOutput struct {
-	Body []models.MissionRule
-}
-
-type ChallengerCardListOutput struct {
-	Body []models.ChallengerCard
+type DeploymentPatternListOutput struct {
+	Body []models.DeploymentPattern
 }
 
 // --- Games ---
@@ -161,7 +153,8 @@ type StatsOutput struct {
 	Body UserStats
 }
 
-// --- Admin CRUD ---
+// --- Admin CRUD (factions/detachments/stratagems carry forward; 11e reference
+// data is seeded from 40kdc-data and managed there, not via admin CRUD yet) ---
 
 // Inputs with body
 type FactionInput struct {
@@ -174,30 +167,6 @@ type DetachmentInput struct {
 
 type StratagemInput struct {
 	Body models.Stratagem
-}
-
-type MissionPackInput struct {
-	Body models.MissionPack
-}
-
-type MissionInput struct {
-	Body models.Mission
-}
-
-type SecondaryInput struct {
-	Body models.Secondary
-}
-
-type GambitInput struct {
-	Body models.Gambit
-}
-
-type ChallengerCardInput struct {
-	Body models.ChallengerCard
-}
-
-type MissionRuleInput struct {
-	Body models.MissionRule
 }
 
 // Inputs with path + body
@@ -216,36 +185,6 @@ type IDStratagemInput struct {
 	Body models.Stratagem
 }
 
-type IDMissionPackInput struct {
-	ID   string `path:"id" doc:"Resource ID"`
-	Body models.MissionPack
-}
-
-type IDMissionInput struct {
-	ID   string `path:"id" doc:"Resource ID"`
-	Body models.Mission
-}
-
-type IDSecondaryInput struct {
-	ID   string `path:"id" doc:"Resource ID"`
-	Body models.Secondary
-}
-
-type IDGambitInput struct {
-	ID   string `path:"id" doc:"Resource ID"`
-	Body models.Gambit
-}
-
-type IDChallengerCardInput struct {
-	ID   string `path:"id" doc:"Resource ID"`
-	Body models.ChallengerCard
-}
-
-type IDMissionRuleInput struct {
-	ID   string `path:"id" doc:"Resource ID"`
-	Body models.MissionRule
-}
-
 // Single-item outputs
 type FactionOutput struct {
 	Body models.Faction
@@ -259,30 +198,6 @@ type StratagemOutput struct {
 	Body models.Stratagem
 }
 
-type MissionPackOutput struct {
-	Body models.MissionPack
-}
-
-type MissionOutput struct {
-	Body models.Mission
-}
-
-type SecondaryOutput struct {
-	Body models.Secondary
-}
-
-type GambitOutput struct {
-	Body models.Gambit
-}
-
-type ChallengerCardOutput struct {
-	Body models.ChallengerCard
-}
-
-type MissionRuleOutput struct {
-	Body models.MissionRule
-}
-
 // Admin list inputs with optional query filters
 type AdminDetachmentListInput struct {
 	FactionID string `query:"faction_id" doc:"Filter by faction ID"`
@@ -291,10 +206,6 @@ type AdminDetachmentListInput struct {
 type AdminStratagemListInput struct {
 	FactionID    string `query:"faction_id" doc:"Filter by faction ID"`
 	DetachmentID string `query:"detachment_id" doc:"Filter by detachment ID"`
-}
-
-type AdminPackFilterInput struct {
-	PackID string `query:"pack_id" doc:"Filter by mission pack ID"`
 }
 
 // Import outputs
