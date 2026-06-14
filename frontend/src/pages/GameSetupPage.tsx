@@ -6,16 +6,16 @@ import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
 import { getToken } from "../api/client";
 import { Faction, Detachment } from "../types/faction";
-import { Mission } from "../types/mission";
-import { SecondaryCard } from "../types/game";
+import { ForceDisposition } from "../types/mission";
 import { FactionPicker } from "../components/setup/FactionPicker";
 import { DetachmentPicker } from "../components/setup/DetachmentPicker";
-import { MissionPicker } from "../components/setup/MissionPicker";
+import { SidePicker } from "../components/setup/SidePicker";
+import { ForceDispositionPicker } from "../components/setup/ForceDispositionPicker";
 import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
 import { ArmyPaintedToggle } from "../components/setup/ArmyPaintedToggle";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
-import { useMissions, useSecondaryCards } from "../hooks/queries/useMissionQueries";
+import { useForceDispositions } from "../hooks/queries/useMissionQueries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -35,10 +35,8 @@ export function GameSetupPage() {
   const { connected, reconnecting, sendAction } = useGameConnection(gameId!, token);
 
   const { data: factions = [] } = useFactions();
-  const { data: missions = [] } = useMissions();
-  const { data: secondaryCards = [] } = useSecondaryCards();
+  const { data: dispositions = [] } = useForceDispositions();
 
-  const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
 
   const myPlayer = gameState?.players.find((p) => p?.userId === user?.id) ?? null;
@@ -46,10 +44,16 @@ export function GameSetupPage() {
 
   const { data: detachments = [] } = useDetachments(myPlayer?.factionId);
 
-  // The 11e secondary-card pool is no longer split into fixed/tactical sets by
-  // the reference data; both pickers draw from the same card list.
-  const fixedSecondaries = secondaryCards;
-  const tacticalSecondaries = secondaryCards;
+  // 11e: a player picks their force disposition from the set granted by their
+  // chosen detachment. (Multi-detachment / DP-budget selection isn't modelled
+  // yet — the engine holds a single detachment per player.) Fall back to the
+  // full list when the detachment doesn't enumerate dispositions.
+  const selectedDetachment = detachments.find((d) => d.id === myPlayer?.detachmentId) ?? null;
+  const allowedDispositionIds = selectedDetachment?.forceDispositions ?? [];
+  const availableDispositions =
+    allowedDispositionIds.length > 0
+      ? dispositions.filter((d) => allowedDispositionIds.includes(d.id))
+      : dispositions;
 
   useEffect(() => {
     if (gameState?.gameId === gameId && gameState?.status === "active") {
@@ -83,24 +87,22 @@ export function GameSetupPage() {
     [sendAction],
   );
 
-  const handleSelectMission = useCallback(
-    (mission: Mission) => {
-      sendAction("select_primary_mission", {
-        missionId: mission.id,
-        missionName: mission.name,
-      });
+  const handleSelectSide = useCallback(
+    (side: "attacker" | "defender") => {
+      sendAction("select_side", { side });
     },
     [sendAction],
   );
 
-  const handleRandomMission = useCallback(() => {
-    if (missions.length === 0) return;
-    const m = missions[Math.floor(Math.random() * missions.length)];
-    sendAction("select_primary_mission", {
-      missionId: m.id,
-      missionName: m.name,
-    });
-  }, [sendAction, missions]);
+  const handleSelectDisposition = useCallback(
+    (disposition: ForceDisposition) => {
+      sendAction("select_force_disposition", {
+        disposition: disposition.id,
+        dispositionName: disposition.name,
+      });
+    },
+    [sendAction],
+  );
 
   const handleSelectFirstPlayer = useCallback(
     (playerNumber: 1 | 2) => {
@@ -117,25 +119,6 @@ export function GameSetupPage() {
   const handleModeChange = useCallback(
     (mode: "fixed" | "tactical") => {
       sendAction("select_secondary_mode", { mode });
-      setSelectedFixedIds([]);
-    },
-    [sendAction],
-  );
-
-  const handleFixedSelect = useCallback(
-    (selected: SecondaryCard[]) => {
-      const ids = selected.map((s) => s.id);
-      setSelectedFixedIds(ids);
-      if (selected.length === 2) {
-        sendAction("set_fixed_secondaries", { secondaries: selected });
-      }
-    },
-    [sendAction],
-  );
-
-  const handleInitDeck = useCallback(
-    (deck: SecondaryCard[]) => {
-      sendAction("init_tactical_deck", { deck });
     },
     [sendAction],
   );
@@ -174,15 +157,15 @@ export function GameSetupPage() {
 
   const hasFaction = !!myPlayer?.factionId;
   const hasDetachment = !!myPlayer?.detachmentId;
+  const hasSide = !!myPlayer?.side;
+  const hasDisposition = !!myPlayer?.forceDisposition;
   const hasMission = !!myPlayer?.missionId;
   const hasFirstPlayer = (gameState.firstTurnPlayer ?? 0) > 0;
   const hasMode = !!myPlayer?.secondaryMode;
-  const hasSecondaries =
-    myPlayer?.secondaryMode === "fixed"
-      ? (myPlayer?.secondaryHand?.length ?? 0) === 2
-      : (myPlayer?.secondaryDeck?.length ?? 0) > 0;
+  // Mission resolution waits on the opponent's disposition, so it is not gated
+  // on — readiness only needs the local player's own choices.
   const canReady =
-    hasFaction && hasDetachment && hasMission && hasFirstPlayer && hasMode && hasSecondaries;
+    hasFaction && hasDetachment && hasSide && hasDisposition && hasFirstPlayer && hasMode;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -272,16 +255,54 @@ export function GameSetupPage() {
           </HUDFrame>
         )}
 
-        <HUDFrame label="Primary Mission">
-          <MissionPicker
-            missions={missions}
-            selectedId={myPlayer?.missionId || ""}
-            onSelect={handleSelectMission}
-            onDrawRandom={handleRandomMission}
-          />
-        </HUDFrame>
+        {hasDetachment && (
+          <HUDFrame label="Your Side">
+            <SidePicker selected={myPlayer?.side || ""} onSelect={handleSelectSide} />
+          </HUDFrame>
+        )}
 
-        {hasMission && myPlayer && (
+        {hasSide && (
+          <HUDFrame label="Force Disposition">
+            <ForceDispositionPicker
+              dispositions={availableDispositions}
+              selectedId={myPlayer?.forceDisposition || ""}
+              onSelect={handleSelectDisposition}
+            />
+          </HUDFrame>
+        )}
+
+        {hasDisposition && (
+          <HUDFrame label="Your Primary Mission">
+            {hasMission ? (
+              <div className="space-y-2 py-1">
+                <p className="text-sm font-medium text-foreground">{myPlayer?.missionName}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="outline"
+                    className="border-primary/40 bg-primary/10 font-mono uppercase tracking-widest text-primary"
+                  >
+                    {gameState.vpPerRoundCap} VP / Round
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-primary/40 bg-primary/10 font-mono uppercase tracking-widest text-primary"
+                  >
+                    {gameState.vpPerGameCap} VP / Game
+                  </Badge>
+                </div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Resolved from both players' force dispositions
+                </p>
+              </div>
+            ) : (
+              <p className="py-1 font-mono text-[10px] uppercase tracking-widest text-amber-400">
+                Waiting for opponent's disposition to resolve your mission...
+              </p>
+            )}
+          </HUDFrame>
+        )}
+
+        {hasDisposition && myPlayer && (
           <HUDFrame label="Who Goes First?">
             <FirstPlayerPicker
               myPlayerNumber={myPlayer.playerNumber}
@@ -299,12 +320,6 @@ export function GameSetupPage() {
             <SecondaryModePicker
               mode={myPlayer?.secondaryMode || ""}
               onModeChange={handleModeChange}
-              fixedSecondaries={fixedSecondaries}
-              selectedFixedIds={selectedFixedIds}
-              onFixedSelect={handleFixedSelect}
-              tacticalSecondaries={tacticalSecondaries}
-              deckInitialized={(myPlayer?.secondaryDeck?.length ?? 0) > 0}
-              onInitDeck={handleInitDeck}
             />
           </HUDFrame>
         )}
@@ -315,6 +330,10 @@ export function GameSetupPage() {
               <p className="text-sm text-foreground/90">
                 {opponent.factionName || "Selecting faction..."}
                 {opponent.detachmentName && ` - ${opponent.detachmentName}`}
+              </p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {opponent.side ? `Side: ${opponent.side}` : "Side: pending"}
+                {opponent.forceDispositionName ? ` · ${opponent.forceDispositionName}` : ""}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Army: {(opponent.vpPaint ?? 0) > 0 ? "Painted (+10 VP)" : "Not painted"}

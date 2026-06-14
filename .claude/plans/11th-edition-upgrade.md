@@ -66,6 +66,7 @@ is a structured predicate (`trigger` + `when`/`per` + `vp`/`vp_per`). I enumerat
 *actual* vocabulary used across all 43 cards — it splits into two layers:
 
 **Layer 1 — Objective control (the dominant case; auto-scored from a board the players maintain).**
+
 - The deployment pattern gives **5 objective coordinates** + per-player **territory** and
   **deployment-zone** polygons (60×44 board). Each objective's **role** (your-home,
   opponent-home, central, in-your-territory, in-enemy-territory, no-man's-land, expansion)
@@ -85,6 +86,7 @@ no source of truth for: `units-destroyed` / `destroyed-while-on-objective` /
 `enemy-character-model-destroyed` and the wounds/starting-strength thresholds;
 `engagement-fronts`; `*-wholly-within-opponent-deployment-zone`; `operation-markers`,
 `*-has-tag`, `action-completed` (card-action markers).
+
 - For these, the engine still **fires at the correct `trigger`, owns the VP math, and
   enforces caps** — but at trigger time it shows a **DSL-generated structured prompt**
   ("End of your turn — *Bring it Down*: score 2 VP per destroyed enemy unit with Starting
@@ -129,6 +131,7 @@ interoperability contract and makes future re-seeds diff-able.
 ## Work breakdown
 
 ### Phase 0 — Spike & vendoring (small)
+
 - Vendor pinned 40kdc-data `data/core` snapshot into the repo (submodule or copy + version file).
 - Write a throwaway Go reader to load `missions.json`, `mission-matchups.json`,
   `force-dispositions.json`, `secondary-cards.json`, `stratagems.json`, and a couple of
@@ -137,6 +140,7 @@ interoperability contract and makes future re-seeds diff-able.
   (see Phase 3 open question).
 
 ### Phase 1 — Backend engine (`backend/internal/game`)
+
 - **`rules.go`**: replace VP constants. Remove `MaxVPPrimary=50`, `MaxVPSecondary=40`,
   `MaxVPGambit=12`, `MaxVPCombined=90`. Introduce per-game + per-round caps
   (`PrimaryPerGameCap=45`, `PerRoundCap=15`, etc.) sourced from mission data, not constants.
@@ -183,7 +187,9 @@ interoperability contract and makes future re-seeds diff-able.
   golden-style test per card award against synthetic board states.
 
 ### Phase 2 — Database (`backend/internal/db/migrations`)
+
 Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTERs:
+
 - Add migration(s) that drop the 10e mission/scoring tables (`gambits`, `challenger_cards`,
   `mission_rules`, old `missions`, `secondaries`, `mission_scoring_rules`, `mission_packs`
   as currently shaped) and the per-player gambit/challenger/adapt columns.
@@ -206,6 +212,7 @@ Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTER
 - Bump game-state persistence schema; since games are wiped, no data migration needed.
 
 ### Phase 3 — Seeding & import (`backend/internal/seed`, `cmd/seed`, admin import)
+
 - Rewrite seeders to read 40kdc-data JSON: `SeedFactions`, `SeedDetachments`,
   `SeedStratagems` (new shape: `category/type/cp_cost/phases/player_turn/timing`),
   plus new `SeedForceDispositions`, `SeedMissions`, `SeedMissionMatchups`, `SeedCards`,
@@ -217,6 +224,7 @@ Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTER
   (`admin_import_handler.go`) to accept the new JSON formats.
 
 ### Phase 4 — API + generated types (`shared/`, `backend/internal/handler`)
+
 - Update huma input/output structs (`handler/types.go`) and `models.go` for the new
   entities (force dispositions, mission matchups, cards) and removed ones (gambits,
   challenger, twists).
@@ -225,6 +233,7 @@ Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTER
 - Regenerate `shared/openapi.json` + `shared/api.generated.ts` (golden files).
 
 ### Phase 5 — Frontend (`frontend/src`)
+
 - **Setup flow** (`pages/Setup`, `components/setup`): replace mission picker with a
   **Force Disposition picker**; show each player the *resolved asymmetric mission* + its
   VP caps. Detachment picker shows `detachment_points`.
@@ -235,18 +244,20 @@ Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTER
   objectives) and let players tap each objective to set control (none/P1/P2). Show derived
   roles. This is the primary new UI surface. On trigger moments, present the
   **structured scoring prompts** (`scoring_prompt`) for Layer-2 awards — auto-generated text
-  + a count/confirm input — and auto-applied Layer-1 scores as log entries the player can undo.
+  - a count/confirm input — and auto-applied Layer-1 scores as log entries the player can undo.
   A simple top-down SVG board is sufficient (positions are 0–60 × 0–44); no drag/measure.
 - Remove gambit/challenger/twist/adapt-or-die components, queries, mutations, types.
 - Update Zustand store, query hooks, mocks (`src/mocks`), and screenshots.
 - Update tests via the `frontend-test` skill (browser-mode Vitest).
 
 ### Phase 6 — Admin (`admin/src`)
+
 - Replace entity pages: drop `gambits/`, `challenger-cards/`, `mission-rules/`; rework
   `missions/`, `secondaries/` (now unified `cards/`), add `force-dispositions/`,
   `mission-matchups/`. Update `api/admin.ts`, `DataTable`, `ImportDialog` for new shapes.
 
 ### Phase 7 — Docs & cleanup
+
 - Rewrite `docs/*.md` (game-overview, turn-structure, scoring, secondary-objectives,
   special-mechanics) for 11e. Update `ARCHITECTURE.md` (tech-stack line says "10th Edition";
   data-source section). Update `CLAUDE.md`. Remove the PDF + temp artifacts from the repo
@@ -256,6 +267,7 @@ Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTER
 ---
 
 ## Suggested sequencing / PRs
+
 1. **PR A** — Phase 0 vendoring + Phase 2 schema reset + Phase 3 seeders (data foundation).
 2. **PR B** — Phase 1 engine rework + tests (the core risk; gambit/challenger/twist removal,
    caps, turn steps, disposition→mission, secondary deck).
@@ -266,6 +278,7 @@ Since we wipe and reseed, prefer a **clean schema reset** over incremental ALTER
 Each PR keeps the build green; B is gated on A; C–E follow B.
 
 ## Biggest risks / things to watch
+
 - **`engine_test.go` (3.8k lines)** is deeply 10e-coupled — expect substantial rewrite, not patch.
 - **Provisional data**: force-disposition text, the combined-cap question, and stratagem
   `type` categories are unconfirmed upstream. Pin to `launch` where available; make caps
@@ -282,35 +295,110 @@ Each PR keeps the build green; B is gated on A; C–E follow B.
   rosters/measurement/combat in v1.
 
 ## Resolved decisions (2026-06-13, round 2)
+
 1. **Vendoring — snapshot + CI auto-update.** Copy a pinned `data/core` snapshot into the
    repo (no submodule; Railway builds need no extra auth). Add a scheduled **GitHub Action**
    that checks `wn-mitch/40kdc-data` `main` for a newer commit/dataslate, refreshes the
    snapshot, runs the seeders + tests, and opens a PR. A `data_source` version file records
    the pinned commit so the diff is reviewable. (Auto-merge gated on green CI, optional.)
-3. **Paint VP — kept.** The 10-VP painting bonus stays as an app-local concept
+2. **Paint VP — kept.** The 10-VP painting bonus stays as an app-local concept
    (`MaxVPPaint = 10`); it is not part of 40kdc-data and is unaffected.
-4. **Secondary mode — Fixed vs Tactical choice persists.** Confirmed: 11e keeps the
+3. **Secondary mode — Fixed vs Tactical choice persists.** Confirmed: 11e keeps the
    player-level Fixed/Tactical choice. **Tactical** = draw **2 cards per turn, keep all
    unscored cards, no maximum hand size** (no discard-on-fail). **Fixed** = chosen for the
    whole game, scores the (usually lower) `fixed`-mode awards. This matches the
    `mode: fixed|tactical` flag on `secondary-card.awards[]`. The deck is ~18 secondary cards.
 
 ## Confirmed caps
+
 Primary and Secondary each cap at **45 VP / game** and **15 VP / battle round**, tracked
 **separately** (not a single combined 45). Engine enforces both per category.
 
 ## Scoring approach — DECIDED: Option B (board-state model + DSL auto-scoring)
+
 The app models objectives + control (Layer 1, auto-scored) and uses structured
 DSL-generated prompts for off-board facts (Layer 2). See "Scope decision: Option B" above.
 
 ## DECIDED — Layer-2 = player-confirm (2026-06-13)
+
 2b. Layer-2 off-board predicates use **structured player-confirm prompts**. **Army-list /
    roster modelling (`units.json`) is deferred** to a later epic — v1 never looks up unit
    profiles; the player supplies the count/boolean when prompted. All scope questions now
    resolved; implementation begins with PR A.
 
 ## Note / risk: Gambits
+
 WarCom 11e coverage references a **Gambit** mechanic ("when to take a Gambit"), but the
 current 40kdc-data dataset models **no gambit entity** and its 11e migration doc omits them.
 We are removing the 10e gambit system. If 11e gambits turn out to be in-scope, they'd be a
 follow-up once the data lands upstream — flag, don't block.
+
+---
+
+# PR D — current state & brief (handoff, 2026-06-14)
+
+**Status:** PR A (#48, data), PR B (#50, engine+scoring), PR C (#51, reference API +
+10e-table drop) are all merged/green. Backend is fully 11e end-to-end. The frontend +
+admin are **compile-level only** — they type-check and the app builds, but the game UI
+still renders 10e-shaped placeholders and the new 11e mechanics have **no real UI yet**.
+PR D builds that UX. PR E (admin management of 11e reference entities + docs) follows.
+
+## What PR D must build (the 11e UX), and the contract for each
+
+The live game state arrives via WebSocket as a hand-written type in
+`frontend/src/types/game.ts` (NOT the OpenAPI type). Reference data comes via REST
+(`frontend/src/api/*.ts` + `hooks/queries/*`). Actions are dispatched over WS as
+`{type, data}` — the engine's action set is in `backend/internal/game/actions.go`.
+
+1. **Setup — force-disposition picker.** Each player picks a disposition
+   (`GET /api/force-dispositions`) via the `select_force_disposition {disposition,
+   dispositionName}` action. The engine resolves each player's asymmetric mission once both
+   have chosen (mission-matchup matrix, `GET /api/mission-matchups` + `GET /api/missions`).
+   Also: `select_side {side}` (attacker/defender) and the existing `select_first_turn_player`,
+   `select_secondary_mode {mode}`, `set_paint_score`, `set_ready`. The setup page
+   (`GameSetupPage.tsx`) currently has placeholder mission/secondary logic to replace.
+2. **Board / objective-control view.** Render the deployment pattern
+   (`GET /api/deployment-patterns` → objectives + territory/zone polygons, board is 0–60 × 0–44).
+   Player state carries `board` (`scoring.Board`: objectives with role/control/tags).
+   Actions: `set_objective_control {objectiveIndex, player}` and
+   `set_objective_tag {objectiveIndex, tag, add}`. A simple top-down SVG is sufficient.
+3. **Secondary deck (draw-2-keep).** `secondaryDeck`/`secondaryHand`/`secondaryScored` on
+   player state; `draw_secondaries` action (tactical mode, Command phase, draws 2 keeps all).
+   `GET /api/secondary-cards` lists the deck. Render card `name` + `text`.
+4. **Scoring prompts.** The engine fires scoring at end-of-command / end-of-turn /
+   end-of-battle: Layer-1 awards auto-apply (a `card_scored` event); Layer-2 awards emit a
+   `score_prompt` event and land in `player.pendingScorePrompts`. The player answers with
+   `confirm_award {promptId, count}`. Build the prompt UI from `pendingScorePrompts`.
+5. **Turn stages.** `currentPhase` now includes `start_of_turn` and `end_of_turn` bookends
+   (see PHASE_ORDER/PHASE_LABELS in `types/game.ts`) — the phase tracker should show them.
+
+## Known gaps / decisions to respect
+
+- **Fixed-mode secondaries have no selection UI yet.** The engine supports fixed vs tactical,
+  but only tactical (draw-2-keep) is wired; fixed-mode players' deck isn't dealt to hand at
+  game start. PR D should add the fixed selection flow (or the engine `startGame` should deal
+  the chosen fixed set to hand). Flagged in PR B.
+- `MissionScoring.tsx` / `ScoringPrompt.tsx` + the local `ScoringAction` type in
+  `types/mission.ts` are a **kept UI-only scaffold** for primary scoring (not fed by the API).
+  Either wire them to the new `score_prompt`/`card_scored` flow or remove them.
+- DB tables are named `stratagems_11e` and `primary_missions` (transitional names kept to
+  avoid churn; not renamed). Other 11e tables: `force_dispositions`, `mission_matchups`,
+  `cards`, `deployment_patterns`.
+- Objective roles (home/central/expansion) derive geometrically in `internal/game/scoring/board.go`.
+- Admin manages factions/detachments + read-only stratagems only; 11e reference entities are
+  seeded from 40kdc-data, not admin-managed yet (PR E).
+
+## Local dev gotchas (see also project memory)
+
+- `vp` needs node on PATH: `export PATH="$HOME/.local/share/mise/installs/node/24.14.1/bin:$HOME/.local/share/mise/installs/vp/0.1.19/bin:$PATH"` then `vp check .` / `vp test` from `frontend/`.
+- **Browser tests (`vp test`) hang in local warmup** — rely on CI for them; `vp check` is the
+  reliable local gate. CI's `vp test` is authoritative (it caught a stale test `vp check` missed).
+- **Don't leave `dist/` build output around** — the pre-commit `admin-check`/`frontend-check`
+  (`vp check`) will flag it; `rm -rf admin/dist frontend/dist` before committing.
+- Backend tests need Docker (testcontainers); Docker works locally. Regenerate types with
+  `make generate-types` (deterministic) whenever Go API types change, or CI's
+  "Generated Types Up-to-Date" fails.
+- Local Postgres for manual runs: brew `postgresql@18`; throwaway cluster pattern used during
+  this migration was port 5439. `make dev-stack` (Docker) is the designed path but the Go
+  service image builds can fail on this machine's Docker IPv6 networking — run Postgres in
+  Docker + Go/Vite on the host instead.

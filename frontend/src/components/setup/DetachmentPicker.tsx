@@ -28,13 +28,18 @@ export function DetachmentPicker({ detachments, selectedId, onSelect }: Props) {
             type="button"
             onClick={() => onSelect(d)}
             className={cn(
-              "w-full rounded-sm border p-3 text-left text-sm transition-colors",
+              "flex w-full items-center justify-between gap-2 rounded-sm border p-3 text-left text-sm transition-colors",
               active
                 ? "border-primary bg-primary/10 text-primary shadow-[0_0_8px_var(--primary)]"
                 : "border-border/60 bg-background/40 text-foreground hover:border-primary/50 hover:bg-primary/5",
             )}
           >
-            {d.name}
+            <span>{d.name}</span>
+            {d.detachmentPoints ? (
+              <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {d.detachmentPoints} pt{d.detachmentPoints === 1 ? "" : "s"}
+              </span>
+            ) : null}
           </button>
         );
       })}

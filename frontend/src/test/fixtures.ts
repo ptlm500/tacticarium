@@ -1,6 +1,6 @@
-import { GameState, PlayerState, GameEvent, SecondaryCard, Board } from "../types/game";
+import { GameState, PlayerState, GameEvent, SecondaryCard, Board, Objective } from "../types/game";
 import { Faction, Detachment, Stratagem } from "../types/faction";
-import { Mission, MissionCard } from "../types/mission";
+import { Mission, MissionCard, ForceDisposition, DeploymentPattern } from "../types/mission";
 import { User } from "../api/auth";
 
 export const mockUser: User = {
@@ -107,13 +107,15 @@ export const mockDetachments: Detachment[] = [
     id: "det-gladius",
     factionId: "faction-sm",
     name: "Gladius Task Force",
-    forceDispositions: [],
+    detachmentPoints: 3,
+    forceDispositions: ["take-and-hold"],
   },
   {
     id: "det-ironstorm",
     factionId: "faction-sm",
     name: "Ironstorm Spearhead",
-    forceDispositions: [],
+    detachmentPoints: 2,
+    forceDispositions: ["hold-the-line"],
   },
 ];
 
@@ -171,6 +173,85 @@ export const mockMissions: Mission[] = [
     vpPerGameCap: 50,
     vpPerRoundCap: 15,
     deploymentPatternIds: [],
+  },
+];
+
+export const mockForceDispositions: ForceDisposition[] = [
+  { id: "take-and-hold", name: "Take and Hold", text: "Press forward and seize the centre." },
+  { id: "hold-the-line", name: "Hold the Line", text: "Defend your territory at all costs." },
+];
+
+export function makeObjective(overrides?: Partial<Objective>): Objective {
+  return {
+    index: 0,
+    point: { x: 30, y: 22 },
+    role: "central",
+    controlledBy: 0,
+    tags: [],
+    ...overrides,
+  };
+}
+
+export const mockObjectives: Objective[] = [
+  makeObjective({ index: 0, point: { x: 30, y: 22 }, role: "central" }),
+  makeObjective({
+    index: 1,
+    point: { x: 22, y: 8 },
+    role: "home",
+    homeSide: "defender",
+    controlledBy: 1,
+  }),
+  makeObjective({ index: 2, point: { x: 46, y: 10 }, role: "expansion", controlledBy: 2 }),
+];
+
+export const mockBoardWithObjectives: Board = {
+  deploymentPatternId: "tipping-point",
+  objectives: mockObjectives,
+  playerSides: ["defender", "attacker"],
+};
+
+export const mockDeploymentPatterns: DeploymentPattern[] = [
+  {
+    id: "tipping-point",
+    name: "Tipping Point",
+    objectives: [
+      { x: 30, y: 22 },
+      { x: 22, y: 8 },
+      { x: 46, y: 10 },
+    ],
+    territories: [
+      {
+        player: "defender",
+        shape: {
+          type: "polygon",
+          points: [
+            { x: 0, y: 0 },
+            { x: 30, y: 0 },
+            { x: 30, y: 44 },
+            { x: 0, y: 44 },
+          ],
+        },
+        position: { x: 0, y: 0 },
+      },
+    ],
+    zones: [
+      {
+        player: "defender",
+        name: "Defender Deployment",
+        shape: {
+          type: "polygon",
+          points: [
+            { x: 0, y: 0 },
+            { x: 12, y: 0 },
+            { x: 12, y: 44 },
+            { x: 0, y: 44 },
+          ],
+        },
+        position: { x: 0, y: 0 },
+        color: "#3b82f6",
+      },
+    ],
+    recommendedTerrainLayoutIds: [],
   },
 ];
 

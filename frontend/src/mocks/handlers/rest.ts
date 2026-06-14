@@ -5,6 +5,8 @@ import {
   mockDetachments,
   mockMissions,
   mockSecondaryCards,
+  mockForceDispositions,
+  mockDeploymentPatterns,
 } from "../../test/fixtures";
 
 const API_URL = "http://localhost:8080";
@@ -42,7 +44,7 @@ export const restHandlers = [
   }),
 
   http.get(`${API_URL}/api/force-dispositions`, () => {
-    return HttpResponse.json([]);
+    return HttpResponse.json(mockForceDispositions);
   }),
 
   http.get(`${API_URL}/api/mission-matchups`, () => {
@@ -50,7 +52,7 @@ export const restHandlers = [
   }),
 
   http.get(`${API_URL}/api/deployment-patterns`, () => {
-    return HttpResponse.json([]);
+    return HttpResponse.json(mockDeploymentPatterns);
   }),
 
   // Games
