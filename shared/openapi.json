@@ -880,6 +880,15 @@
           "factionName": {
             "type": "string"
           },
+          "fixedSecondaryIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
           "forceDisposition": {
             "type": "string"
           },
@@ -994,6 +1003,7 @@
           "vpPaint",
           "ready",
           "secondaryMode",
+          "fixedSecondaryIds",
           "secondaryDeck",
           "secondaryHand",
           "secondaryScored",

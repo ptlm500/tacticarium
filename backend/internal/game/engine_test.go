@@ -216,6 +216,122 @@ func TestDrawSecondariesKeepsCards(t *testing.T) {
 	}
 }
 
+// setupFixedGameState builds a setup-phase engine with side/disposition/first
+// player chosen, player 1 on fixed mode and player 2 on tactical, leaving the
+// fixed selection + ready-up to the caller.
+func setupFixedGameState(t *testing.T, deck []SecondaryCard) *Engine {
+	t.Helper()
+	state := &GameState{
+		GameID: "g", InviteCode: "c", Status: StatusSetup,
+		Players: [2]*PlayerState{{UserID: "u1", PlayerNumber: 1}, {UserID: "u2", PlayerNumber: 2}},
+	}
+	e := NewEngine(state)
+	e.SetMissionResolver(func(_, _ string) (ResolvedMission, bool) {
+		return ResolvedMission{ID: "m", Name: "M", GameCap: 45, RoundCap: 15, PrimaryCard: primaryControlCard()}, true
+	})
+	e.SetBoardBuilder(func(s1, s2 scoring.Side) (scoring.Board, error) {
+		b := testBoard()
+		b.PlayerSides = [2]scoring.Side{s1, s2}
+		return b, nil
+	})
+	e.SetSecondaryDeckBuilder(func(string) []SecondaryCard { return deck })
+
+	apply(t, e, GameAction{Type: ActionSelectSide, PlayerNumber: 1, Data: map[string]any{"side": "defender"}})
+	apply(t, e, GameAction{Type: ActionSelectFirstTurnPlayer, PlayerNumber: 1, Data: map[string]any{"firstTurnPlayer": 1}})
+	apply(t, e, GameAction{Type: ActionSelectForceDisposition, PlayerNumber: 1, Data: map[string]any{"disposition": "take-and-hold"}})
+	apply(t, e, GameAction{Type: ActionSelectForceDisposition, PlayerNumber: 2, Data: map[string]any{"disposition": "disruption"}})
+	apply(t, e, GameAction{Type: ActionSelectSecondaryMode, PlayerNumber: 1, Data: map[string]any{"mode": "fixed"}})
+	apply(t, e, GameAction{Type: ActionSelectSecondaryMode, PlayerNumber: 2, Data: map[string]any{"mode": "tactical"}})
+	return e
+}
+
+func threeCardDeck() []SecondaryCard {
+	return []SecondaryCard{
+		{Card: scoring.Card{ID: "s1", Name: "S1"}},
+		{Card: scoring.Card{ID: "s2", Name: "S2"}},
+		{Card: scoring.Card{ID: "s3", Name: "S3"}},
+	}
+}
+
+func TestFixedSecondariesDealtToHandAtStart(t *testing.T) {
+	e := setupFixedGameState(t, threeCardDeck())
+	apply(t, e, GameAction{Type: ActionSelectFixedSecondaries, PlayerNumber: 1, Data: map[string]any{"secondaryIds": []string{"s1", "s3"}}})
+	apply(t, e, GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
+	apply(t, e, GameAction{Type: ActionSetReady, PlayerNumber: 2, Data: map[string]any{"ready": true}})
+
+	if e.state.Status != StatusActive {
+		t.Fatalf("status = %q, want active", e.state.Status)
+	}
+	p1 := e.state.Players[0]
+	if len(p1.SecondaryHand) != 2 || p1.SecondaryHand[0].ID != "s1" || p1.SecondaryHand[1].ID != "s3" {
+		t.Fatalf("fixed hand ids = %v, want [s1 s3]", cardIDs(p1.SecondaryHand))
+	}
+	if len(p1.SecondaryDeck) != 0 {
+		t.Errorf("fixed player deck = %d, want 0", len(p1.SecondaryDeck))
+	}
+	p2 := e.state.Players[1]
+	if len(p2.SecondaryDeck) != 3 {
+		t.Errorf("tactical player deck = %d, want 3", len(p2.SecondaryDeck))
+	}
+	if len(p2.SecondaryHand) != 0 {
+		t.Errorf("tactical player hand = %d, want 0", len(p2.SecondaryHand))
+	}
+}
+
+func TestFixedPlayerCannotReadyWithoutSelection(t *testing.T) {
+	e := setupFixedGameState(t, threeCardDeck())
+	_, err := e.Apply(context.Background(), GameAction{Type: ActionSetReady, PlayerNumber: 1, Data: map[string]any{"ready": true}})
+	if err == nil {
+		t.Fatal("expected error readying fixed player with no secondaries chosen")
+	}
+	if e.state.Players[0].Ready {
+		t.Error("fixed player marked ready despite no selection")
+	}
+}
+
+func TestSelectFixedSecondariesValidation(t *testing.T) {
+	t.Run("rejects more than the fixed count", func(t *testing.T) {
+		e := setupFixedGameState(t, threeCardDeck())
+		_, err := e.Apply(context.Background(), GameAction{Type: ActionSelectFixedSecondaries, PlayerNumber: 1, Data: map[string]any{"secondaryIds": []string{"s1", "s2", "s3"}}})
+		if err == nil {
+			t.Fatalf("expected error choosing more than %d", FixedSecondaryCount)
+		}
+	})
+
+	t.Run("rejects duplicate ids", func(t *testing.T) {
+		e := setupFixedGameState(t, threeCardDeck())
+		_, err := e.Apply(context.Background(), GameAction{Type: ActionSelectFixedSecondaries, PlayerNumber: 1, Data: map[string]any{"secondaryIds": []string{"s1", "s1"}}})
+		if err == nil {
+			t.Fatal("expected error choosing duplicate ids")
+		}
+	})
+
+	t.Run("rejects selection by a tactical player", func(t *testing.T) {
+		e := setupFixedGameState(t, threeCardDeck())
+		_, err := e.Apply(context.Background(), GameAction{Type: ActionSelectFixedSecondaries, PlayerNumber: 2, Data: map[string]any{"secondaryIds": []string{"s1"}}})
+		if err == nil {
+			t.Fatal("expected error: tactical player selecting fixed secondaries")
+		}
+	})
+
+	t.Run("clears the selection when switching to tactical", func(t *testing.T) {
+		e := setupFixedGameState(t, threeCardDeck())
+		apply(t, e, GameAction{Type: ActionSelectFixedSecondaries, PlayerNumber: 1, Data: map[string]any{"secondaryIds": []string{"s1", "s2"}}})
+		apply(t, e, GameAction{Type: ActionSelectSecondaryMode, PlayerNumber: 1, Data: map[string]any{"mode": "tactical"}})
+		if len(e.state.Players[0].FixedSecondaryIDs) != 0 {
+			t.Errorf("fixed ids = %v, want cleared after switching to tactical", e.state.Players[0].FixedSecondaryIDs)
+		}
+	})
+}
+
+func cardIDs(cards []SecondaryCard) []string {
+	out := make([]string, len(cards))
+	for i, c := range cards {
+		out[i] = c.ID
+	}
+	return out
+}
+
 func TestConfirmLayer2Award(t *testing.T) {
 	// A Layer-2 award (units-destroyed) needs a confirmed count.
 	two := 2

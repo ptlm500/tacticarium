@@ -178,6 +178,23 @@ func (e *Engine) applyDrawSecondaries(action GameAction) ([]GameEvent, error) {
 	return events, nil
 }
 
+// dealFixedSecondaries returns the cards from pool whose ids are in the chosen
+// set, in the player's chosen order. Ids without a matching pool card are
+// skipped (e.g. a stale id after a data re-seed).
+func dealFixedSecondaries(pool []SecondaryCard, chosenIDs []string) []SecondaryCard {
+	byID := make(map[string]SecondaryCard, len(pool))
+	for _, c := range pool {
+		byID[c.ID] = c
+	}
+	hand := make([]SecondaryCard, 0, len(chosenIDs))
+	for _, id := range chosenIDs {
+		if c, ok := byID[id]; ok {
+			hand = append(hand, c)
+		}
+	}
+	return hand
+}
+
 // --- Scoring (evaluator integration) ---
 
 // fireScoring evaluates every player's active cards at a trigger moment,

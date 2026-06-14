@@ -103,6 +103,8 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applySelectForceDisposition(action)
 	case ActionSelectSecondaryMode:
 		return e.applySelectSecondaryMode(action)
+	case ActionSelectFixedSecondaries:
+		return e.applySelectFixedSecondaries(action)
 	case ActionSetPaintScore:
 		return e.applySetPaintScore(action)
 	case ActionSetReady:
@@ -233,11 +235,49 @@ func (e *Engine) applySelectSecondaryMode(action GameAction) ([]GameEvent, error
 		return nil, fmt.Errorf("secondary mode must be fixed or tactical")
 	}
 	player.SecondaryMode = mode
+	// A tactical player has no pre-chosen set; drop any stale fixed selection.
+	if mode != "fixed" {
+		player.FixedSecondaryIDs = nil
+	}
 	player.Ready = false
 	return []GameEvent{{
 		Type:         EventSecondaryModeSelected,
 		PlayerNumber: action.PlayerNumber,
 		Data:         map[string]any{"mode": mode},
+	}}, nil
+}
+
+// applySelectFixedSecondaries records the card ids a fixed-mode player will play
+// for the whole game. The set is dealt to their hand at game start.
+func (e *Engine) applySelectFixedSecondaries(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusSetup {
+		return nil, fmt.Errorf("can only select fixed secondaries during setup")
+	}
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+	if player.SecondaryMode != "fixed" {
+		return nil, fmt.Errorf("only fixed-mode players select fixed secondaries")
+	}
+	ids := stringsFromData(action.Data, "secondaryIds")
+	if len(ids) > FixedSecondaryCount {
+		return nil, fmt.Errorf("choose at most %d fixed secondaries", FixedSecondaryCount)
+	}
+	// Reject duplicates so a player can't pad the count with one card.
+	seen := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		if id == "" || seen[id] {
+			return nil, fmt.Errorf("fixed secondaries must be distinct, non-empty ids")
+		}
+		seen[id] = true
+	}
+	player.FixedSecondaryIDs = ids
+	player.Ready = false
+	return []GameEvent{{
+		Type:         EventFixedSecondariesSelected,
+		PlayerNumber: action.PlayerNumber,
+		Data:         map[string]any{"secondaryIds": ids},
 	}}, nil
 }
 
@@ -266,6 +306,9 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 	if ready && e.state.FirstTurnPlayer == 0 {
 		return nil, fmt.Errorf("first turn player must be selected before readying up")
 	}
+	if ready && player.SecondaryMode == "fixed" && len(player.FixedSecondaryIDs) != FixedSecondaryCount {
+		return nil, fmt.Errorf("fixed-mode players must choose %d secondaries before readying up", FixedSecondaryCount)
+	}
 	player.Ready = ready
 
 	events := []GameEvent{{
@@ -293,11 +336,20 @@ func (e *Engine) startGame() []GameEvent {
 			e.state.Board = board
 		}
 	}
-	// Build secondary decks per player mode.
+	// Build secondary decks per player mode. Tactical players draw from the full
+	// pool each turn; fixed players are dealt their chosen set as their hand and
+	// hold no deck.
 	if e.secondaryDeckBuilder != nil {
 		for _, p := range e.state.Players {
-			if p != nil {
-				p.SecondaryDeck = e.secondaryDeckBuilder(p.SecondaryMode)
+			if p == nil {
+				continue
+			}
+			pool := e.secondaryDeckBuilder(p.SecondaryMode)
+			if p.SecondaryMode == "fixed" {
+				p.SecondaryHand = dealFixedSecondaries(pool, p.FixedSecondaryIDs)
+				p.SecondaryDeck = nil
+			} else {
+				p.SecondaryDeck = pool
 			}
 		}
 	}
@@ -815,4 +867,22 @@ func intFromData(data map[string]any, key string) int {
 		return v
 	}
 	return 0
+}
+
+// stringsFromData reads a string slice from JSON-decoded action data, where a
+// list arrives as []any of strings (or, in tests, a []string directly).
+func stringsFromData(data map[string]any, key string) []string {
+	switch v := data[key].(type) {
+	case []string:
+		return v
+	case []any:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return nil
 }

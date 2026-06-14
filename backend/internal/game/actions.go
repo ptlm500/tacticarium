@@ -10,6 +10,7 @@ const (
 	ActionSelectFirstTurnPlayer  ActionType = "select_first_turn_player"
 	ActionSelectForceDisposition ActionType = "select_force_disposition"
 	ActionSelectSecondaryMode    ActionType = "select_secondary_mode"
+	ActionSelectFixedSecondaries ActionType = "select_fixed_secondaries"
 	ActionSetPaintScore          ActionType = "set_paint_score"
 	ActionSetReady               ActionType = "set_ready"
 
@@ -62,6 +63,7 @@ const (
 	EventForceDispositionSelected EventType = "force_disposition_selected"
 	EventMissionResolved          EventType = "mission_resolved"
 	EventSecondaryModeSelected    EventType = "secondary_mode_selected"
+	EventFixedSecondariesSelected EventType = "fixed_secondaries_selected"
 	EventPlayerReady              EventType = "player_ready"
 	EventGameStart                EventType = "game_start"
 	EventGameEnd                  EventType = "game_end"

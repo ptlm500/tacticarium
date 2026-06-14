@@ -77,10 +77,14 @@ type PlayerState struct {
 	Ready       bool `json:"ready"`
 
 	// Secondary deck (draw 2 per turn, keep unscored cards).
-	SecondaryMode   string          `json:"secondaryMode"` // "fixed" | "tactical"
-	SecondaryDeck   []SecondaryCard `json:"secondaryDeck"`
-	SecondaryHand   []SecondaryCard `json:"secondaryHand"`
-	SecondaryScored []SecondaryCard `json:"secondaryScored"`
+	SecondaryMode string `json:"secondaryMode"` // "fixed" | "tactical"
+	// FixedSecondaryIDs are the card ids a fixed-mode player chose before the
+	// game; at game start these are dealt to SecondaryHand and kept all game.
+	// Empty for tactical players.
+	FixedSecondaryIDs []string        `json:"fixedSecondaryIds"`
+	SecondaryDeck     []SecondaryCard `json:"secondaryDeck"`
+	SecondaryHand     []SecondaryCard `json:"secondaryHand"`
+	SecondaryScored   []SecondaryCard `json:"secondaryScored"`
 
 	CPGainedThisRound       int      `json:"cpGainedThisRound"`
 	StratagemsUsedThisPhase []string `json:"stratagemsUsedThisPhase"`
