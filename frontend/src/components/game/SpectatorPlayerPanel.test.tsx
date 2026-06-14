@@ -46,9 +46,14 @@ describe("SpectatorPlayerPanel", () => {
     expect(screen.queryByText("Active Turn")).toBeNull();
   });
 
-  it("shows the detachment name when present", () => {
-    renderPanel({ detachmentName: "Gladius Task Force" });
-    expect(screen.getByText("Gladius Task Force")).toBeTruthy();
+  it("shows the detachment names when present", () => {
+    renderPanel({
+      detachments: [
+        { id: "det-gladius", name: "Gladius Task Force", points: 3 },
+        { id: "det-allied", name: "Allied Cohort", points: 0 },
+      ],
+    });
+    expect(screen.getByText("Gladius Task Force, Allied Cohort")).toBeTruthy();
   });
 
   it("renders CP and the per-category VP breakdown", () => {

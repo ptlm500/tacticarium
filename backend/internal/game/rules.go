@@ -17,6 +17,10 @@ const (
 	// CP gained by both players when entering each Command phase (every turn).
 	CPPerCommandPhase = 1
 
+	// MaxDetachmentPoints is the detachment-points budget a player may spend on
+	// detachments (combine one ×3, or ×2 + ×1, etc.).
+	MaxDetachmentPoints = 3
+
 	// FixedSecondaryCount is how many secondary cards a fixed-mode player chooses
 	// before the game; the chosen set is their hand for the whole battle. (11e is
 	// pre-launch-provisional here; this matches the established fixed count and is

@@ -28,6 +28,15 @@ type Stats struct {
 func SeedAll(ctx context.Context, pool *pgxpool.Pool, dataDir string) (Stats, error) {
 	var stats Stats
 
+	// The 40kdc snapshot is the sole authority for reference data: clear the
+	// tables it owns before repopulating so a reseed can't leave stale rows
+	// behind (e.g. 10e detachments carried over the edition reset, which only
+	// added columns rather than wiping data). Upsert-only seeding never removes
+	// entities that disappear upstream.
+	if err := clearReferenceData(ctx, pool); err != nil {
+		return stats, err
+	}
+
 	top := func(name string) string { return filepath.Join(dataDir, name) }
 
 	// Per-faction reference data first (factions -> detachments -> stratagems),
@@ -101,6 +110,29 @@ func SeedAll(ctx context.Context, pool *pgxpool.Pool, dataDir string) (Stats, er
 	}
 
 	return stats, nil
+}
+
+// clearReferenceData empties the 40kdc-owned reference tables in FK-safe order
+// (children before parents). game_players carries faction_id/detachment_id FKs
+// but the 11e code leaves them NULL — faction/detachment live in the game-state
+// JSONB — so deleting factions/detachments does not violate them.
+func clearReferenceData(ctx context.Context, pool *pgxpool.Pool) error {
+	tables := []string{
+		"mission_matchups", // -> force_dispositions, primary_missions
+		"stratagems_11e",   // -> factions, detachments
+		"detachments",      // -> factions
+		"factions",
+		"force_dispositions",
+		"primary_missions",
+		"cards",
+		"deployment_patterns",
+	}
+	for _, t := range tables {
+		if _, err := pool.Exec(ctx, "DELETE FROM "+t); err != nil {
+			return fmt.Errorf("clearing %s: %w", t, err)
+		}
+	}
+	return nil
 }
 
 // seedFileIfPresent runs fn against path, treating a missing file as a no-op.

@@ -529,16 +529,16 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 	rows, err := h.db.Query(ctx,
 		`SELECT gp.user_id, u.discord_username, u.discord_id, u.discord_avatar, gp.player_number,
 		        COALESCE(gp.faction_id, ''), COALESCE(f.name, ''),
-		        COALESCE(gp.detachment_id, ''), COALESCE(d.name, ''),
+		        gp.detachments,
 		        COALESCE(gp.side, ''), COALESCE(gp.force_disposition, ''), COALESCE(gp.force_disposition_name, ''),
 		        COALESCE(gp.mission_id, ''), COALESCE(gp.mission_name, ''),
 		        gp.cp, gp.vp_primary, gp.vp_secondary, gp.vp_paint, gp.is_ready, gp.secondary_mode,
+		        gp.fixed_secondary_ids,
 		        gp.primary_card, gp.secondary_deck, gp.secondary_hand, gp.secondary_scored,
 		        gp.primary_scored_this_round, gp.secondary_scored_this_round, gp.pending_score_prompts
 		 FROM game_players gp
 		 JOIN users u ON gp.user_id = u.id
 		 LEFT JOIN factions f ON gp.faction_id = f.id
-		 LEFT JOIN detachments d ON gp.detachment_id = d.id
 		 WHERE gp.game_id = $1
 		 ORDER BY gp.player_number`, gameID)
 	if err != nil {
@@ -550,18 +550,22 @@ func (h *GameHandler) loadGameState(ctx context.Context, gameID string) (*game.G
 		var p game.PlayerState
 		var discordID, side string
 		var discordAvatar *string
+		var detachmentsJSON, fixedSecondaryJSON []byte
 		var primaryCardJSON, deckJSON, handJSON, scoredJSON, promptsJSON []byte
 		if err := rows.Scan(&p.UserID, &p.Username, &discordID, &discordAvatar, &p.PlayerNumber,
 			&p.FactionID, &p.FactionName,
-			&p.DetachmentID, &p.DetachmentName,
+			&detachmentsJSON,
 			&side, &p.ForceDisposition, &p.ForceDispositionName,
 			&p.MissionID, &p.MissionName,
 			&p.CP, &p.VPPrimary, &p.VPSecondary, &p.VPPaint, &p.Ready, &p.SecondaryMode,
+			&fixedSecondaryJSON,
 			&primaryCardJSON, &deckJSON, &handJSON, &scoredJSON,
 			&p.PrimaryScoredThisRound, &p.SecondaryScoredThisRound, &promptsJSON); err != nil {
 			slog.Error("Scan player error", "error", err)
 			continue
 		}
+		_ = json.Unmarshal(detachmentsJSON, &p.Detachments)
+		_ = json.Unmarshal(fixedSecondaryJSON, &p.FixedSecondaryIDs)
 		p.AvatarURL = auth.AvatarURL(discordID, discordAvatar)
 		p.Side = scoring.Side(side)
 
@@ -622,6 +626,8 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 		if p == nil {
 			continue
 		}
+		detachmentsJSON, _ := json.Marshal(orEmptyDetachments(p.Detachments))
+		fixedSecondaryJSON, _ := json.Marshal(orEmptyStrings(p.FixedSecondaryIDs))
 		primaryCardJSON, _ := json.Marshal(p.PrimaryCard)
 		deckJSON, _ := json.Marshal(orEmptyCards(p.SecondaryDeck))
 		handJSON, _ := json.Marshal(orEmptyCards(p.SecondaryHand))
@@ -629,20 +635,20 @@ func (h *GameHandler) PersistGameState(state game.GameState, events []game.GameE
 		promptsJSON, _ := json.Marshal(orEmptyPrompts(p.PendingScorePrompts))
 
 		_, err := h.db.Exec(ctx,
-			`UPDATE game_players SET faction_id = NULLIF($1, ''), detachment_id = NULLIF($2, ''),
+			`UPDATE game_players SET faction_id = NULLIF($1, ''), detachments = $2,
 			 side = NULLIF($3, ''), force_disposition = NULLIF($4, ''), force_disposition_name = NULLIF($5, ''),
 			 mission_id = NULLIF($6, ''), mission_name = NULLIF($7, ''),
 			 cp = $8, vp_primary = $9, vp_secondary = $10, vp_paint = $11, is_ready = $12,
-			 secondary_mode = $13, primary_card = $14, secondary_deck = $15, secondary_hand = $16,
-			 secondary_scored = $17, primary_scored_this_round = $18, secondary_scored_this_round = $19,
-			 pending_score_prompts = $20
-			 WHERE game_id = $21 AND player_number = $22`,
-			p.FactionID, p.DetachmentID, string(p.Side), p.ForceDisposition, p.ForceDispositionName,
+			 secondary_mode = $13, fixed_secondary_ids = $14, primary_card = $15, secondary_deck = $16,
+			 secondary_hand = $17, secondary_scored = $18, primary_scored_this_round = $19,
+			 secondary_scored_this_round = $20, pending_score_prompts = $21
+			 WHERE game_id = $22 AND player_number = $23`,
+			p.FactionID, detachmentsJSON, string(p.Side), p.ForceDisposition, p.ForceDispositionName,
 			p.MissionID, p.MissionName,
 			p.CP, p.VPPrimary, p.VPSecondary, p.VPPaint, p.Ready,
-			p.SecondaryMode, primaryCardJSON, deckJSON, handJSON,
-			scoredJSON, p.PrimaryScoredThisRound, p.SecondaryScoredThisRound,
-			promptsJSON,
+			p.SecondaryMode, fixedSecondaryJSON, primaryCardJSON, deckJSON,
+			handJSON, scoredJSON, p.PrimaryScoredThisRound,
+			p.SecondaryScoredThisRound, promptsJSON,
 			state.GameID, p.PlayerNumber)
 		if err != nil {
 			slog.Error("Persist player state error", "error", err)
@@ -682,6 +688,20 @@ func orEmptyPrompts(p []game.ScorePrompt) []game.ScorePrompt {
 		return []game.ScorePrompt{}
 	}
 	return p
+}
+
+func orEmptyDetachments(d []game.SelectedDetachment) []game.SelectedDetachment {
+	if d == nil {
+		return []game.SelectedDetachment{}
+	}
+	return d
+}
+
+func orEmptyStrings(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
 }
 
 // resolveMission maps a force-disposition matchup to the resolved primary
