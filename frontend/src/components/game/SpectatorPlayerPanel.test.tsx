@@ -4,7 +4,7 @@ import { SpectatorPlayerPanel } from "./SpectatorPlayerPanel";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import { makePlayerState, mockActiveSecondary, mockStratagems } from "../../test/fixtures";
 import { worker } from "../../mocks/browser";
-import type { ActiveSecondary, PlayerState } from "../../types/game";
+import type { SecondaryCard, PlayerState } from "../../types/game";
 
 function renderPanel(
   player: Partial<PlayerState> = {},
@@ -51,16 +51,6 @@ describe("SpectatorPlayerPanel", () => {
     expect(screen.getByText("Gladius Task Force")).toBeTruthy();
   });
 
-  it("shows the Challenger badge when the player is the challenger", () => {
-    renderPanel({ isChallenger: true });
-    expect(screen.getByText("Challenger")).toBeTruthy();
-  });
-
-  it("hides the Challenger badge when the player is not the challenger", () => {
-    renderPanel({ isChallenger: false });
-    expect(screen.queryByText("Challenger")).toBeNull();
-  });
-
   it("renders CP and the per-category VP breakdown", () => {
     renderPanel({ cp: 4, vpPrimary: 6, vpSecondary: 3, vpPaint: 1 });
     expect(screen.getByText("CP").nextSibling?.textContent).toBe("4");
@@ -69,74 +59,59 @@ describe("SpectatorPlayerPanel", () => {
     expect(screen.getByText("Paint").nextSibling?.textContent).toBe("1");
   });
 
-  it("does not surface gambit VP in the spectator panel", () => {
-    renderPanel({ vpGambit: 99 });
-    expect(screen.queryByText("Gambit")).toBeNull();
-  });
-
-  it("computes total VP as primary + secondary + paint (gambit hidden)", () => {
-    renderPanel({ vpPrimary: 6, vpSecondary: 3, vpGambit: 2, vpPaint: 1 });
+  it("computes total VP as primary + secondary + paint", () => {
+    renderPanel({ vpPrimary: 6, vpSecondary: 3, vpPaint: 1 });
     expect(screen.getByText("Total VP").nextSibling?.textContent).toBe("10");
   });
 
   it("shows tactical mode and the remaining deck count", () => {
-    const deck: ActiveSecondary[] = [
+    const deck: SecondaryCard[] = [
       { ...mockActiveSecondary, id: "d1" },
       { ...mockActiveSecondary, id: "d2" },
       { ...mockActiveSecondary, id: "d3" },
     ];
-    renderPanel({ secondaryMode: "tactical", tacticalDeck: deck });
+    renderPanel({ secondaryMode: "tactical", secondaryDeck: deck });
     expect(screen.getByText(/Secondaries \(Tactical\)/)).toBeTruthy();
     expect(screen.getByText(/Deck: 3/)).toBeTruthy();
   });
 
   it("shows fixed mode without a deck count", () => {
-    renderPanel({ secondaryMode: "fixed", tacticalDeck: [] });
+    renderPanel({ secondaryMode: "fixed", secondaryDeck: [] });
     expect(screen.getByText(/Secondaries \(Fixed\)/)).toBeTruthy();
     expect(screen.queryByText(/Deck:/)).toBeNull();
   });
 
   it("shows the empty placeholder when there are no active secondaries", () => {
-    renderPanel({ activeSecondaries: [] });
+    renderPanel({ secondaryHand: [] });
     expect(screen.getByText("No active secondaries")).toBeTruthy();
   });
 
-  it("renders active secondaries with name, description, and max VP", () => {
-    renderPanel({ activeSecondaries: [mockActiveSecondary] });
+  it("renders active secondaries with name and text", () => {
+    renderPanel({ secondaryHand: [mockActiveSecondary] });
     expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
     expect(screen.getByText("Score VP for units in enemy deployment zone")).toBeTruthy();
-    expect(screen.getByText("5 VP max")).toBeTruthy();
   });
 
-  it("renders achieved secondaries with VP scored", () => {
+  it("renders scored secondaries with VP scored", () => {
     renderPanel({
-      achievedSecondaries: [{ ...mockActiveSecondary, id: "a1", vpScored: 4 }],
+      secondaryScored: [{ ...mockActiveSecondary, id: "a1", vpScored: 4 }],
     });
-    expect(screen.getByText("Achieved (1)")).toBeTruthy();
+    expect(screen.getByText("Scored (1)")).toBeTruthy();
     expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
     expect(screen.getByText("+4")).toBeTruthy();
   });
 
-  it("does not render a +VP marker for achieved secondaries scored at zero", () => {
+  it("does not render a +VP marker for scored secondaries scored at zero", () => {
     renderPanel({
-      achievedSecondaries: [{ ...mockActiveSecondary, id: "a1", vpScored: 0 }],
+      secondaryScored: [{ ...mockActiveSecondary, id: "a1", vpScored: 0 }],
     });
-    expect(screen.getByText("Achieved (1)")).toBeTruthy();
+    expect(screen.getByText("Scored (1)")).toBeTruthy();
     expect(screen.queryByText(/^\+/)).toBeNull();
   });
 
-  it("renders discarded secondaries", () => {
-    renderPanel({
-      discardedSecondaries: [{ ...mockActiveSecondary, id: "d1", name: "Skirmish" }],
-    });
-    expect(screen.getByText("Discarded (1)")).toBeTruthy();
-    expect(screen.getByText("Skirmish")).toBeTruthy();
-  });
-
-  it("hides the achieved and discarded sections when both are empty", () => {
-    renderPanel({ achievedSecondaries: [], discardedSecondaries: [] });
-    expect(screen.queryByText(/^Achieved \(/)).toBeNull();
-    expect(screen.queryByText(/^Discarded \(/)).toBeNull();
+  it("hides the scored section when empty", () => {
+    renderPanel({ secondaryScored: [] });
+    expect(screen.queryByText(/^Scored \(/)).toBeNull();
   });
 
   it("hides the stratagems section when none have been used this phase", () => {
@@ -181,16 +156,5 @@ describe("SpectatorPlayerPanel", () => {
     renderPanel({ stratagemsUsedThisPhase: ["strat-1"] });
     expect(screen.getByText("Stratagems This Phase")).toBeTruthy();
     expect(screen.getByText("strat-1")).toBeTruthy();
-  });
-
-  it("shows the Adapt or Die counter when uses are greater than zero", () => {
-    renderPanel({ adaptOrDieUses: 2 });
-    expect(screen.getByText(/Adapt or Die uses:/)).toBeTruthy();
-    expect(screen.getByText("2")).toBeTruthy();
-  });
-
-  it("hides the Adapt or Die counter when uses are zero", () => {
-    renderPanel({ adaptOrDieUses: 0 });
-    expect(screen.queryByText(/Adapt or Die uses:/)).toBeNull();
   });
 });

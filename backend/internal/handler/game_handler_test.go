@@ -456,9 +456,9 @@ func TestGetStats_WithGames(t *testing.T) {
 	assert.Equal(t, float64(1), stats["draws"])
 	assert.Equal(t, float64(0), stats["abandoned"])
 
-	// Average VP: (20 + 6 + 12) / 3 ≈ 12.67
+	// Average VP (gambit removed in 11e): (17 + 6 + 12) / 3 ≈ 11.67
 	avgVP := stats["averageVp"].(float64)
-	assert.InDelta(t, 12.67, avgVP, 0.01)
+	assert.InDelta(t, 11.67, avgVP, 0.01)
 
 	// Faction stats: Space Marines (2 games, 1 win), Orks (1 game, 0 wins)
 	factionStats := stats["factionStats"].([]interface{})

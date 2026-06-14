@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface Props {
   mission: Mission | null;
-  twist: MissionRule | null;
+  twist?: MissionRule | null;
 }
 
 interface DescriptionBlock {
@@ -93,19 +93,15 @@ export function MissionInfo({ mission, twist }: Props) {
             )}
           </div>
 
-          <div className="space-y-3 border-t border-border/40 pt-4">
-            <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Twist
-            </h3>
-            {twist ? (
-              <>
-                <p className="font-medium text-foreground">{twist.name}</p>
-                <DescriptionBody text={twist.description} />
-              </>
-            ) : (
-              <p className="text-muted-foreground">None</p>
-            )}
-          </div>
+          {twist && (
+            <div className="space-y-3 border-t border-border/40 pt-4">
+              <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Twist
+              </h3>
+              <p className="font-medium text-foreground">{twist.name}</p>
+              <DescriptionBody text={twist.description} />
+            </div>
+          )}
         </div>
       )}
     </section>

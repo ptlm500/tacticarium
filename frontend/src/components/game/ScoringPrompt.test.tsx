@@ -1,17 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ScoringPrompt, ScoringPromptItem } from "./ScoringPrompt";
-import { mockActiveSecondary, mockFixedSecondary } from "../../test/fixtures";
+import { mockActiveSecondary } from "../../test/fixtures";
 
 function renderPrompt(overrides: Partial<Parameters<typeof ScoringPrompt>[0]> = {}) {
   const defaultProps = {
     items: [] as ScoringPromptItem[],
     onScore: vi.fn(),
-    activeSecondaries: [],
-    onAchieveSecondary: vi.fn(),
-    onDiscardSecondary: vi.fn(),
-    canGainCP: true,
-    onScoreFixedVP: vi.fn(),
+    secondaryHand: [],
     onConfirm: vi.fn(),
     onCancel: vi.fn(),
     ...overrides,
@@ -85,111 +81,27 @@ describe("ScoringPrompt", () => {
   });
 
   describe("SecondaryReminder", () => {
-    it("renders active secondaries with achieve/discard buttons", async () => {
-      const user = userEvent.setup();
+    it("renders active secondaries with name and prose text", () => {
       const items: ScoringPromptItem[] = [{ kind: "secondary" }];
-      const { props } = renderPrompt({
+      renderPrompt({
         items,
-        activeSecondaries: [mockActiveSecondary],
+        secondaryHand: [mockActiveSecondary],
       });
 
       expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
-
-      const scoreBtn = screen.getByText(/1 unit \+2/);
-      await user.click(scoreBtn);
-      expect(props.onAchieveSecondary).toHaveBeenCalledWith("sec-1", 2);
-
-      await user.click(screen.getByText("Discard"));
-      expect(props.onDiscardSecondary).toHaveBeenCalledWith("sec-1", true);
-    });
-
-    it("shows +1CP button when canGainCP is true", () => {
-      const items: ScoringPromptItem[] = [{ kind: "secondary" }];
-      renderPrompt({
-        items,
-        activeSecondaries: [mockActiveSecondary],
-        canGainCP: true,
-      });
-      expect(screen.getByText("+1CP")).toBeTruthy();
-    });
-
-    it("hides +1CP button when canGainCP is false", () => {
-      const items: ScoringPromptItem[] = [{ kind: "secondary" }];
-      renderPrompt({
-        items,
-        activeSecondaries: [mockActiveSecondary],
-        canGainCP: false,
-      });
-      expect(screen.queryByText("+1CP")).toBeNull();
+      expect(screen.getByText(mockActiveSecondary.text)).toBeTruthy();
     });
 
     it("shows empty message when no active secondaries", () => {
       const items: ScoringPromptItem[] = [{ kind: "secondary" }];
-      renderPrompt({ items, activeSecondaries: [] });
+      renderPrompt({ items, secondaryHand: [] });
       expect(screen.getByText("No active secondary missions.")).toBeTruthy();
     });
   });
 
-  describe("FixedSecondaryReminder", () => {
-    it("renders fixed secondaries with scoring options", async () => {
-      const user = userEvent.setup();
-      const items: ScoringPromptItem[] = [
-        { kind: "fixed_secondary", secondaries: [mockFixedSecondary] },
-      ];
-      const { props } = renderPrompt({ items });
-
-      expect(screen.getByText("Assassination")).toBeTruthy();
-      expect(screen.getByText(/max 8 VP/)).toBeTruthy();
-
-      await user.click(screen.getByText(/Character.*\+3VP/));
-      expect(props.onScoreFixedVP).toHaveBeenCalledWith(3);
-    });
-  });
-
-  describe("timing filtering", () => {
-    const ownTurnSecondary = {
-      ...mockActiveSecondary,
-      id: "own-1",
-      name: "Own Turn Card",
-    };
-    const opponentTurnSecondary = {
-      ...mockActiveSecondary,
-      id: "opp-1",
-      name: "Sabotage",
-      scoringTiming: "end_of_opponent_turn" as const,
-    };
-
-    it("default own-turn item hides end_of_opponent_turn secondaries", () => {
-      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_own_turn" }];
-      renderPrompt({
-        items,
-        activeSecondaries: [ownTurnSecondary, opponentTurnSecondary],
-      });
-
-      expect(screen.getByText("Own Turn Card")).toBeTruthy();
-      expect(screen.queryByText("Sabotage")).toBeNull();
-    });
-
-    it("opponent-turn item shows only end_of_opponent_turn secondaries", () => {
-      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_opponent_turn" }];
-      renderPrompt({
-        items,
-        activeSecondaries: [ownTurnSecondary, opponentTurnSecondary],
-      });
-
-      expect(screen.getByText("Sabotage")).toBeTruthy();
-      expect(screen.queryByText("Own Turn Card")).toBeNull();
-    });
-
-    it("untagged secondaries default to end_of_own_turn", () => {
-      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_own_turn" }];
-      // mockActiveSecondary has no scoringTiming field — should appear in own-turn prompt.
-      renderPrompt({ items, activeSecondaries: [mockActiveSecondary] });
-      expect(screen.getByText(mockActiveSecondary.name!)).toBeTruthy();
-    });
-
+  describe("custom labels", () => {
     it("renders custom title and labels when overridden", () => {
-      const items: ScoringPromptItem[] = [{ kind: "secondary", timing: "end_of_opponent_turn" }];
+      const items: ScoringPromptItem[] = [{ kind: "secondary" }];
       renderPrompt({
         items,
         title: "Opponent's Turn Ended",

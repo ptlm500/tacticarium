@@ -11,10 +11,6 @@ import { Route, Routes } from "react-router-dom";
 function renderSetup() {
   const gs = makeGameState({
     status: "setup",
-    missionId: "",
-    missionName: "",
-    twistId: "",
-    twistName: "",
     players: [
       makePlayerState({
         factionId: "",
@@ -102,10 +98,6 @@ describe("GameSetupPage", () => {
   it("shows detachment section when faction is selected", async () => {
     const gs = makeGameState({
       status: "setup",
-      missionId: "",
-      missionName: "",
-      twistId: "",
-      twistName: "",
       players: [
         makePlayerState({
           factionId: "faction-sm",
@@ -151,10 +143,6 @@ describe("GameSetupPage", () => {
   it("shows first-player picker when twist is selected and hides secondary section until chosen", async () => {
     const gs = makeGameState({
       status: "setup",
-      missionId: "mission-1",
-      missionName: "Supply Drop",
-      twistId: "twist-1",
-      twistName: "Hidden Supplies",
       firstTurnPlayer: 0, // not yet chosen
       players: [
         makePlayerState({
@@ -244,10 +232,6 @@ describe("GameSetupPage", () => {
     const newGameState = makeGameState({
       gameId: "game-NEW",
       status: "setup",
-      missionId: "",
-      missionName: "",
-      twistId: "",
-      twistName: "",
       players: [
         makePlayerState({
           factionId: "",
@@ -287,10 +271,6 @@ describe("GameSetupPage", () => {
   it("shows the army-painted toggle once detachment is selected and reflects vpPaint state", async () => {
     const gs = makeGameState({
       status: "setup",
-      missionId: "",
-      missionName: "",
-      twistId: "",
-      twistName: "",
       players: [
         makePlayerState({
           detachmentId: "det-gladius",
@@ -334,10 +314,6 @@ describe("GameSetupPage", () => {
   it("sends set_paint_score over the websocket when the toggle is clicked", async () => {
     const gs = makeGameState({
       status: "setup",
-      missionId: "",
-      missionName: "",
-      twistId: "",
-      twistName: "",
       players: [
         makePlayerState({
           detachmentId: "det-gladius",
@@ -397,10 +373,6 @@ describe("GameSetupPage", () => {
   it("shows mission section when detachment is selected", async () => {
     const gs = makeGameState({
       status: "setup",
-      missionId: "",
-      missionName: "",
-      twistId: "",
-      twistName: "",
       players: [
         makePlayerState({
           detachmentId: "det-gladius",

@@ -4,27 +4,55 @@ type Schemas = components["schemas"];
 
 // --- Narrower union types (not expressed in OpenAPI spec) ---
 
-export type Phase = "setup" | "command" | "movement" | "shooting" | "charge" | "fight";
+// 11th edition wraps the five phases in Start-of-Turn / End-of-Turn steps.
+export type Phase =
+  | "setup"
+  | "start_of_turn"
+  | "command"
+  | "movement"
+  | "shooting"
+  | "charge"
+  | "fight"
+  | "end_of_turn";
 export type GameStatus = "setup" | "active" | "completed" | "abandoned";
 
-export const PHASE_ORDER: Phase[] = ["command", "movement", "shooting", "charge", "fight"];
+export const PHASE_ORDER: Phase[] = [
+  "start_of_turn",
+  "command",
+  "movement",
+  "shooting",
+  "charge",
+  "fight",
+  "end_of_turn",
+];
 
 export const PHASE_LABELS: Record<Phase, string> = {
   setup: "Setup",
+  start_of_turn: "Start of Turn",
   command: "Command",
   movement: "Movement",
   shooting: "Shooting",
   charge: "Charge",
   fight: "Fight",
+  end_of_turn: "End of Turn",
 };
 
 // --- Types derived from OpenAPI schema ---
 
-export type SecondaryObjective = Schemas["SecondaryObjective"];
+/** A mission/secondary card in a player's deck, hand, or scored pile. */
+export type SecondaryCard = Schemas["SecondaryCard"];
 
-export type ScoringOption = Schemas["ScoringOption"];
+/** A mission/secondary card definition (awards DSL + prose). */
+export type Card = Schemas["Card"];
 
-export type ActiveSecondary = Schemas["ActiveSecondary"];
+/** An outstanding Layer-2 scoring prompt awaiting player confirmation. */
+export type ScorePrompt = Schemas["ScorePrompt"];
+
+/** The battlefield board: objectives + per-player sides. */
+export type Board = Schemas["Board"];
+
+/** A single board objective (position, role, control, tags). */
+export type Objective = Schemas["Objective"];
 
 export type PlayerState = Schemas["PlayerState"];
 
@@ -38,11 +66,10 @@ export interface GameState {
   currentPhase: Phase;
   activePlayer: number;
   firstTurnPlayer: number;
-  missionPackId: string;
-  missionId: string;
-  missionName: string;
-  twistId: string;
-  twistName: string;
+  board: Board;
+  vpPerGameCap: number;
+  vpPerRoundCap: number;
+  startOfTurnControl?: Record<string, number>;
   players: [PlayerState | null, PlayerState | null];
   createdAt: string;
   completedAt?: string;

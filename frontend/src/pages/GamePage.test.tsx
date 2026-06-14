@@ -343,7 +343,7 @@ describe("GamePage", () => {
   });
 
   describe("opponent active secondaries", () => {
-    it("renders opponent's active tactical secondaries with name, description, and max VP", async () => {
+    it("renders opponent's active tactical secondaries with name and text", async () => {
       await act(async () => {
         renderGame({
           players: [
@@ -353,7 +353,7 @@ describe("GamePage", () => {
               username: "Opponent",
               playerNumber: 2,
               secondaryMode: "tactical",
-              activeSecondaries: [mockActiveSecondary],
+              secondaryHand: [mockActiveSecondary],
             }),
           ],
         });
@@ -364,7 +364,6 @@ describe("GamePage", () => {
         expect(screen.getByText("Score VP for units in enemy deployment zone")).toBeTruthy();
         // Opponent name appears in the header; the secondary name appears in the opponent block.
         expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
-        expect(screen.getByText("5 VP max")).toBeTruthy();
       });
     });
 
@@ -378,7 +377,7 @@ describe("GamePage", () => {
               username: "Opponent",
               playerNumber: 2,
               secondaryMode: "fixed",
-              activeSecondaries: [mockFixedSecondary],
+              secondaryHand: [mockFixedSecondary],
             }),
           ],
         });
@@ -401,7 +400,7 @@ describe("GamePage", () => {
               playerNumber: 2,
               factionName: "Chaos Space Marines",
               secondaryMode: "tactical",
-              activeSecondaries: [],
+              secondaryHand: [],
             }),
           ],
         });
@@ -426,7 +425,7 @@ describe("GamePage", () => {
               username: "Opponent",
               playerNumber: 2,
               secondaryMode: "tactical",
-              activeSecondaries: [mockActiveSecondary],
+              secondaryHand: [mockActiveSecondary],
             }),
           ],
         });
@@ -526,8 +525,8 @@ describe("GamePage", () => {
         players: [
           makePlayerState({
             secondaryMode: "tactical",
-            activeSecondaries: [mockActiveSecondary],
-            tacticalDeck: [],
+            secondaryHand: [mockActiveSecondary],
+            secondaryDeck: [],
           }),
           makePlayerState({
             userId: "user-2",
@@ -659,8 +658,8 @@ describe("GamePage", () => {
           players: [
             makePlayerState({
               secondaryMode: "tactical",
-              activeSecondaries: [mockActiveSecondary],
-              tacticalDeck: [],
+              secondaryHand: [mockActiveSecondary],
+              secondaryDeck: [],
             }),
             makePlayerState({
               userId: "user-2",
@@ -686,7 +685,7 @@ describe("GamePage", () => {
         expect(screen.getByText(/Score Primary — Terraform/)).toBeTruthy();
         // Scoring button appears in both Quick Score and the modal
         expect(screen.getAllByText("Terraformed marker (+1)").length).toBeGreaterThanOrEqual(1);
-        expect(screen.getByText("Score / Discard Secondaries")).toBeTruthy();
+        expect(screen.getByText("Score Secondaries")).toBeTruthy();
         // "Behind Enemy Lines" appears in both SecondaryPanel and the modal
         expect(screen.getAllByText("Behind Enemy Lines").length).toBeGreaterThanOrEqual(2);
       });
@@ -752,250 +751,6 @@ describe("GamePage", () => {
         expect(parsed.data.delta).toBe(10);
         expect(parsed.data.scoringSlot).toBe("end_of_command_phase");
       });
-    });
-  });
-
-  describe("end_of_opponent_turn scoring", () => {
-    const sabotage = {
-      ...mockActiveSecondary,
-      id: "sabotage-1",
-      name: "Sabotage",
-      scoringTiming: "end_of_opponent_turn" as const,
-    };
-
-    it("blocks active player's advance with opponent-pending reminder", async () => {
-      worker.use(
-        http.get(`${API_URL}/api/mission-packs/:packId/missions`, () =>
-          HttpResponse.json([
-            {
-              id: "mission-1",
-              missionPackId: "chapter-approved-2025-26",
-              name: "Supply Drop",
-              lore: "",
-              description: "",
-              scoringRules: [],
-              scoringTiming: "end_of_command_phase",
-            },
-          ]),
-        ),
-      );
-
-      await act(async () => {
-        renderGame({
-          activePlayer: 1,
-          currentPhase: "fight",
-          currentRound: 3,
-          currentTurn: 1,
-          players: [
-            makePlayerState({
-              secondaryMode: "tactical",
-              activeSecondaries: [mockActiveSecondary],
-              tacticalDeck: [],
-            }),
-            makePlayerState({
-              userId: "user-2",
-              username: "Opponent",
-              playerNumber: 2,
-              secondaryMode: "tactical",
-              activeSecondaries: [sabotage],
-            }),
-          ],
-        });
-      });
-
-      const user = userEvent.setup();
-      await vi.waitFor(() => {
-        expect(screen.getByText("Advance Phase")).toBeTruthy();
-      });
-      await user.click(screen.getByText("Advance Phase"));
-
-      // The active player's modal includes a reminder block listing the
-      // opponent's end_of_opponent_turn secondaries.
-      await vi.waitFor(() => {
-        expect(screen.getByText(/Wait for Opponent to score/)).toBeTruthy();
-        expect(screen.getByTestId("opponent-pending-secondary")).toBeTruthy();
-      });
-    });
-
-    it("excludes end_of_opponent_turn secondaries from the own-turn fight-phase prompt", async () => {
-      worker.use(
-        http.get(`${API_URL}/api/mission-packs/:packId/missions`, () => {
-          return HttpResponse.json([
-            {
-              id: "mission-1",
-              missionPackId: "chapter-approved-2025-26",
-              name: "Supply Drop",
-              lore: "",
-              description: "",
-              scoringRules: [],
-              scoringTiming: "end_of_command_phase",
-            },
-          ]);
-        }),
-      );
-
-      await act(async () => {
-        renderGame({
-          activePlayer: 1,
-          currentPhase: "fight",
-          currentRound: 3,
-          currentTurn: 1,
-          players: [
-            makePlayerState({
-              secondaryMode: "tactical",
-              activeSecondaries: [mockActiveSecondary, sabotage],
-              tacticalDeck: [],
-            }),
-            makePlayerState({
-              userId: "user-2",
-              username: "Opponent",
-              playerNumber: 2,
-            }),
-          ],
-        });
-      });
-
-      const user = userEvent.setup();
-      await vi.waitFor(() => {
-        expect(screen.getByText("Advance Phase")).toBeTruthy();
-      });
-
-      await user.click(screen.getByText("Advance Phase"));
-
-      // The standard scoring prompt opens; Behind Enemy Lines (own-turn) shows in
-      // the modal section, but Sabotage (opponent-turn) does NOT appear inside it.
-      await vi.waitFor(() => {
-        expect(screen.getByText("Score / Discard Secondaries")).toBeTruthy();
-      });
-      // Behind Enemy Lines also appears in the SecondaryPanel — the modal version
-      // is the second occurrence.
-      const behindAll = screen.getAllByText("Behind Enemy Lines");
-      expect(behindAll.length).toBeGreaterThanOrEqual(2);
-      // Sabotage appears in the SecondaryPanel (1 occurrence) but NOT inside the
-      // modal — so total occurrences should be exactly 1.
-      expect(screen.getAllByText("Sabotage")).toHaveLength(1);
-    });
-
-    it("fires reactive prompt when opponent's Fight phase ends", async () => {
-      // Start with opponent (player 2) in fight phase.
-      const initial = makeGameState({
-        activePlayer: 2,
-        currentPhase: "fight",
-        currentRound: 2,
-        currentTurn: 2,
-        players: [
-          makePlayerState({
-            secondaryMode: "tactical",
-            activeSecondaries: [sabotage],
-          }),
-          makePlayerState({
-            userId: "user-2",
-            username: "Opponent",
-            playerNumber: 2,
-          }),
-        ],
-      });
-      useGameStore.getState().setGameState(initial);
-      localStorage.setItem("token", "test-token");
-
-      const testLink = ws.link("ws://localhost:8080/ws/game/*");
-      worker.use(
-        testLink.addEventListener("connection", ({ client }) => {
-          client.send(JSON.stringify({ type: "state_update", data: initial }));
-        }),
-      );
-
-      await act(async () => {
-        renderWithProviders(
-          <Routes>
-            <Route path="/game/:id" element={<GamePage />} />
-          </Routes>,
-          { user: mockUser, route: "/game/game-1" },
-        );
-      });
-
-      await vi.waitFor(() => {
-        expect(screen.getByText(/Opponent's Turn/)).toBeTruthy();
-      });
-      // Initial state observed; reactive prompt should NOT have fired yet.
-      expect(screen.queryByText("Opponent's Turn Ended")).toBeNull();
-
-      // Opponent advances out of fight — turn rolls into round 3, player 1's command.
-      const next = makeGameState({
-        activePlayer: 1,
-        currentPhase: "command",
-        currentRound: 3,
-        currentTurn: 1,
-        players: initial.players,
-      });
-      await act(async () => {
-        useGameStore.getState().setGameState(next);
-      });
-
-      await vi.waitFor(() => {
-        expect(screen.getByText("Opponent's Turn Ended")).toBeTruthy();
-        // Sabotage shows in the modal (plus once in the SecondaryPanel).
-        expect(screen.getAllByText("Sabotage").length).toBeGreaterThanOrEqual(2);
-      });
-    });
-
-    it("does not fire reactive prompt when player has no end_of_opponent_turn secondaries", async () => {
-      const initial = makeGameState({
-        activePlayer: 2,
-        currentPhase: "fight",
-        currentRound: 2,
-        currentTurn: 2,
-        players: [
-          makePlayerState({
-            secondaryMode: "tactical",
-            activeSecondaries: [mockActiveSecondary],
-          }),
-          makePlayerState({
-            userId: "user-2",
-            username: "Opponent",
-            playerNumber: 2,
-          }),
-        ],
-      });
-      useGameStore.getState().setGameState(initial);
-      localStorage.setItem("token", "test-token");
-
-      const testLink = ws.link("ws://localhost:8080/ws/game/*");
-      worker.use(
-        testLink.addEventListener("connection", ({ client }) => {
-          client.send(JSON.stringify({ type: "state_update", data: initial }));
-        }),
-      );
-
-      await act(async () => {
-        renderWithProviders(
-          <Routes>
-            <Route path="/game/:id" element={<GamePage />} />
-          </Routes>,
-          { user: mockUser, route: "/game/game-1" },
-        );
-      });
-
-      await vi.waitFor(() => {
-        expect(screen.getByText(/Opponent's Turn/)).toBeTruthy();
-      });
-
-      const next = makeGameState({
-        activePlayer: 1,
-        currentPhase: "command",
-        currentRound: 3,
-        currentTurn: 1,
-        players: initial.players,
-      });
-      await act(async () => {
-        useGameStore.getState().setGameState(next);
-      });
-
-      // Wait for the new turn banner so we know the transition was processed.
-      await vi.waitFor(() => {
-        expect(screen.getByText(/Your Turn/)).toBeTruthy();
-      });
-      expect(screen.queryByText("Opponent's Turn Ended")).toBeNull();
     });
   });
 

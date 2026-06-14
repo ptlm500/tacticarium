@@ -1,60 +1,39 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { ActiveSecondary } from "../../types/game";
+import { SecondaryCard } from "../../types/game";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { SecondaryDetailsModal } from "./SecondaryDetailsModal";
 import { SecondaryKanbanBoard } from "./SecondaryKanbanBoard";
-import { Pile, filterOptions } from "./secondaryPiles";
+import { Pile } from "./secondaryPiles";
 
 interface Props {
   mode: string;
-  activeSecondaries: ActiveSecondary[];
-  achievedSecondaries: ActiveSecondary[];
-  discardedSecondaries: ActiveSecondary[];
-  tacticalDeck: ActiveSecondary[];
-  currentRound: number;
+  secondaryHand: SecondaryCard[];
+  secondaryScored: SecondaryCard[];
+  secondaryDeck: SecondaryCard[];
   currentPhase: string;
   isMyTurn: boolean;
-  currentCP: number;
-  canGainCP: boolean;
-  newOrdersUsedThisPhase: boolean;
-  onAchieve: (secondaryId: string, vpScored: number) => void;
   onDiscard: (secondaryId: string, free: boolean) => void;
-  onNewOrders: (discardSecondaryId: string) => void;
-  onReshuffle: (secondaryId: string) => void;
   onDraw: () => void;
   onMove: (secondaryId: string, fromPile: Pile, toPile: Pile, vpScored?: number) => void;
-  onScoreFixedVP: (delta: number) => void;
 }
 
 export function SecondaryPanel({
   mode,
-  activeSecondaries,
-  achievedSecondaries,
-  discardedSecondaries,
-  tacticalDeck,
-  currentRound,
+  secondaryHand,
+  secondaryScored,
+  secondaryDeck,
   currentPhase,
   isMyTurn,
-  currentCP,
-  canGainCP,
-  newOrdersUsedThisPhase,
-  onAchieve,
   onDiscard,
-  onNewOrders,
-  onReshuffle,
   onDraw,
   onMove,
-  onScoreFixedVP,
 }: Props) {
-  const showNewOrders = isMyTurn && currentPhase === "command";
-  const showCPDiscard = isMyTurn && currentPhase === "fight";
   const canDraw = isMyTurn && currentPhase === "command";
   const [expanded, setExpanded] = useState(true);
   const [manageManually, setManageManually] = useState(false);
-  const [detailsCard, setDetailsCard] = useState<ActiveSecondary | null>(null);
-  const deckSize = tacticalDeck.length;
+  const [detailsCard, setDetailsCard] = useState<SecondaryCard | null>(null);
+  const deckSize = secondaryDeck.length;
 
   if (!mode) return null;
 
@@ -92,12 +71,12 @@ export function SecondaryPanel({
           )}
 
           {/* Active pile (only in non-manual mode — the kanban board renders all piles below) */}
-          {!showManual && activeSecondaries.length > 0 && (
+          {!showManual && secondaryHand.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Active
               </h3>
-              {activeSecondaries.map((s) => (
+              {secondaryHand.map((s) => (
                 <div key={s.id} className="rounded-sm border border-border/60 bg-background/40 p-3">
                   <button
                     type="button"
@@ -107,29 +86,12 @@ export function SecondaryPanel({
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <span className="text-sm font-medium text-foreground">{s.name}</span>
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {s.maxVp} VP max
-                      </span>
                     </div>
-                    <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">
-                      {s.description}
-                    </p>
+                    <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{s.text}</p>
                   </button>
 
-                  {isTactical ? (
+                  {isTactical && (
                     <div className="flex flex-wrap gap-2">
-                      {filterOptions(s.scoringOptions, "tactical").map((opt, i) => (
-                        <Button
-                          key={i}
-                          type="button"
-                          size="sm"
-                          onClick={() => onAchieve(s.id, opt.vp)}
-                          title={opt.label}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        >
-                          {opt.label} +{opt.vp}VP
-                        </Button>
-                      ))}
                       <Button
                         type="button"
                         size="sm"
@@ -138,66 +100,6 @@ export function SecondaryPanel({
                       >
                         Discard
                       </Button>
-                      {showCPDiscard && currentRound < 5 && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => onDiscard(s.id, false)}
-                          disabled={!canGainCP}
-                          className="bg-teal-700 text-white hover:bg-teal-800"
-                          title={
-                            canGainCP
-                              ? "End-of-turn discard: gain 1 CP"
-                              : "CP gain cap reached this battle round"
-                          }
-                        >
-                          {canGainCP ? "Discard +1CP" : "Discard (CP capped)"}
-                        </Button>
-                      )}
-                      {showNewOrders && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => onNewOrders(s.id)}
-                          disabled={currentCP < 1 || newOrdersUsedThisPhase}
-                          className="bg-amber-700 text-white hover:bg-amber-800"
-                          title={
-                            newOrdersUsedThisPhase
-                              ? "Already used this Command phase"
-                              : "Spend 1 CP to discard and draw a new secondary"
-                          }
-                        >
-                          New Orders
-                        </Button>
-                      )}
-                      {s.drawRestriction &&
-                        s.drawRestriction.mode === "optional" &&
-                        s.drawRestriction.round === currentRound && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => onReshuffle(s.id)}
-                            title="When Drawn: shuffle this card back into your deck and draw a replacement"
-                          >
-                            Shuffle Back
-                          </Button>
-                        )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {filterOptions(s.scoringOptions, "fixed").map((opt, i) => (
-                        <Button
-                          key={i}
-                          type="button"
-                          size="sm"
-                          onClick={() => onScoreFixedVP(opt.vp)}
-                          title={opt.label}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        >
-                          {opt.label} +{opt.vp}VP
-                        </Button>
-                      ))}
                     </div>
                   )}
                 </div>
@@ -205,7 +107,7 @@ export function SecondaryPanel({
             </div>
           )}
 
-          {isTactical && !showManual && activeSecondaries.length < 2 && deckSize > 0 && (
+          {isTactical && !showManual && secondaryHand.length < 2 && deckSize > 0 && (
             <Button
               type="button"
               onClick={onDraw}
@@ -226,10 +128,10 @@ export function SecondaryPanel({
           {/* Manual kanban board — drag cards between piles, mirrors the physical deck */}
           {showManual && (
             <SecondaryKanbanBoard
-              activeSecondaries={activeSecondaries}
-              achievedSecondaries={achievedSecondaries}
-              discardedSecondaries={discardedSecondaries}
-              tacticalDeck={tacticalDeck}
+              activeSecondaries={secondaryHand}
+              achievedSecondaries={secondaryScored}
+              discardedSecondaries={[]}
+              tacticalDeck={secondaryDeck}
               onMove={onMove}
               onSelect={setDetailsCard}
             />
@@ -237,26 +139,22 @@ export function SecondaryPanel({
 
           {isTactical && !showManual && (
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Deck: {deckSize} | Achieved: {achievedSecondaries.length} | Discarded:{" "}
-              {discardedSecondaries.length}
+              Deck: {deckSize} | Scored: {secondaryScored.length}
             </div>
           )}
 
-          {!showManual && achievedSecondaries.length > 0 && (
+          {!showManual && secondaryScored.length > 0 && (
             <div>
               <h3 className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Achieved
+                Scored
               </h3>
               <div className="space-y-1">
-                {achievedSecondaries.map((s, i) => (
+                {secondaryScored.map((s, i) => (
                   <button
                     type="button"
                     key={`${s.id}-${i}`}
                     onClick={() => setDetailsCard(s)}
-                    className={cn(
-                      "w-full rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-left transition-colors hover:bg-emerald-500/20",
-                      "text-xs text-emerald-400",
-                    )}
+                    className="w-full rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-left text-xs text-emerald-400 transition-colors hover:bg-emerald-500/20"
                     title="View full details"
                   >
                     {s.name}

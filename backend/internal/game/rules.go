@@ -1,97 +1,67 @@
 package game
 
-import "fmt"
-
 const (
-	MaxRounds      = 5
-	MaxVPPrimary   = 50
-	MaxVPSecondary = 40
-	MaxVPGambit    = 12
-	MaxVPPaint     = 10
-	MaxVPTotal     = 100
+	MaxRounds = 5
 
-	// CP gained by both players at the start of each Command Phase (every player turn)
+	// 11th edition VP caps. Primary and Secondary are each capped per game and
+	// per battle round; the per-game/per-round values are also carried on the
+	// mission card and may override these defaults.
+	DefaultVPPerGameCap  = 45
+	DefaultVPPerRoundCap = 15
+	MaxVPPaint           = 10
+
+	// MaxVPTotal is the hard ceiling on a player's total score: primary (45) +
+	// secondary (45) + paint (10).
+	MaxVPTotal = DefaultVPPerGameCap*2 + MaxVPPaint
+
+	// CP gained by both players when entering each Command phase (every turn).
 	CPPerCommandPhase = 1
-
-	// Challenger card constants
-	ChallengerVPThreshold = 6  // Must trail by this many VP
-	ChallengerCardVP      = 3  // Default VP for completing a challenger card mission
-	MaxVPCombined         = 90 // Primary + Secondary + Challenger combined cap
 )
 
-// ShouldGainCP returns true if CP should be auto-gained this command phase.
-// Both players gain 1 CP at the start of every Command Phase (each player turn).
-func ShouldGainCP(round int) bool {
-	return round >= 1
+// TurnStages is the ordered sequence of stages within a single player turn. 11th
+// edition wraps the five phases in explicit Start-of-Turn and End-of-Turn steps,
+// which anchor mission scoring timings.
+var TurnStages = []Phase{
+	PhaseStartOfTurn,
+	PhaseCommand,
+	PhaseMovement,
+	PhaseShooting,
+	PhaseCharge,
+	PhaseFight,
+	PhaseEndOfTurn,
 }
 
-func NextPhase(current Phase) (Phase, bool) {
-	for i, p := range PhaseOrder {
-		if p == current {
-			if i+1 < len(PhaseOrder) {
-				return PhaseOrder[i+1], false
+// nextStage returns the stage following current within a turn and whether the
+// turn has ended (i.e. current was the last stage).
+func nextStage(current Phase) (next Phase, turnEnded bool) {
+	for i, s := range TurnStages {
+		if s == current {
+			if i+1 < len(TurnStages) {
+				return TurnStages[i+1], false
 			}
-			// End of phases for this player's turn
-			return PhaseCommand, true
+			return TurnStages[0], true
 		}
 	}
-	return PhaseCommand, true
+	return TurnStages[0], true
 }
 
-// PrevPhase returns the previous phase within a single player turn. It is
-// only meaningful when current is not PhaseCommand; callers must handle the
-// cross-turn rollback separately.
-func PrevPhase(current Phase) Phase {
-	for i, p := range PhaseOrder {
-		if p == current && i > 0 {
-			return PhaseOrder[i-1]
+// prevStage returns the stage preceding current within a turn. It is only
+// meaningful when current is not the first stage; callers handle the cross-turn
+// rollback separately.
+func prevStage(current Phase) Phase {
+	for i, s := range TurnStages {
+		if s == current && i > 0 {
+			return TurnStages[i-1]
 		}
 	}
-	return PhaseCommand
+	return TurnStages[0]
 }
 
-// Primary scoring slots. These match the mission rule `scoringTiming` values
-// used by the frontend.
-const (
-	ScoringSlotEndOfCommandPhase = "end_of_command_phase"
-	ScoringSlotEndOfBattleRound  = "end_of_battle_round"
-	ScoringSlotEndOfTurn         = "end_of_turn"
-)
+// firstStage / lastStage name the turn bookends.
+func firstStage() Phase { return TurnStages[0] }
+func lastStage() Phase  { return TurnStages[len(TurnStages)-1] }
 
-func IsValidPrimaryScoringSlot(slot string) bool {
-	switch slot {
-	case ScoringSlotEndOfCommandPhase,
-		ScoringSlotEndOfBattleRound,
-		ScoringSlotEndOfTurn:
-		return true
-	}
-	return false
-}
-
-// primaryScoreLocator formats the trailing clause of error messages that
-// reference a specific (slot, ruleLabel, round) entry, omitting the rule
-// portion when no label was supplied.
-func primaryScoreLocator(slot, ruleLabel string, round int) string {
-	if ruleLabel == "" {
-		return fmt.Sprintf("at %s in round %d", PrimaryScoringSlotLabel(slot), round)
-	}
-	return fmt.Sprintf("for %q at %s in round %d", ruleLabel, PrimaryScoringSlotLabel(slot), round)
-}
-
-// PrimaryScoringSlotLabel returns the human-readable name for a primary
-// scoring slot. Falls back to the raw value for unknown slots.
-func PrimaryScoringSlotLabel(slot string) string {
-	switch slot {
-	case ScoringSlotEndOfCommandPhase:
-		return "End of Command Phase"
-	case ScoringSlotEndOfBattleRound:
-		return "End of Battle Round"
-	case ScoringSlotEndOfTurn:
-		return "End of Turn"
-	}
-	return slot
-}
-
+// ClampVP clamps value to [0, max].
 func ClampVP(value, max int) int {
 	if value < 0 {
 		return 0
