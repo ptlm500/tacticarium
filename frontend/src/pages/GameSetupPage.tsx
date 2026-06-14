@@ -13,9 +13,14 @@ import { SidePicker } from "../components/setup/SidePicker";
 import { ForceDispositionPicker } from "../components/setup/ForceDispositionPicker";
 import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
+import { FixedSecondaryPicker } from "../components/setup/FixedSecondaryPicker";
 import { ArmyPaintedToggle } from "../components/setup/ArmyPaintedToggle";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
-import { useForceDispositions } from "../hooks/queries/useMissionQueries";
+import { useForceDispositions, useSecondaryCards } from "../hooks/queries/useMissionQueries";
+
+// Mirrors the backend FixedSecondaryCount: a fixed-mode player keeps this many
+// secondary cards for the whole game.
+const FIXED_SECONDARY_COUNT = 2;
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -36,6 +41,7 @@ export function GameSetupPage() {
 
   const { data: factions = [] } = useFactions();
   const { data: dispositions = [] } = useForceDispositions();
+  const { data: secondaryCards = [] } = useSecondaryCards();
 
   const [copied, setCopied] = useState(false);
 
@@ -123,6 +129,13 @@ export function GameSetupPage() {
     [sendAction],
   );
 
+  const handleFixedSecondariesChange = useCallback(
+    (secondaryIds: string[]) => {
+      sendAction("select_fixed_secondaries", { secondaryIds });
+    },
+    [sendAction],
+  );
+
   const handleTogglePainted = useCallback(
     (painted: boolean) => {
       sendAction("set_paint_score", { score: painted ? 10 : 0 });
@@ -162,10 +175,23 @@ export function GameSetupPage() {
   const hasMission = !!myPlayer?.missionId;
   const hasFirstPlayer = (gameState.firstTurnPlayer ?? 0) > 0;
   const hasMode = !!myPlayer?.secondaryMode;
+  const fixedSecondaryIds = myPlayer?.fixedSecondaryIds ?? [];
+  // Fixed players must pick their set; tactical players are dealt their deck at
+  // game start, so the mode choice is enough.
+  const hasSecondaries =
+    myPlayer?.secondaryMode === "fixed"
+      ? fixedSecondaryIds.length === FIXED_SECONDARY_COUNT
+      : hasMode;
   // Mission resolution waits on the opponent's disposition, so it is not gated
   // on — readiness only needs the local player's own choices.
   const canReady =
-    hasFaction && hasDetachment && hasSide && hasDisposition && hasFirstPlayer && hasMode;
+    hasFaction &&
+    hasDetachment &&
+    hasSide &&
+    hasDisposition &&
+    hasFirstPlayer &&
+    hasMode &&
+    hasSecondaries;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -317,10 +343,20 @@ export function GameSetupPage() {
 
         {hasFirstPlayer && (
           <HUDFrame label="Secondary Missions">
-            <SecondaryModePicker
-              mode={myPlayer?.secondaryMode || ""}
-              onModeChange={handleModeChange}
-            />
+            <div className="space-y-4">
+              <SecondaryModePicker
+                mode={myPlayer?.secondaryMode || ""}
+                onModeChange={handleModeChange}
+              />
+              {myPlayer?.secondaryMode === "fixed" && (
+                <FixedSecondaryPicker
+                  cards={secondaryCards}
+                  selectedIds={fixedSecondaryIds}
+                  max={FIXED_SECONDARY_COUNT}
+                  onChange={handleFixedSecondariesChange}
+                />
+              )}
+            </div>
           </HUDFrame>
         )}
 

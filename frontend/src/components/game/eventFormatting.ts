@@ -111,6 +111,11 @@ export function formatEvent(event: NormalizedEvent, players?: PlayerInfoMap): st
       return `${player} chose ${s(event.data?.dispositionName, "a force disposition")}`;
     case "side_selected":
       return `${player} is the ${s(event.data?.side)}`;
+    case "fixed_secondaries_selected": {
+      const ids = event.data?.secondaryIds;
+      const count = Array.isArray(ids) ? ids.length : 0;
+      return `${player} locked in ${count} fixed secondary mission${count === 1 ? "" : "s"}`;
+    }
     case "objective_control_changed": {
       const idx = (event.data?.objectiveIndex as number | undefined) ?? 0;
       const by = event.data?.controlledBy as number | undefined;

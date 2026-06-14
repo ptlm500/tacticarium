@@ -499,6 +499,75 @@ describe("GameSetupPage", () => {
     });
   });
 
+  it("shows the fixed-secondary picker in fixed mode and sends select_fixed_secondaries", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      firstTurnPlayer: 1,
+      players: [
+        makePlayerState({
+          detachmentId: "det-gladius",
+          detachmentName: "Gladius Task Force",
+          side: "attacker",
+          forceDisposition: "take-and-hold",
+          forceDispositionName: "Take and Hold",
+          secondaryMode: "fixed",
+          fixedSecondaryIds: [],
+          ready: false,
+        }),
+        null,
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const sentActions: Array<Record<string, unknown>> = [];
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+        client.addEventListener("message", (ev) => {
+          if (typeof ev.data !== "string") return;
+          try {
+            const parsed = JSON.parse(ev.data);
+            if (parsed?.type === "action" && parsed.data) {
+              sentActions.push(parsed.data as Record<string, unknown>);
+            }
+          } catch {
+            // ignore non-JSON frames
+          }
+        });
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
+
+    const user = userEvent.setup();
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("Choose 2 fixed secondaries (0/2)")).toBeTruthy();
+      expect(screen.getByText("Behind Enemy Lines")).toBeTruthy();
+      expect(screen.getByText("Assassination")).toBeTruthy();
+    });
+
+    // Fixed players can't ready until they've chosen their set.
+    expect(screen.getByText("Ready Up").closest("button")!.hasAttribute("disabled")).toBe(true);
+
+    await user.click(screen.getByText("Behind Enemy Lines"));
+
+    await vi.waitFor(() => {
+      const action = sentActions.find((a) => a.type === "select_fixed_secondaries");
+      expect(action).toBeTruthy();
+      expect(action!.secondaryIds).toEqual(["sec-behind-lines"]);
+    });
+  });
+
   it("shows the resolved primary mission and caps once it is assigned", async () => {
     const gs = makeGameState({
       status: "setup",

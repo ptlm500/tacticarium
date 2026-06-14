@@ -30,6 +30,7 @@ export function makePlayerState(overrides?: Partial<PlayerState>): PlayerState {
     vpPaint: 0,
     ready: false,
     secondaryMode: "tactical",
+    fixedSecondaryIds: [],
     secondaryDeck: [],
     secondaryHand: [],
     secondaryScored: [],

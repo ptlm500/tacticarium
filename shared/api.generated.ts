@@ -723,6 +723,7 @@ export interface components {
             detachmentName: string;
             factionId: string;
             factionName: string;
+            fixedSecondaryIds: string[] | null;
             forceDisposition?: string;
             forceDispositionName?: string;
             missionId?: string;
