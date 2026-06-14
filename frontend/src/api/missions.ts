@@ -1,20 +1,16 @@
 import { api } from "./client";
 import {
-  MissionPack,
+  ForceDisposition,
   Mission,
-  Secondary,
-  Gambit,
-  MissionRule,
-  ChallengerCard,
+  MissionMatchup,
+  MissionCard,
+  DeploymentPattern,
 } from "../types/mission";
 
 export const missionsApi = {
-  listPacks: () => api.get<MissionPack[]>("/api/mission-packs"),
-  listMissions: (packId: string) => api.get<Mission[]>(`/api/mission-packs/${packId}/missions`),
-  listSecondaries: (packId: string) =>
-    api.get<Secondary[]>(`/api/mission-packs/${packId}/secondaries`),
-  listGambits: (packId: string) => api.get<Gambit[]>(`/api/mission-packs/${packId}/gambits`),
-  listRules: (packId: string) => api.get<MissionRule[]>(`/api/mission-packs/${packId}/rules`),
-  listChallengerCards: (packId: string) =>
-    api.get<ChallengerCard[]>(`/api/mission-packs/${packId}/challenger-cards`),
+  listForceDispositions: () => api.get<ForceDisposition[]>("/api/force-dispositions"),
+  listMissions: () => api.get<Mission[]>("/api/missions"),
+  listMissionMatchups: () => api.get<MissionMatchup[]>("/api/mission-matchups"),
+  listSecondaryCards: () => api.get<MissionCard[]>("/api/secondary-cards"),
+  listDeploymentPatterns: () => api.get<DeploymentPattern[]>("/api/deployment-patterns"),
 };

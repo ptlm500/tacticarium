@@ -7,15 +7,6 @@ type Schemas = components["schemas"];
 export type Faction = Schemas["Faction"] & { id: string };
 export type Detachment = Schemas["Detachment"] & { id: string };
 export type Stratagem = Schemas["Stratagem"] & { id: string };
-export type MissionPack = Schemas["MissionPack"] & { id: string };
-export type ScoringAction = Schemas["ScoringAction"];
-export type Mission = Schemas["Mission"] & { id: string };
-export type ScoringOption = Schemas["ScoringOption"];
-export type DrawRestriction = Schemas["DrawRestriction"];
-export type Secondary = Schemas["Secondary"] & { id: string };
-export type Gambit = Schemas["Gambit"] & { id: string };
-export type ChallengerCard = Schemas["ChallengerCard"] & { id: string };
-export type MissionRule = Schemas["MissionRule"] & { id: string };
 
 export interface ImportResult {
   entity: string;
@@ -40,13 +31,13 @@ function crud<T>(path: string) {
 export const adminApi = {
   factions: crud<Faction>("/factions"),
   detachments: crud<Detachment>("/detachments"),
-  stratagems: crud<Stratagem>("/stratagems"),
-  missionPacks: crud<MissionPack>("/mission-packs"),
-  missions: crud<Mission>("/missions"),
-  secondaries: crud<Secondary>("/secondaries"),
-  gambits: crud<Gambit>("/gambits"),
-  challengerCards: crud<ChallengerCard>("/challenger-cards"),
-  missionRules: crud<MissionRule>("/mission-rules"),
+  // Stratagems are read-only in 11th edition: only the list endpoint exists.
+  stratagems: {
+    list: (params?: Record<string, string>) => {
+      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+      return api.get<Stratagem[]>(`${base}/stratagems${qs}`);
+    },
+  },
 
   import: {
     factions: (file: File) => uploadFile<ImportResult>(`${base}/import/factions`, file),

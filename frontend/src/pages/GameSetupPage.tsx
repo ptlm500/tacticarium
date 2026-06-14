@@ -15,7 +15,7 @@ import { FirstPlayerPicker } from "../components/setup/FirstPlayerPicker";
 import { SecondaryModePicker } from "../components/setup/SecondaryModePicker";
 import { ArmyPaintedToggle } from "../components/setup/ArmyPaintedToggle";
 import { useFactions, useDetachments } from "../hooks/queries/useFactionQueries";
-import { useMissions, useSecondaries } from "../hooks/queries/useMissionQueries";
+import { useMissions, useSecondaryCards } from "../hooks/queries/useMissionQueries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -23,8 +23,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ShareSpectateButton } from "../components/game/ShareSpectateButton";
 import { cn } from "@/lib/utils";
-
-const PACK_ID = "chapter-approved-2025-26";
 
 export function GameSetupPage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -37,8 +35,8 @@ export function GameSetupPage() {
   const { connected, reconnecting, sendAction } = useGameConnection(gameId!, token);
 
   const { data: factions = [] } = useFactions();
-  const { data: missions = [] } = useMissions(PACK_ID);
-  const { data: secondaries = [] } = useSecondaries(PACK_ID);
+  const { data: missions = [] } = useMissions();
+  const { data: secondaryCards = [] } = useSecondaryCards();
 
   const [selectedFixedIds, setSelectedFixedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
@@ -48,8 +46,10 @@ export function GameSetupPage() {
 
   const { data: detachments = [] } = useDetachments(myPlayer?.factionId);
 
-  const fixedSecondaries = secondaries.filter((s) => s.isFixed);
-  const tacticalSecondaries = secondaries.filter((s) => !s.isFixed);
+  // The 11e secondary-card pool is no longer split into fixed/tactical sets by
+  // the reference data; both pickers draw from the same card list.
+  const fixedSecondaries = secondaryCards;
+  const tacticalSecondaries = secondaryCards;
 
   useEffect(() => {
     if (gameState?.gameId === gameId && gameState?.status === "active") {
@@ -86,7 +86,6 @@ export function GameSetupPage() {
   const handleSelectMission = useCallback(
     (mission: Mission) => {
       sendAction("select_primary_mission", {
-        missionPackId: PACK_ID,
         missionId: mission.id,
         missionName: mission.name,
       });
@@ -98,7 +97,6 @@ export function GameSetupPage() {
     if (missions.length === 0) return;
     const m = missions[Math.floor(Math.random() * missions.length)];
     sendAction("select_primary_mission", {
-      missionPackId: PACK_ID,
       missionId: m.id,
       missionName: m.name,
     });

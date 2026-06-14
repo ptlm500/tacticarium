@@ -48,7 +48,7 @@ export function SpectatorPage() {
     setEvents(seeded);
   }, [historicalEvents, setEvents]);
 
-  const { data: allMissions = [] } = useMissions("chapter-approved-2025-26");
+  const { data: allMissions = [] } = useMissions();
 
   const [showLog, setShowLog] = useState(false);
   const [scoringSelection, setScoringSelection] = useState<CellSelection | null>(null);

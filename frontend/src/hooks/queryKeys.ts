@@ -19,8 +19,10 @@ export const queryKeys = {
   },
   missions: {
     all: ["missions"] as const,
-    list: (packId: string) => ["missions", "list", packId] as const,
-    rules: (packId: string) => ["missions", "rules", packId] as const,
-    secondaries: (packId: string) => ["missions", "secondaries", packId] as const,
+    list: () => ["missions", "list"] as const,
+    forceDispositions: () => ["missions", "force-dispositions"] as const,
+    matchups: () => ["missions", "matchups"] as const,
+    secondaryCards: () => ["missions", "secondary-cards"] as const,
+    deploymentPatterns: () => ["missions", "deployment-patterns"] as const,
   },
 } as const;

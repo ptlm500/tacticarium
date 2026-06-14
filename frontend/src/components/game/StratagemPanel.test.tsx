@@ -170,20 +170,17 @@ describe("StratagemPanel", () => {
     expect(screen.queryByLabelText(/CP to spend/i)).toBeNull();
   });
 
-  it("renders legend text when provided", () => {
-    const stratagemWithLegend = {
-      ...mockStratagems[0],
-      legend: "A powerful re-roll ability",
-    };
+  it("renders the stratagem timing metadata (player turn, phases, timing)", () => {
     render(
       <StratagemPanel
-        stratagems={[stratagemWithLegend]}
+        stratagems={[mockStratagems[0]]}
         currentCP={5}
         usedThisPhase={[]}
         onUse={vi.fn()}
       />,
     );
-    expect(screen.getByText("A powerful re-roll ability")).toBeTruthy();
+    // The panel renders "<playerTurn> | <phases> | <timing>" on one line.
+    expect(screen.getByText(/Either player's turn/)).toBeTruthy();
   });
 
   it("does not show repeat-use warning when stratagem is not in usedThisPhase", async () => {

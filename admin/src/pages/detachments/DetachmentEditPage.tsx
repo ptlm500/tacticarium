@@ -11,7 +11,7 @@ export function DetachmentEditPage() {
     id: "",
     factionId: "",
     name: "",
-    gameMode: "core",
+    forceDispositions: [],
   });
   const [factions, setFactions] = useState<Faction[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function DetachmentEditPage() {
     if (id)
       adminApi.detachments
         .get(id)
-        .then((d) => setForm({ ...d, gameMode: d.gameMode ?? "core" }))
+        .then((d) => setForm({ ...d, forceDispositions: d.forceDispositions ?? [] }))
         .catch(() => navigate("/detachments"));
   }, [id, navigate]);
 
@@ -88,18 +88,36 @@ export function DetachmentEditPage() {
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Game Mode</label>
-          <select
-            value={form.gameMode ?? "core"}
-            onChange={(e) => setForm({ ...form, gameMode: e.target.value })}
+          <label className="block text-sm text-gray-400 mb-1">Detachment Points</label>
+          <input
+            type="number"
+            value={form.detachmentPoints ?? ""}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                detachmentPoints: e.target.value === "" ? undefined : Number(e.target.value),
+              })
+            }
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
-          >
-            <option value="core">Core</option>
-            <option value="boarding_actions">Boarding Actions</option>
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            Only Core detachments are visible to players. Boarding Actions content is hidden.
-          </p>
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Force Dispositions</label>
+          <textarea
+            value={(form.forceDispositions ?? []).join("\n")}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                forceDispositions: e.target.value
+                  .split("\n")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">One disposition ID per line.</p>
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <div className="flex gap-2">

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,143 +16,106 @@ func NewMissionHandler(db *pgxpool.Pool) *MissionHandler {
 	return &MissionHandler{db: db}
 }
 
-func (h *MissionHandler) ListMissionPacks(ctx context.Context, input *struct{}) (*MissionPackListOutput, error) {
-	rows, err := h.db.Query(ctx, `SELECT id, name, COALESCE(description, '') FROM mission_packs ORDER BY name`)
+// ListForceDispositions returns the five 11e force dispositions.
+func (h *MissionHandler) ListForceDispositions(ctx context.Context, input *struct{}) (*ForceDispositionListOutput, error) {
+	rows, err := h.db.Query(ctx, `SELECT id, name, text FROM force_dispositions ORDER BY name`)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
-	packs := make([]models.MissionPack, 0)
+	out := make([]models.ForceDisposition, 0)
 	for rows.Next() {
-		var p models.MissionPack
-		if err := rows.Scan(&p.ID, &p.Name, &p.Description); err != nil {
+		var d models.ForceDisposition
+		if err := rows.Scan(&d.ID, &d.Name, &d.Text); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		packs = append(packs, p)
+		out = append(out, d)
 	}
-
-	return &MissionPackListOutput{Body: packs}, nil
+	return &ForceDispositionListOutput{Body: out}, nil
 }
 
-func (h *MissionHandler) ListMissions(ctx context.Context, input *PackIDParam) (*MissionListOutput, error) {
+// ListMissions returns the 11e primary mission objective records.
+func (h *MissionHandler) ListMissions(ctx context.Context, input *struct{}) (*MissionListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, lore, description, scoring_rules, scoring_timing
-		 FROM missions WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
+		`SELECT id, name, vp_per_game_cap, vp_per_round_cap, deployment_pattern_ids
+		 FROM primary_missions ORDER BY name`)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
-	missions := make([]models.Mission, 0)
+	out := make([]models.Mission, 0)
 	for rows.Next() {
 		var m models.Mission
-		var scoringJSON []byte
-		if err := rows.Scan(&m.ID, &m.MissionPackID, &m.Name, &m.Lore, &m.Description, &scoringJSON, &m.ScoringTiming); err != nil {
+		if err := rows.Scan(&m.ID, &m.Name, &m.VPPerGameCap, &m.VPPerRoundCap, &m.DeploymentPatternIDs); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		_ = json.Unmarshal(scoringJSON, &m.ScoringRules)
-		if m.ScoringRules == nil {
-			m.ScoringRules = []models.ScoringAction{}
-		}
-		missions = append(missions, m)
+		out = append(out, m)
 	}
-
-	return &MissionListOutput{Body: missions}, nil
+	return &MissionListOutput{Body: out}, nil
 }
 
-func (h *MissionHandler) ListSecondaries(ctx context.Context, input *PackIDParam) (*SecondaryListOutput, error) {
+// ListMissionMatchups returns the 5x5 disposition selector matrix.
+func (h *MissionHandler) ListMissionMatchups(ctx context.Context, input *struct{}) (*MissionMatchupListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, lore, description, max_vp, is_fixed, scoring_options, draw_restriction, scoring_timing
-		 FROM secondaries WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
+		`SELECT id, disposition, opponent_disposition, mission_id FROM mission_matchups ORDER BY id`)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
-	secondaries := make([]models.Secondary, 0)
+	out := make([]models.MissionMatchup, 0)
 	for rows.Next() {
-		var s models.Secondary
-		var optionsJSON []byte
-		var drawJSON []byte
-		if err := rows.Scan(&s.ID, &s.MissionPackID, &s.Name, &s.Lore, &s.Description, &s.MaxVP, &s.IsFixed, &optionsJSON, &drawJSON, &s.ScoringTiming); err != nil {
+		var m models.MissionMatchup
+		if err := rows.Scan(&m.ID, &m.Disposition, &m.OpponentDisposition, &m.MissionID); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		_ = json.Unmarshal(optionsJSON, &s.ScoringOptions)
-		if s.ScoringOptions == nil {
-			s.ScoringOptions = []models.ScoringOption{}
-		}
-		if len(drawJSON) > 0 {
-			var dr models.DrawRestriction
-			if err := json.Unmarshal(drawJSON, &dr); err == nil {
-				s.DrawRestriction = &dr
-			}
-		}
-		secondaries = append(secondaries, s)
+		out = append(out, m)
 	}
-
-	return &SecondaryListOutput{Body: secondaries}, nil
+	return &MissionMatchupListOutput{Body: out}, nil
 }
 
-func (h *MissionHandler) ListMissionRules(ctx context.Context, input *PackIDParam) (*MissionRuleListOutput, error) {
+// ListSecondaryCards returns the secondary mission deck.
+func (h *MissionHandler) ListSecondaryCards(ctx context.Context, input *struct{}) (*CardListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, lore, description
-		 FROM mission_rules WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
+		`SELECT id, name, card_type, COALESCE(subtype, ''), text
+		 FROM cards WHERE card_type = 'secondary' ORDER BY name`)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
-	rules := make([]models.MissionRule, 0)
+	out := make([]models.MissionCard, 0)
 	for rows.Next() {
-		var mr models.MissionRule
-		if err := rows.Scan(&mr.ID, &mr.MissionPackID, &mr.Name, &mr.Lore, &mr.Description); err != nil {
+		var c models.MissionCard
+		if err := rows.Scan(&c.ID, &c.Name, &c.CardType, &c.Subtype, &c.Text); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		rules = append(rules, mr)
+		out = append(out, c)
 	}
-
-	return &MissionRuleListOutput{Body: rules}, nil
+	return &CardListOutput{Body: out}, nil
 }
 
-func (h *MissionHandler) ListChallengerCards(ctx context.Context, input *PackIDParam) (*ChallengerCardListOutput, error) {
+// ListDeploymentPatterns returns the board deployment patterns.
+func (h *MissionHandler) ListDeploymentPatterns(ctx context.Context, input *struct{}) (*DeploymentPatternListOutput, error) {
 	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, lore, description
-		 FROM challenger_cards WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
+		`SELECT id, name, COALESCE(source, ''), COALESCE(description, ''),
+		        objectives, territories, zones, recommended_terrain_layout_ids
+		 FROM deployment_patterns ORDER BY name`)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("database error")
 	}
 	defer rows.Close()
 
-	cards := make([]models.ChallengerCard, 0)
+	out := make([]models.DeploymentPattern, 0)
 	for rows.Next() {
-		var c models.ChallengerCard
-		if err := rows.Scan(&c.ID, &c.MissionPackID, &c.Name, &c.Lore, &c.Description); err != nil {
+		var p models.DeploymentPattern
+		if err := rows.Scan(&p.ID, &p.Name, &p.Source, &p.Description,
+			&p.Objectives, &p.Territories, &p.Zones, &p.RecommendedTerrainLayoutIDs); err != nil {
 			return nil, huma.Error500InternalServerError("scan error")
 		}
-		cards = append(cards, c)
+		out = append(out, p)
 	}
-
-	return &ChallengerCardListOutput{Body: cards}, nil
-}
-
-func (h *MissionHandler) ListGambits(ctx context.Context, input *PackIDParam) (*GambitListOutput, error) {
-	rows, err := h.db.Query(ctx,
-		`SELECT id, mission_pack_id, name, description, vp_value
-		 FROM gambits WHERE mission_pack_id = $1 ORDER BY name`, input.PackID)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("database error")
-	}
-	defer rows.Close()
-
-	gambits := make([]models.Gambit, 0)
-	for rows.Next() {
-		var g models.Gambit
-		if err := rows.Scan(&g.ID, &g.MissionPackID, &g.Name, &g.Description, &g.VPValue); err != nil {
-			return nil, huma.Error500InternalServerError("scan error")
-		}
-		gambits = append(gambits, g)
-	}
-
-	return &GambitListOutput{Body: gambits}, nil
+	return &DeploymentPatternListOutput{Body: out}, nil
 }

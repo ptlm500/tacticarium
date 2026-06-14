@@ -4,8 +4,7 @@ import {
   mockFactions,
   mockDetachments,
   mockMissions,
-  mockRules,
-  mockSecondaries,
+  mockSecondaryCards,
 } from "../../test/fixtures";
 
 const API_URL = "http://localhost:8080";
@@ -33,24 +32,24 @@ export const restHandlers = [
     return HttpResponse.json([]);
   }),
 
-  // Missions
-  http.get(`${API_URL}/api/mission-packs/:packId/missions`, () => {
+  // Missions / reference data
+  http.get(`${API_URL}/api/missions`, () => {
     return HttpResponse.json(mockMissions);
   }),
 
-  http.get(`${API_URL}/api/mission-packs/:packId/rules`, () => {
-    return HttpResponse.json(mockRules);
+  http.get(`${API_URL}/api/secondary-cards`, () => {
+    return HttpResponse.json(mockSecondaryCards);
   }),
 
-  http.get(`${API_URL}/api/mission-packs/:packId/secondaries`, () => {
-    return HttpResponse.json(mockSecondaries);
-  }),
-
-  http.get(`${API_URL}/api/mission-packs/:packId/gambits`, () => {
+  http.get(`${API_URL}/api/force-dispositions`, () => {
     return HttpResponse.json([]);
   }),
 
-  http.get(`${API_URL}/api/mission-packs/:packId/challenger-cards`, () => {
+  http.get(`${API_URL}/api/mission-matchups`, () => {
+    return HttpResponse.json([]);
+  }),
+
+  http.get(`${API_URL}/api/deployment-patterns`, () => {
     return HttpResponse.json([]);
   }),
 

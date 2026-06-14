@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type User struct {
 	ID              string    `json:"id"`
@@ -12,104 +15,78 @@ type User struct {
 }
 
 type Faction struct {
-	ID            string `json:"id" required:"false"`
-	Name          string `json:"name"`
-	WahapediaLink string `json:"wahapediaLink,omitempty"`
+	ID              string `json:"id" required:"false"`
+	Name            string `json:"name"`
+	ParentFactionID string `json:"parentFactionId,omitempty"`
+	FactionRuleID   string `json:"factionRuleId,omitempty"`
 }
 
 type Detachment struct {
-	ID        string `json:"id" required:"false"`
-	FactionID string `json:"factionId"`
-	Name      string `json:"name"`
-	GameMode  string `json:"gameMode,omitempty"`
+	ID                string   `json:"id" required:"false"`
+	FactionID         string   `json:"factionId"`
+	Name              string   `json:"name"`
+	DetachmentPoints  int      `json:"detachmentPoints,omitempty"`
+	ForceDispositions []string `json:"forceDispositions"`
 }
 
 type Stratagem struct {
-	ID           string `json:"id" required:"false"`
-	FactionID    string `json:"factionId"`
-	DetachmentID string `json:"detachmentId,omitempty"`
-	Name         string `json:"name"`
-	Type         string `json:"type"`
-	CPCost       int    `json:"cpCost"`
-	Legend       string `json:"legend,omitempty"`
-	Turn         string `json:"turn"`
-	Phase        string `json:"phase"`
-	Description  string `json:"description"`
-	GameMode     string `json:"gameMode,omitempty"`
+	ID           string   `json:"id" required:"false"`
+	FactionID    string   `json:"factionId,omitempty"`
+	DetachmentID string   `json:"detachmentId,omitempty"`
+	Name         string   `json:"name"`
+	Type         string   `json:"type,omitempty"`
+	Category     string   `json:"category,omitempty"`
+	CPCost       int      `json:"cpCost"`
+	Phases       []string `json:"phases"`
+	PlayerTurn   string   `json:"playerTurn,omitempty"`
+	Timing       string   `json:"timing,omitempty"`
 }
 
-type MissionPack struct {
-	ID          string `json:"id" required:"false"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+// ForceDisposition is one of the five 11e strategic-intent tags.
+type ForceDisposition struct {
+	ID   string `json:"id" required:"false"`
+	Name string `json:"name"`
+	Text string `json:"text,omitempty"`
 }
 
-type ScoringAction struct {
-	Label         string `json:"label"`
-	VP            int    `json:"vp"`
-	MinRound      int    `json:"minRound,omitempty"`
-	Desc          string `json:"description,omitempty"`
-	ScoringTiming string `json:"scoringTiming,omitempty"`
-}
-
+// Mission is the 11e primary mission objective record.
 type Mission struct {
-	ID            string          `json:"id" required:"false"`
-	MissionPackID string          `json:"missionPackId"`
-	Name          string          `json:"name"`
-	Lore          string          `json:"lore,omitempty"`
-	Description   string          `json:"description"`
-	ScoringRules  []ScoringAction `json:"scoringRules"`
-	ScoringTiming string          `json:"scoringTiming"`
+	ID                   string   `json:"id" required:"false"`
+	Name                 string   `json:"name"`
+	VPPerGameCap         int      `json:"vpPerGameCap"`
+	VPPerRoundCap        int      `json:"vpPerRoundCap"`
+	DeploymentPatternIDs []string `json:"deploymentPatternIds"`
 }
 
-type MissionRule struct {
-	ID            string `json:"id" required:"false"`
-	MissionPackID string `json:"missionPackId"`
-	Name          string `json:"name"`
-	Lore          string `json:"lore,omitempty"`
-	Description   string `json:"description"`
+// MissionMatchup is one cell of the 5x5 disposition selector matrix.
+type MissionMatchup struct {
+	ID                  string `json:"id" required:"false"`
+	Disposition         string `json:"disposition"`
+	OpponentDisposition string `json:"opponentDisposition"`
+	MissionID           string `json:"missionId"`
 }
 
-type ScoringOption struct {
-	Label string `json:"label"`
-	VP    int    `json:"vp"`
-	Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
+// Card is an 11e mission/secondary card (primary mission cards and the
+// secondary deck). The awards DSL is internal to scoring; the API exposes the
+// community-authored prose.
+type MissionCard struct {
+	ID       string `json:"id" required:"false"`
+	Name     string `json:"name"`
+	CardType string `json:"cardType"`
+	Subtype  string `json:"subtype,omitempty"`
+	Text     string `json:"text,omitempty"`
 }
 
-type DrawRestriction struct {
-	Round int    `json:"round"`
-	Mode  string `json:"mode"` // "mandatory" or "optional"
-}
-
-type Secondary struct {
-	ID              string           `json:"id" required:"false"`
-	MissionPackID   string           `json:"missionPackId"`
-	Name            string           `json:"name"`
-	Lore            string           `json:"lore,omitempty"`
-	Description     string           `json:"description"`
-	MaxVP           int              `json:"maxVp"`
-	IsFixed         bool             `json:"isFixed"`
-	ScoringOptions  []ScoringOption  `json:"scoringOptions"`
-	DrawRestriction *DrawRestriction `json:"drawRestriction,omitempty"`
-	// ScoringTiming controls when the frontend prompts the owner to score.
-	// "end_of_own_turn" (default) or "end_of_opponent_turn".
-	ScoringTiming string `json:"scoringTiming,omitempty"`
-}
-
-type ChallengerCard struct {
-	ID            string `json:"id" required:"false"`
-	MissionPackID string `json:"missionPackId"`
-	Name          string `json:"name"`
-	Lore          string `json:"lore,omitempty"`
-	Description   string `json:"description"`
-}
-
-type Gambit struct {
-	ID            string `json:"id" required:"false"`
-	MissionPackID string `json:"missionPackId"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	VPValue       int    `json:"vpValue"`
+// DeploymentPattern carries the board geometry for the frontend board view.
+type DeploymentPattern struct {
+	ID                          string          `json:"id" required:"false"`
+	Name                        string          `json:"name"`
+	Source                      string          `json:"source,omitempty"`
+	Description                 string          `json:"description,omitempty"`
+	Objectives                  json.RawMessage `json:"objectives" doc:"Objective coordinates" type:"array"`
+	Territories                 json.RawMessage `json:"territories" type:"array"`
+	Zones                       json.RawMessage `json:"zones" type:"array"`
+	RecommendedTerrainLayoutIDs []string        `json:"recommendedTerrainLayoutIds"`
 }
 
 type GameSummary struct {

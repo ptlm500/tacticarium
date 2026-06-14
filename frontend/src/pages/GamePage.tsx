@@ -14,7 +14,6 @@ import { VPCounter } from "../components/game/VPCounter";
 import { StratagemPanel } from "../components/game/StratagemPanel";
 import { SecondaryPanel } from "../components/game/SecondaryPanel";
 import { MissionInfo } from "../components/game/MissionInfo";
-import { MissionScoring } from "../components/game/MissionScoring";
 import { PrimaryScoreHistory } from "../components/game/PrimaryScoreHistory";
 import { GameLog } from "../components/game/GameLog";
 import { PlayerAvatar } from "../components/game/PlayerAvatar";
@@ -39,8 +38,6 @@ import { HUDFrame } from "@/components/ui/hud-frame";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { ShareSpectateButton } from "../components/game/ShareSpectateButton";
-
-const PACK_ID = "chapter-approved-2025-26";
 
 export function GamePage() {
   const { id: gameId } = useParams<{ id: string }>();
@@ -103,26 +100,29 @@ export function GamePage() {
     isError: stratagemsError,
     refetch: refetchStratagems,
   } = useStratagems(myPlayer?.factionId);
-  const { data: allMissions = [] } = useMissions(PACK_ID);
+  const { data: allMissions = [] } = useMissions();
 
   // Mission is now per-player in 11th edition. Resolve it from the viewing
-  // player's missionId against the mission pack.
+  // player's missionId against the mission list.
   const currentMission = allMissions.find((m) => m.id === myPlayer?.missionId) ?? null;
 
   const availableStratagems = stratagems.filter((s) => {
     if (!gameState) return false;
 
     const phase = gameState.currentPhase;
+    const phases = s.phases ?? [];
     const phaseMatch =
-      s.phase === "Any phase" || s.phase.toLowerCase().includes(phase.toLowerCase());
+      phases.length === 0 ||
+      phases.some((p) => p === "Any phase" || p.toLowerCase().includes(phase.toLowerCase()));
 
-    const turnMatch = isMyTurn
-      ? s.turn === "Your turn" || s.turn === "Either player's turn"
-      : s.turn === "Opponent's turn" || s.turn === "Either player's turn";
+    const turnMatch =
+      !s.playerTurn ||
+      s.playerTurn === "Either player's turn" ||
+      (isMyTurn ? s.playerTurn === "Your turn" : s.playerTurn === "Opponent's turn");
 
     const detachmentMatch = !s.detachmentId || s.detachmentId === myPlayer?.detachmentId;
 
-    const isChallenger = s.type.startsWith("Challenger \u2013 ");
+    const isChallenger = s.type?.startsWith("Challenger \u2013 ") ?? false;
 
     return phaseMatch && turnMatch && detachmentMatch && !isChallenger;
   });
@@ -137,66 +137,14 @@ export function GamePage() {
     if (!gameState || !myPlayer) return;
 
     const phase = gameState.currentPhase;
-    const round = gameState.currentRound;
-    const isSecondPlayerTurn = gameState.currentTurn === 2;
     const isFightPhase = phase === "fight";
     const isCommandPhase = phase === "command";
-    const scoringTiming = currentMission?.scoringTiming || "end_of_command_phase";
 
     const items: ScoringPromptItem[] = [];
 
-    if (currentMission) {
-      if (scoringTiming === "end_of_command_phase") {
-        if (isCommandPhase && round >= 2) {
-          items.push({
-            kind: "primary",
-            missionName: currentMission.name,
-            scoringRules: (currentMission.scoringRules ?? []).filter(
-              (r) => !r.scoringTiming || r.scoringTiming === "end_of_command_phase",
-            ),
-            currentRound: round,
-            scoringSlot: "end_of_command_phase",
-          });
-        }
-        if (isFightPhase && round === 5 && isSecondPlayerTurn) {
-          items.push({
-            kind: "primary",
-            missionName: currentMission.name,
-            scoringRules: (currentMission.scoringRules ?? []).filter(
-              (r) => !r.scoringTiming || r.scoringTiming === "end_of_command_phase",
-            ),
-            currentRound: round,
-            scoringSlot: "end_of_command_phase",
-          });
-        }
-      }
-
-      if (scoringTiming === "end_of_battle_round") {
-        if (isFightPhase && isSecondPlayerTurn) {
-          items.push({
-            kind: "end_of_round_primary",
-            missionName: currentMission.name,
-            note: "Both players score at the end of each battle round. Make sure your opponent has scored too.",
-          });
-        }
-      }
-
-      if (isFightPhase) {
-        const endOfTurnActions = (currentMission.scoringRules ?? []).filter(
-          (r) => r.scoringTiming === "end_of_turn",
-        );
-        if (endOfTurnActions.length > 0) {
-          items.push({
-            kind: "primary",
-            missionName: currentMission.name + " (end of turn)",
-            scoringRules: endOfTurnActions,
-            currentRound: round,
-            scoringSlot: "end_of_turn",
-          });
-        }
-      }
-    }
-
+    // Primary scoring is no longer driven by mission scoringRules (removed in
+    // the 11e migration). Secondary scoring and the tactical draw reminder
+    // remain phase-driven.
     if (isFightPhase && (myPlayer.secondaryHand ?? []).length > 0) {
       items.push({ kind: "secondary" });
     }
@@ -217,7 +165,7 @@ export function GamePage() {
     } else {
       doAdvancePhase();
     }
-  }, [gameState, myPlayer, currentMission, doAdvancePhase]);
+  }, [gameState, myPlayer, doAdvancePhase]);
 
   const handleAdjustCP = useCallback(
     (delta: number) => {
@@ -507,17 +455,7 @@ export function GamePage() {
             )}
           </div>
 
-          {/* Mission Scoring + Primary Score History */}
-          {currentMission &&
-            currentMission.scoringRules &&
-            currentMission.scoringRules.length > 0 && (
-              <MissionScoring
-                scoringRules={currentMission.scoringRules ?? []}
-                currentRound={gameState.currentRound}
-                missionScoringTiming={currentMission.scoringTiming ?? "end_of_command_phase"}
-                onScore={(vp, slot, label) => handleScoreVP("primary", vp, slot, label)}
-              />
-            )}
+          {/* Primary Score History */}
           <PrimaryScoreHistory scoredSlots={{}} onUndo={handleUndoPrimaryScore} />
 
           {/* Opponent's Active Secondaries */}

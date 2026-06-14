@@ -13,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { RulesText } from "./RulesText";
 
 interface Props {
   stratagems: Stratagem[];
@@ -70,13 +69,9 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
                 {s.cpCost} CP
               </Badge>
             </div>
-            {s.legend && <p className="mb-2 text-xs italic text-muted-foreground">{s.legend}</p>}
-            {s.description && (
-              <RulesText html={s.description} className="mb-2 text-xs text-foreground/80" />
-            )}
             <div className="mt-2 flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {s.turn} | {s.phase}
+                {[s.playerTurn, (s.phases ?? []).join(", "), s.timing].filter(Boolean).join(" | ")}
               </span>
               <Button type="button" size="sm" onClick={() => openPrompt(s)}>
                 Use
@@ -103,10 +98,6 @@ export function StratagemPanel({ stratagems, currentCP, usedThisPhase, onUse }: 
                 stratagem more expensive, cheaper, or free.
               </DialogDescription>
             </DialogHeader>
-
-            {pending.description && (
-              <RulesText html={pending.description} className="text-xs text-foreground/80" />
-            )}
 
             {usedThisPhase.includes(pending.id) && (
               <div
