@@ -2,897 +2,341 @@ package game
 
 import (
 	"fmt"
-	"math/rand/v2"
+
+	"github.com/peter/tacticarium/backend/internal/game/scoring"
 )
 
-// --- Setup Actions ---
+// --- Force disposition + mission resolution ---
 
-func (e *Engine) applySelectPrimaryMission(action GameAction) ([]GameEvent, error) {
+func (e *Engine) applySelectForceDisposition(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only select primary mission during setup")
+		return nil, fmt.Errorf("can only select force disposition during setup")
 	}
-
-	missionPackID := strFromData(action.Data, "missionPackId")
-	missionID := strFromData(action.Data, "missionId")
-	missionName := strFromData(action.Data, "missionName")
-
-	if missionID == "" {
-		return nil, fmt.Errorf("mission ID is required")
-	}
-
-	e.state.MissionPackID = missionPackID
-	e.state.MissionID = missionID
-	e.state.MissionName = missionName
-
-	// Reset readiness when mission changes
-	for _, p := range e.state.Players {
-		if p != nil {
-			p.Ready = false
-		}
-	}
-
-	return []GameEvent{{
-		Type:         EventPrimaryMissionSelected,
-		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"missionPackId": missionPackID, "missionId": missionID, "missionName": missionName},
-	}}, nil
-}
-
-func (e *Engine) applySelectTwist(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only select twist during setup")
-	}
-
-	twistID := strFromData(action.Data, "twistId")
-	twistName := strFromData(action.Data, "twistName")
-
-	if twistID == "" {
-		return nil, fmt.Errorf("twist ID is required")
-	}
-
-	e.state.TwistID = twistID
-	e.state.TwistName = twistName
-
-	// Reset readiness when twist changes
-	for _, p := range e.state.Players {
-		if p != nil {
-			p.Ready = false
-		}
-	}
-
-	return []GameEvent{{
-		Type:         EventTwistSelected,
-		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"twistId": twistID, "twistName": twistName},
-	}}, nil
-}
-
-func (e *Engine) applySelectSecondaryMode(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only select secondary mode during setup")
-	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	mode := strFromData(action.Data, "mode")
-	if mode != "fixed" && mode != "tactical" {
-		return nil, fmt.Errorf("secondary mode must be fixed or tactical")
+	disposition := strFromData(action.Data, "disposition")
+	if disposition == "" {
+		return nil, fmt.Errorf("disposition is required")
 	}
-
-	player.SecondaryMode = mode
-	player.Ready = false
-	// Clear any previous selections when mode changes
-	player.ActiveSecondaries = nil
-	player.TacticalDeck = nil
-
-	return []GameEvent{{
-		Type:         EventSecondaryModeSelected,
-		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"mode": mode},
-	}}, nil
-}
-
-func (e *Engine) applySetFixedSecondaries(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only set fixed secondaries during setup")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if player.SecondaryMode != "fixed" {
-		return nil, fmt.Errorf("player must be in fixed secondary mode")
-	}
-
-	secondaries, err := activeSecondariesFromData(action.Data, "secondaries")
-	if err != nil {
-		return nil, fmt.Errorf("invalid secondaries data")
-	}
-
-	if len(secondaries) != 2 {
-		return nil, fmt.Errorf("must select exactly 2 fixed secondaries")
-	}
-
-	player.ActiveSecondaries = secondaries
-	player.Ready = false
-
-	return []GameEvent{{
-		Type:         EventSecondarySelected,
-		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"secondaries": secondaries},
-	}}, nil
-}
-
-func (e *Engine) applyInitTacticalDeck(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only initialize tactical deck during setup")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if player.SecondaryMode != "tactical" {
-		return nil, fmt.Errorf("player must be in tactical secondary mode")
-	}
-
-	deck, err := activeSecondariesFromData(action.Data, "deck")
-	if err != nil {
-		return nil, fmt.Errorf("invalid deck data")
-	}
-
-	if len(deck) == 0 {
-		return nil, fmt.Errorf("deck cannot be empty")
-	}
-
-	player.TacticalDeck = deck
-	player.ActiveSecondaries = nil
-	player.Ready = false
-
-	return nil, nil
-}
-
-// --- Gameplay Actions ---
-
-func (e *Engine) applyDrawSecondary(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	if e.state.CurrentPhase != PhaseCommand {
-		return nil, fmt.Errorf("can only draw secondaries during the Command Phase")
-	}
-
-	if action.PlayerNumber != e.state.ActivePlayer {
-		return nil, fmt.Errorf("only the active player can draw secondaries")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if player.SecondaryMode != "tactical" {
-		return nil, fmt.Errorf("can only draw secondaries in tactical mode")
-	}
-
-	if len(player.ActiveSecondaries) >= 2 {
-		return nil, fmt.Errorf("already have 2 active secondaries")
-	}
-
-	var events []GameEvent
-	for len(player.ActiveSecondaries) < 2 && len(player.TacticalDeck) > 0 {
-		drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
-		events = append(events, drawEvents...)
-		if drawn == nil {
-			break
-		}
-		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
-		events = append(events, GameEvent{
-			Type:         EventSecondaryDrawn,
-			PlayerNumber: action.PlayerNumber,
-			Round:        e.state.CurrentRound,
-			Phase:        e.state.CurrentPhase,
-			Data:         map[string]any{"secondaryId": drawn.ID, "secondaryName": drawn.Name},
-		})
-	}
-
-	return events, nil
-}
-
-// drawNextCard pops the top card of the player's tactical deck and applies any
-// mandatory "when drawn" restriction by shuffling the card back into the deck
-// (at a random position) and drawing the next one. Returns the final drawn
-// card (or nil if the deck contains no drawable cards) along with any
-// reshuffle events emitted along the way.
-func drawNextCard(player *PlayerState, round, playerNumber int, phase Phase) (*ActiveSecondary, []GameEvent) {
-	var events []GameEvent
-	for len(player.TacticalDeck) > 0 {
-		card := player.TacticalDeck[0]
-		player.TacticalDeck = player.TacticalDeck[1:]
-		if isMandatoryReshuffle(card, round) {
-			// Bail cleanly if the rest of the deck is all restricted — otherwise
-			// we'd cycle forever.
-			anyDrawable := false
-			for _, c := range player.TacticalDeck {
-				if !isMandatoryReshuffle(c, round) {
-					anyDrawable = true
-					break
-				}
-			}
-			player.TacticalDeck = insertRandomlyIntoDeck(player.TacticalDeck, card)
-			if !anyDrawable {
-				return nil, events
-			}
-			events = append(events, GameEvent{
-				Type:         EventSecondaryReshuffled,
-				PlayerNumber: playerNumber,
-				Round:        round,
-				Phase:        phase,
-				Data: map[string]any{
-					"secondaryId":   card.ID,
-					"secondaryName": card.Name,
-					"reason":        "mandatory",
-				},
-			})
-			continue
-		}
-		return &card, events
-	}
-	return nil, events
-}
-
-func isMandatoryReshuffle(card ActiveSecondary, round int) bool {
-	return card.DrawRestriction != nil &&
-		card.DrawRestriction.Round == round &&
-		card.DrawRestriction.Mode == DrawRestrictionMandatory
-}
-
-// insertRandomlyIntoDeck returns the deck with card inserted at a random
-// position (inclusive of start and end).
-func insertRandomlyIntoDeck(deck []ActiveSecondary, card ActiveSecondary) []ActiveSecondary {
-	pos := rand.IntN(len(deck) + 1)
-	result := make([]ActiveSecondary, 0, len(deck)+1)
-	result = append(result, deck[:pos]...)
-	result = append(result, card)
-	result = append(result, deck[pos:]...)
-	return result
-}
-
-func (e *Engine) applyAchieveSecondary(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	secondaryID := strFromData(action.Data, "secondaryId")
-	vpScored := intFromData(action.Data, "vpScored")
-
-	idx := -1
-	for i, s := range player.ActiveSecondaries {
-		if s.ID == secondaryID {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return nil, fmt.Errorf("secondary not found in active secondaries")
-	}
-
-	achieved := player.ActiveSecondaries[idx]
-
-	// Validate vpScored against scoring options
-	if len(achieved.ScoringOptions) > 0 && vpScored > 0 {
-		valid := false
-		for _, opt := range achieved.ScoringOptions {
-			if opt.Mode != "" && opt.Mode != player.SecondaryMode {
-				continue
-			}
-			if opt.VP == vpScored {
-				valid = true
-				break
-			}
-		}
-		if !valid {
-			return nil, fmt.Errorf("invalid VP score %d: does not match any scoring option", vpScored)
-		}
-	}
-	achieved.VPScored = vpScored
-	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
-	player.AchievedSecondaries = append(player.AchievedSecondaries, achieved)
-
-	// Score VP
-	if vpScored > 0 {
-		player.VPSecondary = ClampVP(player.VPSecondary+vpScored, MaxVPSecondary)
-	}
-
-	return []GameEvent{{
-		Type:         EventSecondaryAchieved,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data: map[string]any{
-			"secondaryId":   secondaryID,
-			"secondaryName": achieved.Name,
-			"vpScored":      vpScored,
-			"vpSecondary":   player.VPSecondary,
-		},
-	}}, nil
-}
-
-func (e *Engine) applyDiscardSecondary(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if player.SecondaryMode != "tactical" {
-		return nil, fmt.Errorf("can only discard secondaries in tactical mode")
-	}
-
-	secondaryID := strFromData(action.Data, "secondaryId")
-
-	idx := -1
-	for i, s := range player.ActiveSecondaries {
-		if s.ID == secondaryID {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return nil, fmt.Errorf("secondary not found in active secondaries")
-	}
-
-	discarded := player.ActiveSecondaries[idx]
-	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
-	player.DiscardedSecondaries = append(player.DiscardedSecondaries, discarded)
-
-	// End-of-turn discard grants 1CP (except round 5); free discard grants nothing.
-	// Players can only gain a maximum of 1 additional CP per battle round beyond
-	// the automatic Command Phase gain.
-	free := false
-	if v, ok := action.Data["free"].(bool); ok {
-		free = v
-	}
-	cpGained := 0
-	if !free && e.state.CurrentRound < MaxRounds && player.CPGainedThisRound < 1 {
-		player.CP++
-		player.CPGainedThisRound++
-		cpGained = 1
-	}
-
-	return []GameEvent{{
-		Type:         EventSecondaryDiscarded,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data: map[string]any{
-			"secondaryId":   secondaryID,
-			"secondaryName": discarded.Name,
-			"cpGained":      cpGained,
-			"free":          free,
-		},
-	}}, nil
-}
-
-func (e *Engine) applyNewOrders(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	if e.state.CurrentPhase != PhaseCommand {
-		return nil, fmt.Errorf("can only use New Orders during the Command Phase")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if player.SecondaryMode != "tactical" {
-		return nil, fmt.Errorf("new orders only available in tactical mode")
-	}
-
-	if player.NewOrdersUsedThisPhase {
-		return nil, fmt.Errorf("new orders can only be used once per Command Phase")
-	}
-
-	cpCost := e.newOrdersCPCost()
-	if player.CP < cpCost {
-		return nil, fmt.Errorf("not enough CP — you have %d, need %d", player.CP, cpCost)
-	}
-
-	discardID := strFromData(action.Data, "discardSecondaryId")
-
-	// Find and discard the specified secondary
-	idx := -1
-	for i, s := range player.ActiveSecondaries {
-		if s.ID == discardID {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return nil, fmt.Errorf("secondary not found in active secondaries")
-	}
-
-	discarded := player.ActiveSecondaries[idx]
-	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
-	player.DiscardedSecondaries = append(player.DiscardedSecondaries, discarded)
-
-	// Spend CP
-	player.CP -= cpCost
-	player.NewOrdersUsedThisPhase = true
-
-	// Draw replacement from deck (applies mandatory reshuffle rules)
-	drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
-	if drawn != nil {
-		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
-	}
-
-	data := map[string]any{
-		"discardedId":   discardID,
-		"discardedName": discarded.Name,
-		"cpSpent":       cpCost,
-	}
-	if drawn != nil {
-		data["drawnId"] = drawn.ID
-		data["drawnName"] = drawn.Name
-	}
-
-	events := drawEvents
-	events = append(events, GameEvent{
-		Type:         EventNewOrdersUsed,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data:         data,
-	})
-	return events, nil
-}
-
-func (e *Engine) applyReshuffleSecondary(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if player.SecondaryMode != "tactical" {
-		return nil, fmt.Errorf("can only reshuffle secondaries in tactical mode")
-	}
-
-	secondaryID := strFromData(action.Data, "secondaryId")
-
-	idx := -1
-	for i, s := range player.ActiveSecondaries {
-		if s.ID == secondaryID {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return nil, fmt.Errorf("secondary not found in active secondaries")
-	}
-
-	card := player.ActiveSecondaries[idx]
-	if card.DrawRestriction == nil ||
-		card.DrawRestriction.Mode != DrawRestrictionOptional ||
-		card.DrawRestriction.Round != e.state.CurrentRound {
-		return nil, fmt.Errorf("secondary cannot be reshuffled: no optional draw restriction active this round")
-	}
-
-	player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
-	player.TacticalDeck = insertRandomlyIntoDeck(player.TacticalDeck, card)
+	player.ForceDisposition = disposition
+	player.ForceDispositionName = strFromData(action.Data, "dispositionName")
+	e.resetReady()
 
 	events := []GameEvent{{
-		Type:         EventSecondaryReshuffled,
+		Type:         EventForceDispositionSelected,
 		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data: map[string]any{
-			"secondaryId":   card.ID,
-			"secondaryName": card.Name,
-			"reason":        "optional",
-		},
+		Data:         map[string]any{"disposition": disposition, "dispositionName": player.ForceDispositionName},
 	}}
-
-	// Draw a replacement from the deck (applies mandatory reshuffle rules).
-	drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
-	events = append(events, drawEvents...)
-	if drawn != nil {
-		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
-		events = append(events, GameEvent{
-			Type:         EventSecondaryDrawn,
-			PlayerNumber: action.PlayerNumber,
-			Round:        e.state.CurrentRound,
-			Phase:        e.state.CurrentPhase,
-			Data:         map[string]any{"secondaryId": drawn.ID, "secondaryName": drawn.Name},
-		})
-	}
-
+	events = append(events, e.resolveMissions()...)
 	return events, nil
 }
 
-// applyMoveSecondary is the manual escape hatch for tactical mode players who
-// are tracking their secondaries with a physical deck. It moves a card between
-// any two of the four piles (deck, active, achieved, discarded) with no phase,
-// active-player, or CP restrictions, and optionally adjusts secondary VP by
-// the supplied delta (no scoring-option validation).
-func (e *Engine) applyMoveSecondary(action GameAction) ([]GameEvent, error) {
+// resolveMissions resolves each player's asymmetric primary mission once both
+// players have chosen a force disposition.
+func (e *Engine) resolveMissions() []GameEvent {
+	if e.missionResolver == nil {
+		return nil
+	}
+	p1, p2 := e.state.Players[0], e.state.Players[1]
+	if p1 == nil || p2 == nil || p1.ForceDisposition == "" || p2.ForceDisposition == "" {
+		return nil
+	}
+
+	var events []GameEvent
+	for _, pair := range [][2]*PlayerState{{p1, p2}, {p2, p1}} {
+		p, opp := pair[0], pair[1]
+		rm, ok := e.missionResolver(p.ForceDisposition, opp.ForceDisposition)
+		if !ok {
+			continue
+		}
+		p.MissionID = rm.ID
+		p.MissionName = rm.Name
+		p.PrimaryCard = rm.PrimaryCard
+		if rm.GameCap > 0 {
+			e.state.VPPerGameCap = rm.GameCap
+		}
+		if rm.RoundCap > 0 {
+			e.state.VPPerRoundCap = rm.RoundCap
+		}
+		events = append(events, GameEvent{
+			Type:         EventMissionResolved,
+			PlayerNumber: p.PlayerNumber,
+			Data:         map[string]any{"missionId": rm.ID, "missionName": rm.Name},
+		})
+	}
+	return events
+}
+
+// --- Board control ---
+
+func (e *Engine) applySetObjectiveControl(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
 	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
+	idx := intFromData(action.Data, "objectiveIndex")
+	controller := intFromData(action.Data, "player") // 0 = none, 1, 2
+	if controller < 0 || controller > 2 {
+		return nil, fmt.Errorf("invalid controlling player")
 	}
-
-	if player.SecondaryMode != "tactical" {
-		return nil, fmt.Errorf("can only manually move secondaries in tactical mode")
+	obj := e.objective(idx)
+	if obj == nil {
+		return nil, fmt.Errorf("unknown objective %d", idx)
 	}
-
-	secondaryID := strFromData(action.Data, "secondaryId")
-	fromPile := strFromData(action.Data, "fromPile")
-	toPile := strFromData(action.Data, "toPile")
-	vpDelta := intFromData(action.Data, "vpScored")
-
-	if !isValidSecondaryPile(fromPile) || !isValidSecondaryPile(toPile) {
-		return nil, fmt.Errorf("pile must be one of: deck, active, achieved, discarded")
-	}
-	if fromPile == toPile {
-		return nil, fmt.Errorf("source and destination piles must differ")
-	}
-
-	card, ok := removeFromSecondaryPile(player, fromPile, secondaryID)
-	if !ok {
-		return nil, fmt.Errorf("secondary not found in %s pile", fromPile)
-	}
-	appendToSecondaryPile(player, toPile, card)
-
-	appliedDelta := 0
-	if vpDelta != 0 {
-		oldVP := player.VPSecondary
-		player.VPSecondary = ClampVP(oldVP+vpDelta, MaxVPSecondary)
-		appliedDelta = player.VPSecondary - oldVP
-	}
-
+	obj.ControlledBy = controller
 	return []GameEvent{{
-		Type:         EventSecondaryMoved,
+		Type:         EventObjectiveControlChanged,
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
-		Data: map[string]any{
-			"secondaryId":   card.ID,
-			"secondaryName": card.Name,
-			"fromPile":      fromPile,
-			"toPile":        toPile,
-			"vpDelta":       appliedDelta,
-			"vpSecondary":   player.VPSecondary,
-		},
+		Data:         map[string]any{"objectiveIndex": idx, "controlledBy": controller},
 	}}, nil
 }
 
-func isValidSecondaryPile(name string) bool {
-	switch name {
-	case "deck", "active", "achieved", "discarded":
-		return true
+func (e *Engine) applySetObjectiveTag(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
 	}
-	return false
+	idx := intFromData(action.Data, "objectiveIndex")
+	tag := strFromData(action.Data, "tag")
+	if tag == "" {
+		return nil, fmt.Errorf("tag is required")
+	}
+	add, _ := action.Data["add"].(bool)
+	obj := e.objective(idx)
+	if obj == nil {
+		return nil, fmt.Errorf("unknown objective %d", idx)
+	}
+	if add {
+		obj.AddTag(tag)
+	} else {
+		removeTag(obj, tag)
+	}
+	return []GameEvent{{
+		Type:         EventObjectiveTagged,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data:         map[string]any{"objectiveIndex": idx, "tag": tag, "add": add},
+	}}, nil
 }
 
-func secondaryPilePtr(player *PlayerState, pile string) *[]ActiveSecondary {
-	switch pile {
-	case "deck":
-		return &player.TacticalDeck
-	case "active":
-		return &player.ActiveSecondaries
-	case "achieved":
-		return &player.AchievedSecondaries
-	case "discarded":
-		return &player.DiscardedSecondaries
+func (e *Engine) objective(index int) *scoring.Objective {
+	for i := range e.state.Board.Objectives {
+		if e.state.Board.Objectives[i].Index == index {
+			return &e.state.Board.Objectives[i]
+		}
 	}
 	return nil
 }
 
-func removeFromSecondaryPile(player *PlayerState, pile, id string) (ActiveSecondary, bool) {
-	p := secondaryPilePtr(player, pile)
-	if p == nil {
-		return ActiveSecondary{}, false
-	}
-	for i, s := range *p {
-		if s.ID == id {
-			card := (*p)[i]
-			*p = append((*p)[:i], (*p)[i+1:]...)
-			return card, true
+func removeTag(o *scoring.Objective, tag string) {
+	out := o.Tags[:0]
+	for _, t := range o.Tags {
+		if t != tag {
+			out = append(out, t)
 		}
 	}
-	return ActiveSecondary{}, false
+	o.Tags = out
 }
 
-func appendToSecondaryPile(player *PlayerState, pile string, card ActiveSecondary) {
-	p := secondaryPilePtr(player, pile)
-	if p == nil {
-		return
-	}
-	*p = append(*p, card)
-}
+// --- Secondary deck ---
 
-func (e *Engine) applyDrawChallengerCard(action GameAction) ([]GameEvent, error) {
+func (e *Engine) applyDrawSecondaries(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
 	}
-
 	if e.state.CurrentPhase != PhaseCommand {
-		return nil, fmt.Errorf("can only draw challenger cards during the Command Phase")
+		return nil, fmt.Errorf("can only draw secondaries during the Command phase")
 	}
-
+	if action.PlayerNumber != e.state.ActivePlayer {
+		return nil, fmt.Errorf("only the active player can draw secondaries")
+	}
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	// Validate trailing by 6+ VP
-	opponent := e.state.GetPlayer(3 - action.PlayerNumber)
-	if opponent == nil {
-		return nil, fmt.Errorf("opponent not found")
+	if player.SecondaryMode != "tactical" {
+		return nil, fmt.Errorf("only tactical players draw secondaries")
 	}
 
-	vpDiff := opponent.TotalVP() - player.TotalVP()
-	if vpDiff < ChallengerVPThreshold {
-		return nil, fmt.Errorf("must be trailing by %d+ VP to draw a challenger card (currently trailing by %d)", ChallengerVPThreshold, vpDiff)
-	}
-
-	cardID := strFromData(action.Data, "challengerCardId")
-	cardName := strFromData(action.Data, "challengerCardName")
-
-	player.IsChallenger = true
-	player.ChallengerCardID = cardID
-
-	return []GameEvent{{
-		Type:         EventChallengerActivated,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data:         map[string]any{"challengerCardId": cardID, "challengerCardName": cardName},
-	}}, nil
-}
-
-func (e *Engine) applyScoreChallenger(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	if !player.IsChallenger || player.ChallengerCardID == "" {
-		return nil, fmt.Errorf("no active challenger card")
-	}
-
-	vpScored := intFromData(action.Data, "vpScored")
-	if vpScored <= 0 {
-		vpScored = ChallengerCardVP
-	}
-
-	player.VPGambit = ClampVP(player.VPGambit+vpScored, MaxVPGambit)
-	cardID := player.ChallengerCardID
-	player.ChallengerCardID = ""
-
-	return []GameEvent{{
-		Type:         EventChallengerScored,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data:         map[string]any{"challengerCardId": cardID, "vpScored": vpScored, "vpGambit": player.VPGambit},
-	}}, nil
-}
-
-func (e *Engine) applyAdaptOrDie(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	if !e.canUseAdaptOrDie(e.state.GetPlayer(action.PlayerNumber)) {
-		return nil, fmt.Errorf("adapt or die not available")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-
+	// Draw two cards, keeping any already in hand (11e: no maximum hand size).
 	var events []GameEvent
-
-	if player.SecondaryMode == "fixed" {
-		// Swap one fixed secondary for another
-		discardID := strFromData(action.Data, "discardSecondaryId")
-		newSecondary, err := singleActiveSecondaryFromData(action.Data, "newSecondary")
-		if err != nil {
-			return nil, fmt.Errorf("invalid new secondary")
-		}
-
-		idx := -1
-		for i, s := range player.ActiveSecondaries {
-			if s.ID == discardID {
-				idx = i
-				break
-			}
-		}
-		if idx == -1 {
-			return nil, fmt.Errorf("secondary not found in active secondaries")
-		}
-
-		player.ActiveSecondaries[idx] = newSecondary
-	} else {
-		// Tactical: draw extra card, shuffle one back
-		// The client sends which card to shuffle back
-		shuffleBackID := strFromData(action.Data, "shuffleBackSecondaryId")
-
-		if len(player.TacticalDeck) == 0 {
-			return nil, fmt.Errorf("tactical deck is empty")
-		}
-
-		// Draw one extra — applies mandatory reshuffle rules.
-		drawn, drawEvents := drawNextCard(player, e.state.CurrentRound, action.PlayerNumber, e.state.CurrentPhase)
-		events = append(events, drawEvents...)
-		if drawn == nil {
-			return nil, fmt.Errorf("tactical deck is empty")
-		}
-		player.ActiveSecondaries = append(player.ActiveSecondaries, *drawn)
-
-		// Shuffle one back (random position)
-		idx := -1
-		for i, s := range player.ActiveSecondaries {
-			if s.ID == shuffleBackID {
-				idx = i
-				break
-			}
-		}
-		if idx == -1 {
-			return nil, fmt.Errorf("secondary to shuffle back not found")
-		}
-		toShuffle := player.ActiveSecondaries[idx]
-		player.ActiveSecondaries = append(player.ActiveSecondaries[:idx], player.ActiveSecondaries[idx+1:]...)
-		player.TacticalDeck = insertRandomlyIntoDeck(player.TacticalDeck, toShuffle)
+	for i := 0; i < 2 && len(player.SecondaryDeck) > 0; i++ {
+		card := player.SecondaryDeck[0]
+		player.SecondaryDeck = player.SecondaryDeck[1:]
+		player.SecondaryHand = append(player.SecondaryHand, card)
+		events = append(events, GameEvent{
+			Type:         EventSecondaryDrawn,
+			PlayerNumber: action.PlayerNumber,
+			Round:        e.state.CurrentRound,
+			Phase:        e.state.CurrentPhase,
+			Data:         map[string]any{"cardId": card.ID, "cardName": card.Name},
+		})
 	}
-
-	player.AdaptOrDieUses++
-
 	return events, nil
 }
 
-// --- Helpers ---
+// --- Scoring (evaluator integration) ---
 
-func activeSecondariesFromData(data map[string]any, key string) ([]ActiveSecondary, error) {
-	raw, ok := data[key]
-	if !ok {
-		return nil, fmt.Errorf("missing key: %s", key)
-	}
-
-	items, ok := raw.([]any)
-	if !ok {
-		return nil, fmt.Errorf("expected array for %s", key)
-	}
-
-	result := make([]ActiveSecondary, 0, len(items))
-	for _, item := range items {
-		m, ok := item.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("expected object in %s array", key)
-		}
-		s := ActiveSecondary{
-			ID:              strFromMapAny(m, "id"),
-			Name:            strFromMapAny(m, "name"),
-			Description:     strFromMapAny(m, "description"),
-			IsFixed:         boolFromMapAny(m, "isFixed"),
-			MaxVP:           intFromMapAny(m, "maxVp"),
-			ScoringOptions:  scoringOptionsFromMapAny(m, "scoringOptions"),
-			DrawRestriction: drawRestrictionFromMapAny(m, "drawRestriction"),
-			ScoringTiming:   strFromMapAny(m, "scoringTiming"),
-		}
-		result = append(result, s)
-	}
-	return result, nil
-}
-
-func singleActiveSecondaryFromData(data map[string]any, key string) (ActiveSecondary, error) {
-	raw, ok := data[key]
-	if !ok {
-		return ActiveSecondary{}, fmt.Errorf("missing key: %s", key)
-	}
-	m, ok := raw.(map[string]any)
-	if !ok {
-		return ActiveSecondary{}, fmt.Errorf("expected object for %s", key)
-	}
-	return ActiveSecondary{
-		ID:              strFromMapAny(m, "id"),
-		Name:            strFromMapAny(m, "name"),
-		Description:     strFromMapAny(m, "description"),
-		IsFixed:         boolFromMapAny(m, "isFixed"),
-		MaxVP:           intFromMapAny(m, "maxVp"),
-		ScoringOptions:  scoringOptionsFromMapAny(m, "scoringOptions"),
-		DrawRestriction: drawRestrictionFromMapAny(m, "drawRestriction"),
-		ScoringTiming:   strFromMapAny(m, "scoringTiming"),
-	}, nil
-}
-
-func drawRestrictionFromMapAny(m map[string]any, key string) *SecondaryDrawRestriction {
-	raw, ok := m[key]
-	if !ok || raw == nil {
-		return nil
-	}
-	om, ok := raw.(map[string]any)
-	if !ok {
-		return nil
-	}
-	return &SecondaryDrawRestriction{
-		Round: intFromMapAny(om, "round"),
-		Mode:  strFromMapAny(om, "mode"),
-	}
-}
-
-func strFromMapAny(m map[string]any, key string) string {
-	if v, ok := m[key].(string); ok {
-		return v
-	}
-	return ""
-}
-
-func boolFromMapAny(m map[string]any, key string) bool {
-	if v, ok := m[key].(bool); ok {
-		return v
-	}
-	return false
-}
-
-func intFromMapAny(m map[string]any, key string) int {
-	switch v := m[key].(type) {
-	case float64:
-		return int(v)
-	case int:
-		return v
-	}
-	return 0
-}
-
-func scoringOptionsFromMapAny(m map[string]any, key string) []SecondaryScoringOption {
-	raw, ok := m[key]
-	if !ok {
-		return nil
-	}
-	items, ok := raw.([]any)
-	if !ok {
-		return nil
-	}
-	opts := make([]SecondaryScoringOption, 0, len(items))
-	for _, item := range items {
-		om, ok := item.(map[string]any)
-		if !ok {
+// fireScoring evaluates every player's active cards at a trigger moment,
+// auto-applying Layer-1 VP and raising prompts for Layer-2 awards.
+func (e *Engine) fireScoring(timing string, phase Phase) []GameEvent {
+	var events []GameEvent
+	for _, p := range e.state.Players {
+		if p == nil {
 			continue
 		}
-		opts = append(opts, SecondaryScoringOption{
-			Label: strFromMapAny(om, "label"),
-			VP:    intFromMapAny(om, "vp"),
-			Mode:  strFromMapAny(om, "mode"),
+		ctx := e.scoreContext(p, timing, phase)
+
+		// Primary mission card.
+		if len(p.PrimaryCard.Awards) > 0 {
+			events = append(events, e.scoreCard(p, &p.PrimaryCard, "primary", ctx)...)
+		}
+		// Secondary hand.
+		for i := range p.SecondaryHand {
+			card := &p.SecondaryHand[i].Card
+			events = append(events, e.scoreCard(p, card, "secondary", ctx)...)
+		}
+	}
+	return events
+}
+
+func (e *Engine) scoreContext(p *PlayerState, timing string, phase Phase) scoring.Context {
+	playerTurn := "opponent-turn"
+	if p.PlayerNumber == e.state.ActivePlayer {
+		playerTurn = "your-turn"
+	}
+	return scoring.Context{
+		Round:              e.state.CurrentRound,
+		Phase:              string(phase),
+		Timing:             timing,
+		PlayerTurn:         playerTurn,
+		Mode:               p.SecondaryMode,
+		Player:             p.PlayerNumber,
+		Board:              &e.state.Board,
+		StartOfTurnControl: e.state.StartOfTurnControl,
+	}
+}
+
+// scoreCard evaluates one card: auto-applies Layer-1 VP and emits a prompt for
+// each Layer-2 award needing confirmation.
+func (e *Engine) scoreCard(p *PlayerState, card *scoring.Card, category string, ctx scoring.Context) []GameEvent {
+	results, total := scoring.EvaluateCard(card, ctx)
+	var events []GameEvent
+
+	if total > 0 {
+		applied := e.applyCategoryVP(p, category, total)
+		if applied > 0 {
+			events = append(events, GameEvent{
+				Type:         EventCardScored,
+				PlayerNumber: p.PlayerNumber,
+				Round:        e.state.CurrentRound,
+				Phase:        e.state.CurrentPhase,
+				Data: map[string]any{
+					"cardId": card.ID, "cardName": card.Name,
+					"category": category, "appliedDelta": applied, "newTotal": p.TotalVP(),
+				},
+			})
+		}
+	}
+
+	for _, r := range results {
+		if !r.NeedsConfirm {
+			continue
+		}
+		e.promptSeq++
+		prompt := ScorePrompt{
+			ID:         fmt.Sprintf("prompt-%d", e.promptSeq),
+			Category:   category,
+			CardID:     card.ID,
+			CardName:   card.Name,
+			AwardIndex: r.Index,
+			Round:      e.state.CurrentRound,
+			Text:       card.Text,
+		}
+		p.PendingScorePrompts = append(p.PendingScorePrompts, prompt)
+		events = append(events, GameEvent{
+			Type:         EventScorePrompt,
+			PlayerNumber: p.PlayerNumber,
+			Round:        e.state.CurrentRound,
+			Phase:        e.state.CurrentPhase,
+			Data: map[string]any{
+				"promptId": prompt.ID, "category": category,
+				"cardId": card.ID, "cardName": card.Name, "text": card.Text,
+			},
 		})
 	}
-	return opts
+	return events
+}
+
+func (e *Engine) applyCategoryVP(p *PlayerState, category string, want int) int {
+	if category == "primary" {
+		return e.scorePrimary(p, want)
+	}
+	return e.scoreSecondary(p, want)
+}
+
+// applyConfirmAward resolves a Layer-2 prompt with the player-supplied count and
+// applies the resulting VP.
+func (e *Engine) applyConfirmAward(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+	promptID := strFromData(action.Data, "promptId")
+	count := intFromData(action.Data, "count")
+
+	idx := -1
+	for i := range player.PendingScorePrompts {
+		if player.PendingScorePrompts[i].ID == promptID {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return nil, fmt.Errorf("unknown scoring prompt %q", promptID)
+	}
+	prompt := player.PendingScorePrompts[idx]
+
+	card := e.cardForPrompt(player, prompt)
+	if card == nil || prompt.AwardIndex >= len(card.Awards) {
+		return nil, fmt.Errorf("scoring prompt references a missing card/award")
+	}
+
+	ctx := e.scoreContext(player, "", "")
+	ctx.Round = prompt.Round
+	ctx.Confirmed = map[int]int{prompt.AwardIndex: count}
+	res := scoring.EvaluateAward(&card.Awards[prompt.AwardIndex], prompt.AwardIndex, ctx)
+	applied := e.applyCategoryVP(player, prompt.Category, res.VP)
+
+	// Remove the resolved prompt.
+	player.PendingScorePrompts = append(player.PendingScorePrompts[:idx], player.PendingScorePrompts[idx+1:]...)
+
+	return []GameEvent{{
+		Type:         EventAwardConfirmed,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data: map[string]any{
+			"promptId": promptID, "category": prompt.Category, "count": count,
+			"appliedDelta": applied, "newTotal": player.TotalVP(),
+		},
+	}}, nil
+}
+
+func (e *Engine) cardForPrompt(p *PlayerState, prompt ScorePrompt) *scoring.Card {
+	if prompt.Category == "primary" {
+		return &p.PrimaryCard
+	}
+	for i := range p.SecondaryHand {
+		if p.SecondaryHand[i].ID == prompt.CardID {
+			return &p.SecondaryHand[i].Card
+		}
+	}
+	return nil
 }

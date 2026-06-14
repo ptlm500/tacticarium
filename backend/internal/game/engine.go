@@ -7,44 +7,64 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/peter/tacticarium/backend/internal/game/scoring"
 )
 
 var tracer = otel.Tracer("tacticarium/game")
 
-// StratagemInfo is the canonical (DB-sourced) representation of a stratagem
-// used by the engine to validate stratagem usage.
+// StratagemInfo is the canonical (DB-sourced) representation of a stratagem.
 type StratagemInfo struct {
 	Name   string
 	CPCost int
 }
 
-// StratagemLookup resolves a stratagem ID to its canonical info. If nil,
-// the engine falls back to trusting the client-supplied name/cost (tests).
+// StratagemLookup resolves a stratagem ID to its canonical info. If nil, the
+// engine trusts the client-supplied name/cost (tests).
 type StratagemLookup func(id string) (*StratagemInfo, error)
 
+// ResolvedMission is the primary mission a force-disposition matchup yields for
+// a player, plus its VP caps and scoring card.
+type ResolvedMission struct {
+	ID          string
+	Name        string
+	GameCap     int
+	RoundCap    int
+	PrimaryCard scoring.Card
+}
+
+// MissionResolver maps (own disposition, opponent disposition) to the resolved
+// primary mission for that player. Injected by the handler (DB-backed).
+type MissionResolver func(disposition, opponentDisposition string) (ResolvedMission, bool)
+
+// BoardBuilder builds the board for the game's chosen deployment pattern and the
+// players' sides. Injected by the handler (DB-backed).
+type BoardBuilder func(player1Side, player2Side scoring.Side) (scoring.Board, error)
+
+// SecondaryDeckBuilder builds a player's secondary deck for a scoring mode.
+type SecondaryDeckBuilder func(mode string) []SecondaryCard
+
 type Engine struct {
-	state           *GameState
-	stratagemLookup StratagemLookup
+	state                *GameState
+	stratagemLookup      StratagemLookup
+	missionResolver      MissionResolver
+	boardBuilder         BoardBuilder
+	secondaryDeckBuilder SecondaryDeckBuilder
+	promptSeq            int
 }
 
 func NewEngine(state *GameState) *Engine {
 	return &Engine{state: state}
 }
 
-// SetStratagemLookup wires up a canonical stratagem source (typically the DB).
-// When set, the engine uses DB values for the stratagem's original CP cost and
-// name, and treats the client-supplied cpCost as the (possibly overridden)
-// amount the player is spending.
-func (e *Engine) SetStratagemLookup(fn StratagemLookup) {
-	e.stratagemLookup = fn
-}
+func (e *Engine) SetStratagemLookup(fn StratagemLookup)           { e.stratagemLookup = fn }
+func (e *Engine) SetMissionResolver(fn MissionResolver)           { e.missionResolver = fn }
+func (e *Engine) SetBoardBuilder(fn BoardBuilder)                 { e.boardBuilder = fn }
+func (e *Engine) SetSecondaryDeckBuilder(fn SecondaryDeckBuilder) { e.secondaryDeckBuilder = fn }
 
-func (e *Engine) State() GameState {
-	return *e.state
-}
+func (e *Engine) State() GameState { return *e.state }
 
-// AddPlayer adds a player to the state if the slot is empty.
-// Used when a player joins after the room was already created.
+// AddPlayer adds a player to an empty slot (used on late join).
 func (e *Engine) AddPlayer(player *PlayerState) {
 	idx := player.PlayerNumber - 1
 	if idx >= 0 && idx < 2 && e.state.Players[idx] == nil {
@@ -75,14 +95,16 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applySelectFaction(action)
 	case ActionSelectDetachment:
 		return e.applySelectDetachment(action)
+	case ActionSelectSide:
+		return e.applySelectSide(action)
 	case ActionSelectFirstTurnPlayer:
 		return e.applySelectFirstTurnPlayer(action)
-	case ActionSelectMission:
-		return e.applySelectMission(action)
-	case ActionSelectSecondary:
-		return e.applySelectSecondary(action)
-	case ActionRemoveSecondary:
-		return e.applyRemoveSecondary(action)
+	case ActionSelectForceDisposition:
+		return e.applySelectForceDisposition(action)
+	case ActionSelectSecondaryMode:
+		return e.applySelectSecondaryMode(action)
+	case ActionSetPaintScore:
+		return e.applySetPaintScore(action)
 	case ActionSetReady:
 		return e.applySetReady(action)
 	case ActionAdvancePhase:
@@ -91,80 +113,50 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 		return e.applyRevertPhase(action)
 	case ActionAdjustCP:
 		return e.applyAdjustCP(action)
-	case ActionScoreVP:
-		return e.applyScoreVP(action)
 	case ActionUseStratagem:
 		return e.applyUseStratagem(action)
-	case ActionDeclareGambit:
-		return e.applyDeclareGambit(action)
+	case ActionSetObjectiveControl:
+		return e.applySetObjectiveControl(action)
+	case ActionSetObjectiveTag:
+		return e.applySetObjectiveTag(action)
+	case ActionDrawSecondaries:
+		return e.applyDrawSecondaries(action)
+	case ActionConfirmAward:
+		return e.applyConfirmAward(action)
+	case ActionScoreVP:
+		return e.applyScoreVP(action)
+	case ActionAdjustVPManual:
+		return e.applyAdjustVPManual(action)
 	case ActionConcede:
 		return e.applyConcede(action)
-	case ActionSetPaintScore:
-		return e.applySetPaintScore(action)
-	case ActionSelectPrimaryMission:
-		return e.applySelectPrimaryMission(action)
-	case ActionSelectTwist:
-		return e.applySelectTwist(action)
-	case ActionSelectSecondaryMode:
-		return e.applySelectSecondaryMode(action)
-	case ActionSetFixedSecondaries:
-		return e.applySetFixedSecondaries(action)
-	case ActionInitTacticalDeck:
-		return e.applyInitTacticalDeck(action)
-	case ActionDrawSecondary:
-		return e.applyDrawSecondary(action)
-	case ActionAchieveSecondary:
-		return e.applyAchieveSecondary(action)
-	case ActionDiscardSecondary:
-		return e.applyDiscardSecondary(action)
-	case ActionNewOrders:
-		return e.applyNewOrders(action)
-	case ActionReshuffleSecondary:
-		return e.applyReshuffleSecondary(action)
-	case ActionMoveSecondary:
-		return e.applyMoveSecondary(action)
-	case ActionDrawChallengerCard:
-		return e.applyDrawChallengerCard(action)
-	case ActionScoreChallenger:
-		return e.applyScoreChallenger(action)
-	case ActionAdaptOrDie:
-		return e.applyAdaptOrDie(action)
 	case ActionRequestAbandon:
 		return e.applyRequestAbandon(action)
 	case ActionRespondAbandon:
 		return e.applyRespondAbandon(action)
-	case ActionUndoPrimaryScore:
-		return e.applyUndoPrimaryScore(action)
-	case ActionAdjustVPManual:
-		return e.applyAdjustVPManual(action)
 	default:
 		return nil, fmt.Errorf("unknown action type: %s", action.Type)
 	}
 }
 
+// --- Setup ---
+
 func (e *Engine) applySelectFaction(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
 		return nil, fmt.Errorf("can only select faction during setup")
 	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	factionID, _ := action.Data["factionId"].(string)
-	factionName, _ := action.Data["factionName"].(string)
-
-	player.FactionID = factionID
-	player.FactionName = factionName
+	player.FactionID = strFromData(action.Data, "factionId")
+	player.FactionName = strFromData(action.Data, "factionName")
 	player.DetachmentID = ""
 	player.DetachmentName = ""
 	player.Ready = false
-
 	return []GameEvent{{
 		Type:         EventFactionSelected,
 		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"factionId": factionID, "factionName": factionName},
+		Data:         map[string]any{"factionId": player.FactionID, "factionName": player.FactionName},
 	}}, nil
 }
 
@@ -172,23 +164,42 @@ func (e *Engine) applySelectDetachment(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
 		return nil, fmt.Errorf("can only select detachment during setup")
 	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	detachmentID, _ := action.Data["detachmentId"].(string)
-	detachmentName, _ := action.Data["detachmentName"].(string)
-
-	player.DetachmentID = detachmentID
-	player.DetachmentName = detachmentName
+	player.DetachmentID = strFromData(action.Data, "detachmentId")
+	player.DetachmentName = strFromData(action.Data, "detachmentName")
 	player.Ready = false
-
 	return []GameEvent{{
 		Type:         EventFactionSelected,
 		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"detachmentId": detachmentID, "detachmentName": detachmentName},
+		Data:         map[string]any{"detachmentId": player.DetachmentID, "detachmentName": player.DetachmentName},
+	}}, nil
+}
+
+func (e *Engine) applySelectSide(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusSetup {
+		return nil, fmt.Errorf("can only select side during setup")
+	}
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+	side := scoring.Side(strFromData(action.Data, "side"))
+	if side != scoring.SideAttacker && side != scoring.SideDefender {
+		return nil, fmt.Errorf("side must be attacker or defender")
+	}
+	player.Side = side
+	// The opponent takes the other side.
+	if opp := e.state.GetPlayer(opponentNumber(action.PlayerNumber)); opp != nil {
+		opp.Side = otherSide(side)
+	}
+	e.resetReady()
+	return []GameEvent{{
+		Type:         EventSideSelected,
+		PlayerNumber: action.PlayerNumber,
+		Data:         map[string]any{"side": string(side)},
 	}}, nil
 }
 
@@ -196,25 +207,12 @@ func (e *Engine) applySelectFirstTurnPlayer(action GameAction) ([]GameEvent, err
 	if e.state.Status != StatusSetup {
 		return nil, fmt.Errorf("can only select first turn player during setup")
 	}
-
-	// NOTE: the data field is named `firstTurnPlayer` rather than `playerNumber`
-	// because the WS client handler strips `playerNumber` from incoming action
-	// data (to prevent clients spoofing which player they are) — see
-	// backend/internal/ws/client.go.
 	firstTurnPlayer := intFromData(action.Data, "firstTurnPlayer")
 	if firstTurnPlayer != 1 && firstTurnPlayer != 2 {
 		return nil, fmt.Errorf("first turn player must be 1 or 2")
 	}
-
 	e.state.FirstTurnPlayer = firstTurnPlayer
-
-	// Reset readiness when the first turn player changes
-	for _, p := range e.state.Players {
-		if p != nil {
-			p.Ready = false
-		}
-	}
-
+	e.resetReady()
 	return []GameEvent{{
 		Type:         EventFirstTurnPlayerSelected,
 		PlayerNumber: action.PlayerNumber,
@@ -222,79 +220,37 @@ func (e *Engine) applySelectFirstTurnPlayer(action GameAction) ([]GameEvent, err
 	}}, nil
 }
 
-func (e *Engine) applySelectMission(action GameAction) ([]GameEvent, error) {
+func (e *Engine) applySelectSecondaryMode(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only select mission during setup")
+		return nil, fmt.Errorf("can only select secondary mode during setup")
 	}
-
-	missionPackID, _ := action.Data["missionPackId"].(string)
-	missionID, _ := action.Data["missionId"].(string)
-	missionName, _ := action.Data["missionName"].(string)
-
-	e.state.MissionPackID = missionPackID
-	e.state.MissionID = missionID
-	e.state.MissionName = missionName
-
-	// Reset readiness when mission changes
-	for _, p := range e.state.Players {
-		if p != nil {
-			p.Ready = false
-		}
-	}
-
-	return []GameEvent{{
-		Type:         EventMissionSelected,
-		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"missionPackId": missionPackID, "missionId": missionID, "missionName": missionName},
-	}}, nil
-}
-
-func (e *Engine) applySelectSecondary(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only select secondaries during setup")
-	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	secondary := SecondaryObjective{
-		ID:          fmt.Sprintf("sec_%d_%d", action.PlayerNumber, len(player.Secondaries)),
-		SecondaryID: strFromData(action.Data, "secondaryId"),
-		CustomName:  strFromData(action.Data, "customName"),
-		CustomMaxVP: intFromData(action.Data, "customMaxVp"),
+	mode := strFromData(action.Data, "mode")
+	if mode != "fixed" && mode != "tactical" {
+		return nil, fmt.Errorf("secondary mode must be fixed or tactical")
 	}
-
-	player.Secondaries = append(player.Secondaries, secondary)
+	player.SecondaryMode = mode
 	player.Ready = false
-
 	return []GameEvent{{
-		Type:         EventSecondarySelected,
+		Type:         EventSecondaryModeSelected,
 		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"secondary": secondary},
+		Data:         map[string]any{"mode": mode},
 	}}, nil
 }
 
-func (e *Engine) applyRemoveSecondary(action GameAction) ([]GameEvent, error) {
+func (e *Engine) applySetPaintScore(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only modify secondaries during setup")
+		return nil, fmt.Errorf("can only set paint score during setup")
 	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	secondaryID, _ := action.Data["secondaryId"].(string)
-	for i, s := range player.Secondaries {
-		if s.ID == secondaryID {
-			player.Secondaries = append(player.Secondaries[:i], player.Secondaries[i+1:]...)
-			player.Ready = false
-			break
-		}
-	}
-
+	player.VPPaint = ClampVP(intFromData(action.Data, "score"), MaxVPPaint)
+	player.Ready = false
 	return nil, nil
 }
 
@@ -302,12 +258,10 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
 		return nil, fmt.Errorf("can only ready up during setup")
 	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
 	ready, _ := action.Data["ready"].(bool)
 	if ready && e.state.FirstTurnPlayer == 0 {
 		return nil, fmt.Errorf("first turn player must be selected before readying up")
@@ -320,37 +274,44 @@ func (e *Engine) applySetReady(action GameAction) ([]GameEvent, error) {
 		Data:         map[string]any{"ready": ready},
 	}}
 
-	// Check if both players are ready to start the game
-	if e.state.Players[0] != nil && e.state.Players[1] != nil &&
-		e.state.Players[0].Ready && e.state.Players[1].Ready {
-		e.state.Status = StatusActive
-		e.state.CurrentRound = 1
-		e.state.CurrentTurn = 1
-		e.state.CurrentPhase = PhaseCommand
-		e.state.ActivePlayer = e.state.FirstTurnPlayer
+	if e.bothReady() {
+		events = append(events, e.startGame()...)
+	}
+	return events, nil
+}
 
-		events = append(events, GameEvent{
-			Type: EventGameStart,
-			Data: map[string]any{"round": 1, "firstPlayer": e.state.ActivePlayer},
-		})
+func (e *Engine) startGame() []GameEvent {
+	e.state.Status = StatusActive
+	e.state.CurrentRound = 1
+	e.state.CurrentTurn = 1
+	e.state.CurrentPhase = PhaseCommand
+	e.state.ActivePlayer = e.state.FirstTurnPlayer
 
-		// Both players gain 1 CP at the start of the first Command Phase
+	// Build the board from the players' sides.
+	if e.boardBuilder != nil {
+		if board, err := e.boardBuilder(e.sideOf(1), e.sideOf(2)); err == nil {
+			e.state.Board = board
+		}
+	}
+	// Build secondary decks per player mode.
+	if e.secondaryDeckBuilder != nil {
 		for _, p := range e.state.Players {
 			if p != nil {
-				p.CP += CPPerCommandPhase
-				events = append(events, GameEvent{
-					Type:         EventCPGain,
-					PlayerNumber: p.PlayerNumber,
-					Round:        1,
-					Phase:        PhaseCommand,
-					Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
-				})
+				p.SecondaryDeck = e.secondaryDeckBuilder(p.SecondaryMode)
 			}
 		}
 	}
+	e.snapshotControl()
 
-	return events, nil
+	events := []GameEvent{{
+		Type: EventGameStart,
+		Data: map[string]any{"round": 1, "firstPlayer": e.state.ActivePlayer},
+	}}
+	events = append(events, e.gainCommandCP()...)
+	return events
 }
+
+// --- Turn flow ---
 
 func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
@@ -361,69 +322,60 @@ func (e *Engine) applyAdvancePhase(action GameAction) ([]GameEvent, error) {
 	}
 
 	oldPhase := e.state.CurrentPhase
-	nextPhase, turnEnded := NextPhase(e.state.CurrentPhase)
-
-	// Stratagems are tracked once per phase; clear the per-player list whenever
-	// the phase changes so the repeat-use confirmation resets each phase.
-	for _, p := range e.state.Players {
-		if p != nil {
-			p.StratagemsUsedThisPhase = nil
-			p.NewOrdersUsedThisPhase = false
-		}
-	}
+	e.clearPhaseStratagems()
 
 	var events []GameEvent
 
-	if turnEnded {
-		// Switch active player
-		otherPlayer := 3 - e.state.ActivePlayer
-		if e.state.ActivePlayer != e.state.FirstTurnPlayer {
-			// Second player just finished — advance to next battle round
-			e.state.CurrentRound++
-			if e.state.CurrentRound > MaxRounds {
-				return e.endGame(events)
-			}
-			e.state.CurrentTurn = 1
-
-			// Reset the per-round additional CP cap at the start of each new battle round
-			for _, p := range e.state.Players {
-				if p != nil {
-					p.CPGainedThisRound = 0
-				}
-			}
-		} else {
-			// First player just finished — second player's turn begins
-			e.state.CurrentTurn = 2
-		}
-		e.state.ActivePlayer = otherPlayer
-		e.state.CurrentPhase = PhaseCommand
-
-		// Both players gain 1 CP at the start of each Command Phase
-		for _, p := range e.state.Players {
-			if p != nil {
-				p.CP += CPPerCommandPhase
-				events = append(events, GameEvent{
-					Type:         EventCPGain,
-					PlayerNumber: p.PlayerNumber,
-					Round:        e.state.CurrentRound,
-					Phase:        PhaseCommand,
-					Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
-				})
-			}
-		}
-	} else {
-		e.state.CurrentPhase = nextPhase
+	// Fire end-of-command-phase scoring when leaving the Command stage.
+	if oldPhase == PhaseCommand {
+		events = append(events, e.fireScoring("end-of-phase", PhaseCommand)...)
 	}
 
-	events = append(events, GameEvent{
+	next, turnEnded := nextStage(oldPhase)
+
+	if !turnEnded {
+		e.state.CurrentPhase = next
+		// Entering Command grants Core CP.
+		if next == PhaseCommand {
+			events = append(events, e.gainCommandCP()...)
+		}
+		// Entering End-of-Turn fires end-of-turn scoring.
+		if next == PhaseEndOfTurn {
+			events = append(events, e.fireScoring("end-of-turn", "")...)
+		}
+		events = append(events, e.phaseAdvanceEvent(action, oldPhase)...)
+		return events, nil
+	}
+
+	// Turn ended (advancing past End-of-Turn): switch turn/round.
+	if e.state.ActivePlayer != e.state.FirstTurnPlayer {
+		// Second player finished — advance the battle round.
+		e.state.CurrentRound++
+		if e.state.CurrentRound > MaxRounds {
+			events = append(events, e.fireScoring("end-of-battle", "")...)
+			return e.endGame(events)
+		}
+		e.state.CurrentTurn = 1
+		e.resetRound()
+	} else {
+		e.state.CurrentTurn = 2
+	}
+	e.state.ActivePlayer = opponentNumber(e.state.ActivePlayer)
+	e.state.CurrentPhase = PhaseStartOfTurn
+	e.snapshotControl()
+
+	events = append(events, e.phaseAdvanceEvent(action, oldPhase)...)
+	return events, nil
+}
+
+func (e *Engine) phaseAdvanceEvent(action GameAction, from Phase) []GameEvent {
+	return []GameEvent{{
 		Type:         EventPhaseAdvance,
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
-		Data:         map[string]any{"from": string(oldPhase), "to": string(e.state.CurrentPhase)},
-	})
-
-	return events, nil
+		Data:         map[string]any{"from": string(from), "to": string(e.state.CurrentPhase)},
+	}}
 }
 
 func (e *Engine) applyRevertPhase(action GameAction) ([]GameEvent, error) {
@@ -438,82 +390,94 @@ func (e *Engine) applyRevertPhase(action GameAction) ([]GameEvent, error) {
 	}
 
 	oldPhase := e.state.CurrentPhase
+	e.clearPhaseStratagems()
 
-	// Mirror advance_phase: stratagem "used this phase" lists reset on any
-	// phase change so the repeat-use confirmation resets for the reverted phase.
-	for _, p := range e.state.Players {
-		if p != nil {
-			p.StratagemsUsedThisPhase = nil
-			p.NewOrdersUsedThisPhase = false
+	crossedTurnBoundary := oldPhase == firstStage() || (oldPhase == PhaseCommand && e.state.CurrentTurn == 1 && e.state.CurrentRound == 1)
+	_ = crossedTurnBoundary
+
+	var events []GameEvent
+	// Reverting out of the first stage crosses the turn boundary.
+	if oldPhase == firstStage() {
+		if e.state.CurrentTurn == 2 {
+			e.state.CurrentTurn = 1
+			e.state.ActivePlayer = e.state.FirstTurnPlayer
+		} else {
+			e.state.CurrentRound--
+			e.state.CurrentTurn = 2
+			e.state.ActivePlayer = opponentNumber(e.state.FirstTurnPlayer)
 		}
-	}
-
-	crossedTurnBoundary := oldPhase == PhaseCommand
-
-	if !crossedTurnBoundary {
-		e.state.CurrentPhase = PrevPhase(oldPhase)
-	} else if e.state.CurrentTurn == 2 {
-		// Rolling back to the first player's Fight phase, same round.
-		e.state.CurrentTurn = 1
-		e.state.ActivePlayer = e.state.FirstTurnPlayer
-		e.state.CurrentPhase = PhaseFight
+		e.state.CurrentPhase = lastStage()
 	} else {
-		// currentTurn == 1, rolling back into the previous round's second turn.
-		e.state.CurrentRound--
-		e.state.CurrentTurn = 2
-		e.state.ActivePlayer = 3 - e.state.FirstTurnPlayer
-		e.state.CurrentPhase = PhaseFight
+		// Reverting CP grant when stepping back out of Command.
+		if oldPhase == PhaseCommand {
+			events = append(events, e.revokeCommandCP()...)
+		}
+		e.state.CurrentPhase = prevStage(oldPhase)
 	}
 
-	events := []GameEvent{{
+	events = append(events, GameEvent{
 		Type:         EventPhaseRevert,
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
 		Data:         map[string]any{"from": string(oldPhase), "to": string(e.state.CurrentPhase)},
-	}}
-
-	if crossedTurnBoundary {
-		// Revoke the 1 CP each player auto-gained when entering the Command
-		// phase we just rolled out of. Clamp at 0 — if a player already spent
-		// the CP, we don't push them negative; their stratagem use stands.
-		for _, p := range e.state.Players {
-			if p == nil {
-				continue
-			}
-			newCP := p.CP - CPPerCommandPhase
-			if newCP < 0 {
-				newCP = 0
-			}
-			delta := newCP - p.CP
-			p.CP = newCP
-			events = append(events, GameEvent{
-				Type:         EventCPAdjust,
-				PlayerNumber: p.PlayerNumber,
-				Round:        e.state.CurrentRound,
-				Phase:        e.state.CurrentPhase,
-				Data:         map[string]any{"delta": delta, "newTotal": newCP, "reason": "phase_revert"},
-			})
-		}
-	}
-
+	})
 	return events, nil
+}
+
+// gainCommandCP grants 1 Core CP to both players (entering a Command phase).
+func (e *Engine) gainCommandCP() []GameEvent {
+	var events []GameEvent
+	for _, p := range e.state.Players {
+		if p == nil {
+			continue
+		}
+		p.CP += CPPerCommandPhase
+		events = append(events, GameEvent{
+			Type:         EventCPGain,
+			PlayerNumber: p.PlayerNumber,
+			Round:        e.state.CurrentRound,
+			Phase:        PhaseCommand,
+			Data:         map[string]any{"amount": CPPerCommandPhase, "newTotal": p.CP},
+		})
+	}
+	return events
+}
+
+// revokeCommandCP reverses the Core CP grant, clamped at 0.
+func (e *Engine) revokeCommandCP() []GameEvent {
+	var events []GameEvent
+	for _, p := range e.state.Players {
+		if p == nil {
+			continue
+		}
+		newCP := p.CP - CPPerCommandPhase
+		if newCP < 0 {
+			newCP = 0
+		}
+		delta := newCP - p.CP
+		p.CP = newCP
+		events = append(events, GameEvent{
+			Type:         EventCPAdjust,
+			PlayerNumber: p.PlayerNumber,
+			Round:        e.state.CurrentRound,
+			Phase:        e.state.CurrentPhase,
+			Data:         map[string]any{"delta": delta, "newTotal": newCP, "reason": "phase_revert"},
+		})
+	}
+	return events
 }
 
 func (e *Engine) applyAdjustCP(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
 	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
 	delta := intFromData(action.Data, "delta")
 	force, _ := action.Data["force"].(bool)
-	// Positive adjustments are subject to the per-round CP gain cap unless the
-	// client explicitly opts out via force=true (player has confirmed override).
 	if delta > 0 && player.CPGainedThisRound >= 1 && !force {
 		return nil, fmt.Errorf("cannot gain more than 1 additional CP per battle round")
 	}
@@ -521,12 +485,10 @@ func (e *Engine) applyAdjustCP(action GameAction) ([]GameEvent, error) {
 	if newCP < 0 {
 		return nil, fmt.Errorf("not enough CP")
 	}
-
 	player.CP = newCP
 	if delta > 0 {
 		player.CPGainedThisRound++
 	}
-
 	return []GameEvent{{
 		Type:         EventCPAdjust,
 		PlayerNumber: action.PlayerNumber,
@@ -536,183 +498,17 @@ func (e *Engine) applyAdjustCP(action GameAction) ([]GameEvent, error) {
 	}}, nil
 }
 
-func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	category, _ := action.Data["category"].(string)
-	delta := intFromData(action.Data, "delta")
-
-	var (
-		eventType        EventType
-		oldVP            int
-		newVP            int
-		scoringSlot      string
-		scoringRuleLabel string
-	)
-	switch category {
-	case "primary":
-		scoringSlot, _ = action.Data["scoringSlot"].(string)
-		if !IsValidPrimaryScoringSlot(scoringSlot) {
-			return nil, fmt.Errorf("invalid primary scoring time")
-		}
-		scoringRuleLabel, _ = action.Data["scoringRuleLabel"].(string)
-		if _, used := player.LookupPrimaryScore(e.state.CurrentRound, scoringSlot, scoringRuleLabel); used {
-			return nil, fmt.Errorf("primary already scored %s", primaryScoreLocator(scoringSlot, scoringRuleLabel, e.state.CurrentRound))
-		}
-		oldVP = player.VPPrimary
-		newVP = ClampVP(oldVP+delta, MaxVPPrimary)
-		player.VPPrimary = newVP
-		player.RecordPrimaryScore(e.state.CurrentRound, scoringSlot, scoringRuleLabel, newVP-oldVP)
-		eventType = EventVPPrimaryScore
-	case "secondary":
-		oldVP = player.VPSecondary
-		newVP = ClampVP(oldVP+delta, MaxVPSecondary)
-		player.VPSecondary = newVP
-		eventType = EventVPSecondaryScore
-	case "gambit":
-		oldVP = player.VPGambit
-		newVP = ClampVP(oldVP+delta, MaxVPGambit)
-		player.VPGambit = newVP
-		eventType = EventVPGambitScore
-	default:
-		return nil, fmt.Errorf("unknown VP category: %s", category)
-	}
-
-	data := map[string]any{
-		"category":     category,
-		"delta":        delta,
-		"appliedDelta": newVP - oldVP,
-		"newTotal":     player.TotalVP(),
-	}
-	if scoringSlot != "" {
-		data["scoringSlot"] = scoringSlot
-	}
-	if scoringRuleLabel != "" {
-		data["scoringRuleLabel"] = scoringRuleLabel
-	}
-
-	return []GameEvent{{
-		Type:         eventType,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data:         data,
-	}}, nil
-}
-
-func (e *Engine) applyUndoPrimaryScore(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	round := intFromData(action.Data, "round")
-	scoringSlot, _ := action.Data["scoringSlot"].(string)
-	if !IsValidPrimaryScoringSlot(scoringSlot) {
-		return nil, fmt.Errorf("invalid primary scoring time")
-	}
-	if round <= 0 {
-		return nil, fmt.Errorf("invalid round")
-	}
-	scoringRuleLabel, _ := action.Data["scoringRuleLabel"].(string)
-
-	appliedDelta, ok := player.LookupPrimaryScore(round, scoringSlot, scoringRuleLabel)
-	if !ok {
-		return nil, fmt.Errorf("no primary score recorded %s", primaryScoreLocator(scoringSlot, scoringRuleLabel, round))
-	}
-
-	player.VPPrimary = ClampVP(player.VPPrimary-appliedDelta, MaxVPPrimary)
-	player.RemovePrimaryScore(round, scoringSlot, scoringRuleLabel)
-
-	data := map[string]any{
-		"revertedRound": round,
-		"scoringSlot":   scoringSlot,
-		"revertedDelta": appliedDelta,
-		"newTotal":      player.TotalVP(),
-	}
-	if scoringRuleLabel != "" {
-		data["scoringRuleLabel"] = scoringRuleLabel
-	}
-
-	return []GameEvent{{
-		Type:         EventVPPrimaryScoreReverted,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data:         data,
-	}}, nil
-}
-
-func (e *Engine) applyAdjustVPManual(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusActive {
-		return nil, fmt.Errorf("game is not active")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	category, _ := action.Data["category"].(string)
-	delta := intFromData(action.Data, "delta")
-
-	var oldVP, newVP int
-	switch category {
-	case "primary":
-		oldVP = player.VPPrimary
-		newVP = ClampVP(oldVP+delta, MaxVPPrimary)
-		player.VPPrimary = newVP
-	case "secondary":
-		oldVP = player.VPSecondary
-		newVP = ClampVP(oldVP+delta, MaxVPSecondary)
-		player.VPSecondary = newVP
-	case "gambit":
-		oldVP = player.VPGambit
-		newVP = ClampVP(oldVP+delta, MaxVPGambit)
-		player.VPGambit = newVP
-	default:
-		return nil, fmt.Errorf("unknown VP category: %s", category)
-	}
-
-	return []GameEvent{{
-		Type:         EventVPManualAdjust,
-		PlayerNumber: action.PlayerNumber,
-		Round:        e.state.CurrentRound,
-		Phase:        e.state.CurrentPhase,
-		Data: map[string]any{
-			"category":     category,
-			"delta":        delta,
-			"appliedDelta": newVP - oldVP,
-			"newTotal":     player.TotalVP(),
-		},
-	}}, nil
-}
-
 func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
 	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-
-	stratagemID, _ := action.Data["stratagemId"].(string)
-	stratagemName, _ := action.Data["stratagemName"].(string)
+	stratagemID := strFromData(action.Data, "stratagemId")
+	stratagemName := strFromData(action.Data, "stratagemName")
 	cpSpent := intFromData(action.Data, "cpCost")
-
 	originalCpCost := cpSpent
 	if e.stratagemLookup != nil {
 		info, err := e.stratagemLookup(stratagemID)
@@ -722,27 +518,24 @@ func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 		stratagemName = info.Name
 		originalCpCost = info.CPCost
 	}
-
 	if cpSpent < 0 {
 		return nil, fmt.Errorf("CP cost cannot be negative")
 	}
 	if player.CP < cpSpent {
 		return nil, fmt.Errorf("not enough CP — you have %d, need %d", player.CP, cpSpent)
 	}
-
 	player.CP -= cpSpent
 
-	alreadyUsedThisPhase := false
+	alreadyUsed := false
 	for _, id := range player.StratagemsUsedThisPhase {
 		if id == stratagemID {
-			alreadyUsedThisPhase = true
+			alreadyUsed = true
 			break
 		}
 	}
-	if !alreadyUsedThisPhase {
+	if !alreadyUsed {
 		player.StratagemsUsedThisPhase = append(player.StratagemsUsedThisPhase, stratagemID)
 	}
-
 	return []GameEvent{{
 		Type:         EventStratagemUsed,
 		PlayerNumber: action.PlayerNumber,
@@ -758,101 +551,122 @@ func (e *Engine) applyUseStratagem(action GameAction) ([]GameEvent, error) {
 	}}, nil
 }
 
-func (e *Engine) applyDeclareGambit(action GameAction) ([]GameEvent, error) {
+// applyScoreVP is the manual scoring escape hatch (primary/secondary).
+func (e *Engine) applyScoreVP(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
 	}
-	if e.state.CurrentRound < 3 {
-		return nil, fmt.Errorf("gambits can only be declared from round 3 onward")
-	}
-
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
+	category, _ := action.Data["category"].(string)
+	delta := intFromData(action.Data, "delta")
 
-	gambitID, _ := action.Data["gambitId"].(string)
-	player.GambitID = gambitID
-	player.GambitDeclaredRound = e.state.CurrentRound
-
+	var applied int
+	var eventType EventType
+	switch category {
+	case "primary":
+		applied = e.scorePrimary(player, delta)
+		eventType = EventVPPrimaryScore
+	case "secondary":
+		applied = e.scoreSecondary(player, delta)
+		eventType = EventVPSecondaryScore
+	default:
+		return nil, fmt.Errorf("unknown VP category: %s", category)
+	}
 	return []GameEvent{{
-		Type:         EventGambitDeclared,
+		Type:         eventType,
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
-		Data:         map[string]any{"gambitId": gambitID},
+		Data: map[string]any{
+			"category": category, "delta": delta, "appliedDelta": applied, "newTotal": player.TotalVP(),
+		},
 	}}, nil
 }
+
+func (e *Engine) applyAdjustVPManual(action GameAction) ([]GameEvent, error) {
+	if e.state.Status != StatusActive {
+		return nil, fmt.Errorf("game is not active")
+	}
+	player := e.state.GetPlayer(action.PlayerNumber)
+	if player == nil {
+		return nil, fmt.Errorf("invalid player number")
+	}
+	category, _ := action.Data["category"].(string)
+	delta := intFromData(action.Data, "delta")
+	gameCap := e.state.gameCap()
+	var oldVP, newVP int
+	switch category {
+	case "primary":
+		oldVP = player.VPPrimary
+		newVP = ClampVP(oldVP+delta, gameCap)
+		player.VPPrimary = newVP
+	case "secondary":
+		oldVP = player.VPSecondary
+		newVP = ClampVP(oldVP+delta, gameCap)
+		player.VPSecondary = newVP
+	case "paint":
+		oldVP = player.VPPaint
+		newVP = ClampVP(oldVP+delta, MaxVPPaint)
+		player.VPPaint = newVP
+	default:
+		return nil, fmt.Errorf("unknown VP category: %s", category)
+	}
+	return []GameEvent{{
+		Type:         EventVPManualAdjust,
+		PlayerNumber: action.PlayerNumber,
+		Round:        e.state.CurrentRound,
+		Phase:        e.state.CurrentPhase,
+		Data: map[string]any{
+			"category": category, "delta": delta, "appliedDelta": newVP - oldVP, "newTotal": player.TotalVP(),
+		},
+	}}, nil
+}
+
+// --- Game end ---
 
 func (e *Engine) applyConcede(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusActive {
 		return nil, fmt.Errorf("game is not active")
 	}
-
-	winnerNumber := 3 - action.PlayerNumber
-	winner := e.state.GetPlayer(winnerNumber)
-
+	winner := e.state.GetPlayer(opponentNumber(action.PlayerNumber))
 	events := []GameEvent{{
 		Type:         EventPlayerConcede,
 		PlayerNumber: action.PlayerNumber,
 		Round:        e.state.CurrentRound,
 		Phase:        e.state.CurrentPhase,
 	}}
-
 	e.state.Status = StatusCompleted
 	now := time.Now()
 	e.state.CompletedAt = &now
 	if winner != nil {
 		e.state.WinnerID = winner.UserID
 	}
-
 	events = append(events, GameEvent{
 		Type: EventGameEnd,
 		Data: map[string]any{"reason": "concede", "winnerId": e.state.WinnerID},
 	})
-
 	return events, nil
-}
-
-func (e *Engine) applySetPaintScore(action GameAction) ([]GameEvent, error) {
-	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only set paint score during setup")
-	}
-
-	player := e.state.GetPlayer(action.PlayerNumber)
-	if player == nil {
-		return nil, fmt.Errorf("invalid player number")
-	}
-
-	score := intFromData(action.Data, "score")
-	player.VPPaint = ClampVP(score, MaxVPPaint)
-	player.Ready = false
-
-	return nil, nil
 }
 
 func (e *Engine) endGame(events []GameEvent) ([]GameEvent, error) {
 	e.state.Status = StatusCompleted
 	now := time.Now()
 	e.state.CompletedAt = &now
-
-	// Determine winner by total VP
-	p1 := e.state.Players[0]
-	p2 := e.state.Players[1]
+	p1, p2 := e.state.Players[0], e.state.Players[1]
 	if p1 != nil && p2 != nil {
 		if p1.TotalVP() > p2.TotalVP() {
 			e.state.WinnerID = p1.UserID
 		} else if p2.TotalVP() > p1.TotalVP() {
 			e.state.WinnerID = p2.UserID
 		}
-		// Tie: no winner
 	}
-
 	events = append(events, GameEvent{
 		Type: EventGameEnd,
 		Data: map[string]any{"reason": "rounds_complete", "winnerId": e.state.WinnerID},
 	})
-
 	return events, nil
 }
 
@@ -863,9 +677,7 @@ func (e *Engine) applyRequestAbandon(action GameAction) ([]GameEvent, error) {
 	if e.state.AbandonRequestedBy != nil {
 		return nil, fmt.Errorf("an abandon request is already pending")
 	}
-
 	e.state.AbandonRequestedBy = &action.PlayerNumber
-
 	return []GameEvent{{
 		Type:         EventAbandonRequested,
 		PlayerNumber: action.PlayerNumber,
@@ -884,9 +696,7 @@ func (e *Engine) applyRespondAbandon(action GameAction) ([]GameEvent, error) {
 	if *e.state.AbandonRequestedBy == action.PlayerNumber {
 		return nil, fmt.Errorf("cannot respond to your own abandon request")
 	}
-
 	accept, _ := action.Data["accept"].(bool)
-
 	if !accept {
 		e.state.AbandonRequestedBy = nil
 		return []GameEvent{{
@@ -896,19 +706,100 @@ func (e *Engine) applyRespondAbandon(action GameAction) ([]GameEvent, error) {
 			Phase:        e.state.CurrentPhase,
 		}}, nil
 	}
-
 	e.state.AbandonRequestedBy = nil
 	e.state.Status = StatusAbandoned
 	now := time.Now()
 	e.state.CompletedAt = &now
-
 	return []GameEvent{{
 		Type: EventGameEnd,
 		Data: map[string]any{"reason": "abandoned"},
 	}}, nil
 }
 
-// Helpers to extract typed values from action data
+// --- Shared helpers ---
+
+func (e *Engine) resetReady() {
+	for _, p := range e.state.Players {
+		if p != nil {
+			p.Ready = false
+		}
+	}
+}
+
+func (e *Engine) bothReady() bool {
+	return e.state.Players[0] != nil && e.state.Players[1] != nil &&
+		e.state.Players[0].Ready && e.state.Players[1].Ready
+}
+
+func (e *Engine) clearPhaseStratagems() {
+	for _, p := range e.state.Players {
+		if p != nil {
+			p.StratagemsUsedThisPhase = nil
+		}
+	}
+}
+
+func (e *Engine) resetRound() {
+	for _, p := range e.state.Players {
+		if p != nil {
+			p.CPGainedThisRound = 0
+			p.PrimaryScoredThisRound = 0
+			p.SecondaryScoredThisRound = 0
+		}
+	}
+}
+
+func (e *Engine) sideOf(playerNumber int) scoring.Side {
+	if p := e.state.GetPlayer(playerNumber); p != nil {
+		return p.Side
+	}
+	return ""
+}
+
+// snapshotControl records each objective's controller at the start of the turn.
+func (e *Engine) snapshotControl() {
+	m := make(map[int]int, len(e.state.Board.Objectives))
+	for _, o := range e.state.Board.Objectives {
+		m[o.Index] = o.ControlledBy
+	}
+	e.state.StartOfTurnControl = m
+}
+
+// scorePrimary / scoreSecondary apply VP for a category, clamped by both the
+// per-round and per-game caps, returning the applied amount.
+func (e *Engine) scorePrimary(p *PlayerState, want int) int {
+	caps := scoring.Caps{PerRound: e.state.roundCap(), PerGame: e.state.gameCap()}
+	applied := caps.Clamp(want, p.PrimaryScoredThisRound, p.VPPrimary)
+	p.VPPrimary += applied
+	p.PrimaryScoredThisRound += applied
+	return applied
+}
+
+func (e *Engine) scoreSecondary(p *PlayerState, want int) int {
+	caps := scoring.Caps{PerRound: e.state.roundCap(), PerGame: e.state.gameCap()}
+	applied := caps.Clamp(want, p.SecondaryScoredThisRound, p.VPSecondary)
+	p.VPSecondary += applied
+	p.SecondaryScoredThisRound += applied
+	return applied
+}
+
+func opponentNumber(playerNumber int) int {
+	if playerNumber == 1 {
+		return 2
+	}
+	if playerNumber == 2 {
+		return 1
+	}
+	return 0
+}
+
+func otherSide(s scoring.Side) scoring.Side {
+	if s == scoring.SideAttacker {
+		return scoring.SideDefender
+	}
+	return scoring.SideAttacker
+}
+
 func strFromData(data map[string]any, key string) string {
 	if v, ok := data[key].(string); ok {
 		return v

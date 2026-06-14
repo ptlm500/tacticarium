@@ -1,21 +1,23 @@
 package game
 
-import "time"
+import (
+	"time"
+
+	"github.com/peter/tacticarium/backend/internal/game/scoring"
+)
 
 type Phase string
 
 const (
-	PhaseSetup    Phase = "setup"
-	PhaseCommand  Phase = "command"
-	PhaseMovement Phase = "movement"
-	PhaseShooting Phase = "shooting"
-	PhaseCharge   Phase = "charge"
-	PhaseFight    Phase = "fight"
+	PhaseSetup       Phase = "setup"
+	PhaseStartOfTurn Phase = "start_of_turn"
+	PhaseCommand     Phase = "command"
+	PhaseMovement    Phase = "movement"
+	PhaseShooting    Phase = "shooting"
+	PhaseCharge      Phase = "charge"
+	PhaseFight       Phase = "fight"
+	PhaseEndOfTurn   Phase = "end_of_turn"
 )
-
-var PhaseOrder = []Phase{
-	PhaseCommand, PhaseMovement, PhaseShooting, PhaseCharge, PhaseFight,
-}
 
 type GameStatus string
 
@@ -26,146 +28,93 @@ const (
 	StatusAbandoned GameStatus = "abandoned"
 )
 
-type SecondaryObjective struct {
-	ID          string `json:"id"`
-	SecondaryID string `json:"secondaryId,omitempty"`
-	CustomName  string `json:"customName,omitempty"`
-	CustomMaxVP int    `json:"customMaxVp,omitempty"`
-	VPScored    int    `json:"vpScored"`
-}
-
-// SecondaryScoringOption represents one scoring criterion for a secondary mission.
-type SecondaryScoringOption struct {
-	Label string `json:"label"`
-	VP    int    `json:"vp"`
-	Mode  string `json:"mode,omitempty"` // "fixed", "tactical", or "" (both)
-}
-
-// DrawRestrictionMode enumerates how a draw restriction is enforced.
-const (
-	DrawRestrictionMandatory = "mandatory"
-	DrawRestrictionOptional  = "optional"
-)
-
-// SecondaryDrawRestriction describes a "When Drawn" rule that triggers when a
-// card is drawn during a specific battle round. Mandatory restrictions force
-// the card to be shuffled back into the deck; optional restrictions let the
-// player choose to shuffle it back via the reshuffle_secondary action.
-type SecondaryDrawRestriction struct {
-	Round int    `json:"round"`
-	Mode  string `json:"mode"`
-}
-
-// ActiveSecondary represents a secondary mission card in the deck/active/achieved/discarded piles.
-type ActiveSecondary struct {
-	ID              string                    `json:"id"`
-	Name            string                    `json:"name"`
-	Description     string                    `json:"description"`
-	IsFixed         bool                      `json:"isFixed"`
-	MaxVP           int                       `json:"maxVp"`
-	ScoringOptions  []SecondaryScoringOption  `json:"scoringOptions"`
-	DrawRestriction *SecondaryDrawRestriction `json:"drawRestriction,omitempty"`
-	// ScoringTiming controls when the frontend prompts the owner to score.
-	// "end_of_own_turn" (default) or "end_of_opponent_turn".
-	ScoringTiming string `json:"scoringTiming,omitempty"`
-	// VPScored is set when the card moves to AchievedSecondaries. Zero on cards
-	// in deck/active/discarded piles.
+// SecondaryCard is a card in a player's secondary deck/hand/scored pile. It
+// embeds the evaluable card (id, name, awards, text) and, once scored, the VP it
+// yielded.
+type SecondaryCard struct {
+	scoring.Card
 	VPScored int `json:"vpScored,omitempty"`
 }
 
+// ScorePrompt is an outstanding request for a player to confirm an off-board
+// (Layer-2) fact so an award can be scored. The player responds with
+// confirm_award supplying a count.
+type ScorePrompt struct {
+	ID         string `json:"id"`
+	Category   string `json:"category"` // "primary" | "secondary"
+	CardID     string `json:"cardId"`
+	CardName   string `json:"cardName"`
+	AwardIndex int    `json:"awardIndex"`
+	Round      int    `json:"round"`
+	Text       string `json:"text"`
+}
+
 type PlayerState struct {
-	UserID              string               `json:"userId"`
-	Username            string               `json:"username"`
-	AvatarURL           string               `json:"avatarUrl,omitempty"`
-	PlayerNumber        int                  `json:"playerNumber"`
-	FactionID           string               `json:"factionId"`
-	FactionName         string               `json:"factionName"`
-	DetachmentID        string               `json:"detachmentId"`
-	DetachmentName      string               `json:"detachmentName"`
-	CP                  int                  `json:"cp"`
-	VPPrimary           int                  `json:"vpPrimary"`
-	VPSecondary         int                  `json:"vpSecondary"`
-	VPGambit            int                  `json:"vpGambit"`
-	VPPaint             int                  `json:"vpPaint"`
-	Ready               bool                 `json:"ready"`
-	GambitID            string               `json:"gambitId,omitempty"`
-	GambitDeclaredRound int                  `json:"gambitDeclaredRound,omitempty"`
-	Secondaries         []SecondaryObjective `json:"secondaries"`
+	UserID         string `json:"userId"`
+	Username       string `json:"username"`
+	AvatarURL      string `json:"avatarUrl,omitempty"`
+	PlayerNumber   int    `json:"playerNumber"`
+	FactionID      string `json:"factionId"`
+	FactionName    string `json:"factionName"`
+	DetachmentID   string `json:"detachmentId"`
+	DetachmentName string `json:"detachmentName"`
 
-	// Mission system fields
-	SecondaryMode           string            `json:"secondaryMode"`
-	TacticalDeck            []ActiveSecondary `json:"tacticalDeck"`
-	ActiveSecondaries       []ActiveSecondary `json:"activeSecondaries"`
-	AchievedSecondaries     []ActiveSecondary `json:"achievedSecondaries"`
-	DiscardedSecondaries    []ActiveSecondary `json:"discardedSecondaries"`
-	CPGainedThisRound       int               `json:"cpGainedThisRound"`
-	IsChallenger            bool              `json:"isChallenger"`
-	ChallengerCardID        string            `json:"challengerCardId,omitempty"`
-	AdaptOrDieUses          int               `json:"adaptOrDieUses"`
-	StratagemsUsedThisPhase []string          `json:"stratagemsUsedThisPhase"`
-	NewOrdersUsedThisPhase  bool              `json:"newOrdersUsedThisPhase"`
+	// 11e: each player has a side, a chosen force disposition, and a resolved
+	// (asymmetric) primary mission.
+	Side                 scoring.Side `json:"side,omitempty"`
+	ForceDisposition     string       `json:"forceDisposition,omitempty"`
+	ForceDispositionName string       `json:"forceDispositionName,omitempty"`
+	MissionID            string       `json:"missionId,omitempty"`
+	MissionName          string       `json:"missionName,omitempty"`
+	// PrimaryCard is the scoring card for this player's resolved primary mission
+	// (card_type="primary"); its awards drive primary VP.
+	PrimaryCard scoring.Card `json:"primaryCard,omitempty"`
 
-	// VPPrimaryScoredSlots maps battle round -> scoring slot -> rule label -> applied VP delta.
-	// Used to prevent double-clicking the same scoring rule and to support
-	// undoing a specific prior score. Multiple distinct rules can score in the
-	// same slot in the same round (e.g. Purge the Foe's four end-of-battle-round
-	// rules).
-	VPPrimaryScoredSlots map[int]map[string]map[string]int `json:"vpPrimaryScoredSlots"`
+	CP          int  `json:"cp"`
+	VPPrimary   int  `json:"vpPrimary"`
+	VPSecondary int  `json:"vpSecondary"`
+	VPPaint     int  `json:"vpPaint"`
+	Ready       bool `json:"ready"`
+
+	// Secondary deck (draw 2 per turn, keep unscored cards).
+	SecondaryMode   string          `json:"secondaryMode"` // "fixed" | "tactical"
+	SecondaryDeck   []SecondaryCard `json:"secondaryDeck"`
+	SecondaryHand   []SecondaryCard `json:"secondaryHand"`
+	SecondaryScored []SecondaryCard `json:"secondaryScored"`
+
+	CPGainedThisRound       int      `json:"cpGainedThisRound"`
+	StratagemsUsedThisPhase []string `json:"stratagemsUsedThisPhase"`
+
+	// Per-round VP accounting for the 15-VP/round caps (reset each battle round).
+	// Per-game totals are VPPrimary / VPSecondary (capped at the game cap).
+	PrimaryScoredThisRound   int `json:"primaryScoredThisRound"`
+	SecondaryScoredThisRound int `json:"secondaryScoredThisRound"`
+
+	// Outstanding Layer-2 scoring prompts awaiting player confirmation.
+	PendingScorePrompts []ScorePrompt `json:"pendingScorePrompts"`
 }
 
 func (p *PlayerState) TotalVP() int {
-	return p.VPPrimary + p.VPSecondary + p.VPGambit + p.VPPaint
-}
-
-// RecordPrimaryScore stores the applied delta for a (round, slot, ruleLabel)
-// triple, allocating nested maps as needed.
-func (p *PlayerState) RecordPrimaryScore(round int, slot, ruleLabel string, delta int) {
-	if p.VPPrimaryScoredSlots == nil {
-		p.VPPrimaryScoredSlots = map[int]map[string]map[string]int{}
-	}
-	if p.VPPrimaryScoredSlots[round] == nil {
-		p.VPPrimaryScoredSlots[round] = map[string]map[string]int{}
-	}
-	if p.VPPrimaryScoredSlots[round][slot] == nil {
-		p.VPPrimaryScoredSlots[round][slot] = map[string]int{}
-	}
-	p.VPPrimaryScoredSlots[round][slot][ruleLabel] = delta
-}
-
-// LookupPrimaryScore returns the applied delta recorded for a (round, slot,
-// ruleLabel) triple, or (0, false) if no such entry exists.
-func (p *PlayerState) LookupPrimaryScore(round int, slot, ruleLabel string) (int, bool) {
-	delta, ok := p.VPPrimaryScoredSlots[round][slot][ruleLabel]
-	return delta, ok
-}
-
-// RemovePrimaryScore deletes the (round, slot, ruleLabel) entry and prunes
-// empty parent maps so the structure stays compact.
-func (p *PlayerState) RemovePrimaryScore(round int, slot, ruleLabel string) {
-	rules := p.VPPrimaryScoredSlots[round][slot]
-	delete(rules, ruleLabel)
-	if len(rules) == 0 {
-		delete(p.VPPrimaryScoredSlots[round], slot)
-	}
-	if len(p.VPPrimaryScoredSlots[round]) == 0 {
-		delete(p.VPPrimaryScoredSlots, round)
-	}
+	return p.VPPrimary + p.VPSecondary + p.VPPaint
 }
 
 type GameState struct {
-	GameID             string          `json:"gameId"`
-	InviteCode         string          `json:"inviteCode"`
-	Status             GameStatus      `json:"status"`
-	CurrentRound       int             `json:"currentRound"`
-	CurrentTurn        int             `json:"currentTurn"`
-	CurrentPhase       Phase           `json:"currentPhase"`
-	ActivePlayer       int             `json:"activePlayer"`
-	FirstTurnPlayer    int             `json:"firstTurnPlayer"`
-	MissionPackID      string          `json:"missionPackId"`
-	MissionID          string          `json:"missionId"`
-	MissionName        string          `json:"missionName"`
-	TwistID            string          `json:"twistId"`
-	TwistName          string          `json:"twistName"`
+	GameID          string        `json:"gameId"`
+	InviteCode      string        `json:"inviteCode"`
+	Status          GameStatus    `json:"status"`
+	CurrentRound    int           `json:"currentRound"`
+	CurrentTurn     int           `json:"currentTurn"`
+	CurrentPhase    Phase         `json:"currentPhase"`
+	ActivePlayer    int           `json:"activePlayer"`
+	FirstTurnPlayer int           `json:"firstTurnPlayer"`
+	Board           scoring.Board `json:"board"`
+	// VP caps for this game, sourced from the mission cards (default 45 / 15).
+	VPPerGameCap  int `json:"vpPerGameCap"`
+	VPPerRoundCap int `json:"vpPerRoundCap"`
+	// StartOfTurnControl snapshots objective control (index -> player) at the
+	// start of the current turn, for "newly controlled this turn" scoring.
+	StartOfTurnControl map[int]int `json:"startOfTurnControl,omitempty"`
+
 	Players            [2]*PlayerState `json:"players"`
 	CreatedAt          time.Time       `json:"createdAt"`
 	CompletedAt        *time.Time      `json:"completedAt,omitempty"`
@@ -187,4 +136,19 @@ func (gs *GameState) GetPlayerByUserID(userID string) *PlayerState {
 		}
 	}
 	return nil
+}
+
+// gameCap / roundCap return the configured caps, falling back to defaults.
+func (gs *GameState) gameCap() int {
+	if gs.VPPerGameCap > 0 {
+		return gs.VPPerGameCap
+	}
+	return DefaultVPPerGameCap
+}
+
+func (gs *GameState) roundCap() int {
+	if gs.VPPerRoundCap > 0 {
+		return gs.VPPerRoundCap
+	}
+	return DefaultVPPerRoundCap
 }
