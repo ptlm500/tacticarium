@@ -52,6 +52,16 @@ export function buildPlayerStats(
       }
     }
 
+    // 11e auto-scoring (Layer-1) and confirmed Layer-2 awards both carry a
+    // category + applied delta.
+    if (e.eventType === "card_scored" || e.eventType === "award_confirmed") {
+      const category = e.data?.category as string | undefined;
+      const applied =
+        (e.data?.appliedDelta as number | undefined) ?? (e.data?.delta as number | undefined) ?? 0;
+      if (category === "primary") bucket(round).primary += applied;
+      else if (category === "secondary") bucket(round).secondary += applied;
+    }
+
     if (e.eventType === "vp_primary_score_reverted") {
       const revertedRound = (e.data?.revertedRound as number | undefined) ?? round;
       const revertedDelta = (e.data?.revertedDelta as number | undefined) ?? 0;

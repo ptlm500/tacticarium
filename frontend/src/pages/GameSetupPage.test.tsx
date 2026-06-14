@@ -140,7 +140,7 @@ describe("GameSetupPage", () => {
     });
   });
 
-  it("shows first-player picker when twist is selected and hides secondary section until chosen", async () => {
+  it("shows first-player picker once a disposition is chosen and hides secondary section until chosen", async () => {
     const gs = makeGameState({
       status: "setup",
       firstTurnPlayer: 0, // not yet chosen
@@ -150,6 +150,11 @@ describe("GameSetupPage", () => {
           factionName: "Space Marines",
           detachmentId: "det-gladius",
           detachmentName: "Gladius Task Force",
+          side: "attacker",
+          forceDisposition: "take-and-hold",
+          forceDispositionName: "Take and Hold",
+          missionId: "",
+          missionName: "",
           secondaryMode: "",
           ready: false,
         }),
@@ -370,13 +375,17 @@ describe("GameSetupPage", () => {
     });
   });
 
-  it("shows mission section when detachment is selected", async () => {
+  it("shows the side picker once a detachment is selected", async () => {
     const gs = makeGameState({
       status: "setup",
       players: [
         makePlayerState({
           detachmentId: "det-gladius",
           detachmentName: "Gladius Task Force",
+          side: "",
+          forceDisposition: "",
+          missionId: "",
+          missionName: "",
           secondaryMode: "",
           ready: false,
         }),
@@ -403,16 +412,137 @@ describe("GameSetupPage", () => {
     });
 
     await vi.waitFor(() => {
-      expect(screen.getByText("Primary Mission")).toBeTruthy();
+      expect(screen.getByText("Your Side")).toBeTruthy();
+      expect(screen.getByText("Attacker")).toBeTruthy();
+      expect(screen.getByText("Defender")).toBeTruthy();
+    });
+
+    // Force-disposition section is gated until a side is chosen.
+    expect(screen.queryByText("Force Disposition")).toBeNull();
+  });
+
+  it("sends select_side and select_force_disposition over the websocket", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      players: [
+        makePlayerState({
+          detachmentId: "det-gladius",
+          detachmentName: "Gladius Task Force",
+          side: "attacker",
+          forceDisposition: "",
+          missionId: "",
+          missionName: "",
+          secondaryMode: "",
+          ready: false,
+        }),
+        null,
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const sentActions: Array<Record<string, unknown>> = [];
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+        client.addEventListener("message", (ev) => {
+          if (typeof ev.data !== "string") return;
+          try {
+            const parsed = JSON.parse(ev.data);
+            if (parsed?.type === "action" && parsed.data) {
+              sentActions.push(parsed.data as Record<string, unknown>);
+            }
+          } catch {
+            // ignore non-JSON frames (e.g. the client's pings)
+          }
+        });
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
     });
 
     const user = userEvent.setup();
-    const trigger = screen.getByRole("combobox");
-    await user.click(trigger);
 
     await vi.waitFor(() => {
-      expect(screen.getByRole("option", { name: "Supply Drop" })).toBeTruthy();
-      expect(screen.getByRole("option", { name: "Scorched Earth" })).toBeTruthy();
+      expect(screen.getByText("Defender")).toBeTruthy();
+    });
+    await user.click(screen.getByText("Defender"));
+
+    await vi.waitFor(() => {
+      const sideAction = sentActions.find((a) => a.type === "select_side");
+      expect(sideAction).toBeTruthy();
+      expect(sideAction!.side).toBe("defender");
+    });
+
+    // The disposition picker is shown (side already set to attacker in fixture)
+    // and is limited to the dispositions granted by the chosen detachment
+    // (det-gladius → take-and-hold only).
+    await vi.waitFor(() => {
+      expect(screen.getByText("Take and Hold")).toBeTruthy();
+    });
+    expect(screen.queryByText("Hold the Line")).toBeNull();
+    await user.click(screen.getByText("Take and Hold"));
+
+    await vi.waitFor(() => {
+      const dispAction = sentActions.find((a) => a.type === "select_force_disposition");
+      expect(dispAction).toBeTruthy();
+      expect(dispAction!.disposition).toBe("take-and-hold");
+      expect(dispAction!.dispositionName).toBe("Take and Hold");
+    });
+  });
+
+  it("shows the resolved primary mission and caps once it is assigned", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      vpPerGameCap: 45,
+      vpPerRoundCap: 15,
+      players: [
+        makePlayerState({
+          detachmentId: "det-gladius",
+          detachmentName: "Gladius Task Force",
+          side: "attacker",
+          forceDisposition: "take-and-hold",
+          forceDispositionName: "Take and Hold",
+          missionId: "battlefield-dominance",
+          missionName: "Battlefield Dominance",
+          secondaryMode: "",
+          ready: false,
+        }),
+        null,
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("Your Primary Mission")).toBeTruthy();
+      expect(screen.getByText("Battlefield Dominance")).toBeTruthy();
+      expect(screen.getByText("45 VP / Game")).toBeTruthy();
+      expect(screen.getByText("15 VP / Round")).toBeTruthy();
     });
   });
 });

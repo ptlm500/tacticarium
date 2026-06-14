@@ -125,6 +125,25 @@ function buildEntries(events: NormalizedEvent[], selection: CellSelection): Deta
       out.push({ key: `sec-ach-${idx}`, label: `${name} achieved`, delta });
     }
 
+    if (e.eventType === "card_scored" || e.eventType === "award_confirmed") {
+      const cat = e.data?.category as string | undefined;
+      if (cat === category) {
+        const delta =
+          (e.data?.appliedDelta as number | undefined) ??
+          (e.data?.delta as number | undefined) ??
+          0;
+        const name = (e.data?.cardName as string | undefined) ?? null;
+        const suffix = e.eventType === "award_confirmed" ? " (confirmed)" : "";
+        out.push({
+          key: `card-${idx}`,
+          label: name
+            ? `${name}${suffix}`
+            : `${category === "primary" ? "Primary" : "Secondary"} score${suffix}`,
+          delta,
+        });
+      }
+    }
+
     if (e.eventType === "vp_secondary_score" && category === "secondary") {
       const delta =
         (e.data?.appliedDelta as number | undefined) ?? (e.data?.delta as number | undefined) ?? 0;

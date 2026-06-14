@@ -92,9 +92,38 @@ export function formatEvent(event: NormalizedEvent, players?: PlayerInfoMap): st
           : `${s(spent)} CP`;
       return `${player} used ${s(event.data?.stratagemName)} (${suffix})`;
     }
+    case "card_scored": {
+      const applied = event.data?.appliedDelta ?? event.data?.delta;
+      const card = s(event.data?.cardName);
+      return `${player} scored ${s(applied)} ${s(event.data?.category)} VP${card ? ` — ${card}` : ""}`;
+    }
+    case "award_confirmed": {
+      const applied = event.data?.appliedDelta ?? event.data?.delta;
+      return `${player} confirmed ${s(event.data?.category)} scoring (+${s(applied)} VP)`;
+    }
+    case "score_prompt":
+      return `${player} must confirm scoring: ${s(event.data?.cardName)}`;
+    case "secondary_drawn":
+      return `${player} drew ${s(event.data?.cardName)}`;
+    case "mission_resolved":
+      return `${player}'s mission: ${s(event.data?.missionName)}`;
+    case "force_disposition_selected":
+      return `${player} chose ${s(event.data?.dispositionName, "a force disposition")}`;
+    case "side_selected":
+      return `${player} is the ${s(event.data?.side)}`;
+    case "objective_control_changed": {
+      const idx = (event.data?.objectiveIndex as number | undefined) ?? 0;
+      const by = event.data?.controlledBy as number | undefined;
+      const who = by === 1 || by === 2 ? `P${by}` : "no one";
+      return `${player} set objective ${idx + 1} → controlled by ${who}`;
+    }
+    case "objective_tagged": {
+      const idx = (event.data?.objectiveIndex as number | undefined) ?? 0;
+      const verb = event.data?.add ? "tagged" : "cleared tag on";
+      return `${player} ${verb} objective ${idx + 1}: ${s(event.data?.tag)}`;
+    }
     case "vp_primary_score":
-    case "vp_secondary_score":
-    case "vp_gambit_score": {
+    case "vp_secondary_score": {
       const applied = event.data?.appliedDelta ?? event.data?.delta;
       const ruleLabel = event.data?.scoringRuleLabel;
       const slot = event.data?.scoringSlot;
@@ -129,8 +158,6 @@ export function formatEvent(event: NormalizedEvent, players?: PlayerInfoMap): st
       const vpSuffix = vpDelta > 0 ? ` (+${vpDelta} VP)` : vpDelta < 0 ? ` (${vpDelta} VP)` : "";
       return `📝 ${player} moved ${name}: ${from} → ${to}${vpSuffix}`;
     }
-    case "challenger_scored":
-      return `${player} completed challenger mission (+${s(event.data?.vpScored)} VP)`;
     case "game_start":
       return "Game started!";
     case "game_end":
@@ -149,11 +176,11 @@ export function formatEvent(event: NormalizedEvent, players?: PlayerInfoMap): st
 export const HIGHLIGHT_EVENT_TYPES = new Set([
   "vp_primary_score",
   "vp_secondary_score",
-  "vp_gambit_score",
+  "card_scored",
+  "award_confirmed",
   "vp_primary_score_reverted",
   "vp_manual_adjust",
   "secondary_achieved",
-  "challenger_scored",
   "stratagem_used",
   "player_concede",
   "game_end",

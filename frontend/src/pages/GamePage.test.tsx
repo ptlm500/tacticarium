@@ -498,27 +498,39 @@ describe("GamePage", () => {
     });
   });
 
-  it("shows scoring prompt when advancing from fight phase", async () => {
-    // The secondary scoring prompt is driven by the player's secondary hand.
+  it("sends advance_phase immediately (scoring fires automatically on the server)", async () => {
+    const wsMessages: string[] = [];
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    const gs = makeGameState({
+      activePlayer: 1,
+      currentPhase: "fight",
+      currentRound: 3,
+      currentTurn: 1,
+      players: [
+        makePlayerState({ secondaryMode: "tactical", secondaryHand: [mockActiveSecondary] }),
+        makePlayerState({ userId: "user-2", username: "Opponent", playerNumber: 2 }),
+      ],
+    });
+
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.addEventListener("message", (event) => {
+          wsMessages.push(typeof event.data === "string" ? event.data : "");
+        });
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+      }),
+    );
+
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
     await act(async () => {
-      renderGame({
-        activePlayer: 1,
-        currentPhase: "fight",
-        currentRound: 3,
-        currentTurn: 1,
-        players: [
-          makePlayerState({
-            secondaryMode: "tactical",
-            secondaryHand: [mockActiveSecondary],
-            secondaryDeck: [],
-          }),
-          makePlayerState({
-            userId: "user-2",
-            username: "Opponent",
-            playerNumber: 2,
-          }),
-        ],
-      });
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id" element={<GamePage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1" },
+      );
     });
 
     const user = userEvent.setup();
@@ -529,10 +541,14 @@ describe("GamePage", () => {
 
     await user.click(screen.getByText("Advance Phase"));
 
-    // Fight phase should show secondary scoring prompt
     await vi.waitFor(() => {
-      expect(screen.getByText("Scoring Reminder")).toBeTruthy();
+      const msg = wsMessages.find((m) => m.includes("advance_phase"));
+      expect(msg).toBeTruthy();
+      const parsed = JSON.parse(msg!);
+      expect(parsed.data.type).toBe("advance_phase");
     });
+    // No manual scoring reminder modal in 11e.
+    expect(screen.queryByText("Scoring Reminder")).toBeNull();
   });
 
   describe("connection status", () => {

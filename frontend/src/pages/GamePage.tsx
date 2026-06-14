@@ -13,20 +13,17 @@ import { CPCounter } from "../components/game/CPCounter";
 import { VPCounter } from "../components/game/VPCounter";
 import { StratagemPanel } from "../components/game/StratagemPanel";
 import { SecondaryPanel } from "../components/game/SecondaryPanel";
+import { BoardView } from "../components/game/BoardView";
+import { ScorePromptsPanel } from "../components/game/ScorePromptsPanel";
 import { MissionInfo } from "../components/game/MissionInfo";
-import { PrimaryScoreHistory } from "../components/game/PrimaryScoreHistory";
 import { GameLog } from "../components/game/GameLog";
 import { PlayerAvatar } from "../components/game/PlayerAvatar";
-import { ScoringPrompt, ScoringPromptItem } from "../components/game/ScoringPrompt";
-import { PrimaryScoringSlot } from "../types/scoring";
-import { ReminderPrompt } from "../components/game/ReminderPrompt";
-import { TacticalDrawReminder } from "../components/game/TacticalDrawReminder";
 import { ConfirmModal } from "../components/game/ConfirmModal";
 import { GameSummary } from "../components/game/GameSummary";
 import { SecondaryDetailsModal } from "../components/game/SecondaryDetailsModal";
 import type { SecondaryCard } from "../types/game";
 import { useStratagems } from "../hooks/queries/useFactionQueries";
-import { useMissions } from "../hooks/queries/useMissionQueries";
+import { useMissions, useDeploymentPatterns } from "../hooks/queries/useMissionQueries";
 import { useGameEvents } from "../hooks/queries/useGamesQueries";
 import { type RestGameEvent, normalizeWsEvent } from "../components/game/eventFormatting";
 import { buildScoringHeatmapData } from "../components/game/vpUtils";
@@ -92,15 +89,15 @@ export function GamePage() {
   const opponent = gameState?.players.find((p) => p?.userId !== user?.id) ?? null;
   const isMyTurn = myPlayer?.playerNumber === gameState?.activePlayer;
 
-  const [scoringPromptItems, setScoringPromptItems] = useState<ScoringPromptItem[] | null>(null);
-  const [showDrawPrompt, setShowDrawPrompt] = useState(false);
-
   const {
     data: stratagems = [],
     isError: stratagemsError,
     refetch: refetchStratagems,
   } = useStratagems(myPlayer?.factionId);
   const { data: allMissions = [] } = useMissions();
+  const { data: deploymentPatterns = [] } = useDeploymentPatterns();
+  const deploymentPattern =
+    deploymentPatterns.find((p) => p.id === gameState?.board?.deploymentPatternId) ?? null;
 
   // Mission is now per-player in 11th edition. Resolve it from the viewing
   // player's missionId against the mission list.
@@ -127,45 +124,13 @@ export function GamePage() {
     return phaseMatch && turnMatch && detachmentMatch && !isChallenger;
   });
 
-  const doAdvancePhase = useCallback(() => {
-    setScoringPromptItems(null);
-    setShowDrawPrompt(false);
+  // 11e scoring fires automatically on the backend at end-of-command /
+  // end-of-turn / end-of-battle: Layer-1 awards auto-apply and Layer-2 awards
+  // raise a confirmation prompt. Advancing the phase no longer needs a manual
+  // scoring reminder.
+  const handleAdvancePhase = useCallback(() => {
     sendAction("advance_phase");
   }, [sendAction]);
-
-  const handleAdvancePhase = useCallback(() => {
-    if (!gameState || !myPlayer) return;
-
-    const phase = gameState.currentPhase;
-    const isFightPhase = phase === "fight";
-    const isCommandPhase = phase === "command";
-
-    const items: ScoringPromptItem[] = [];
-
-    // Primary scoring is no longer driven by mission scoringRules (removed in
-    // the 11e migration). Secondary scoring and the tactical draw reminder
-    // remain phase-driven.
-    if (isFightPhase && (myPlayer.secondaryHand ?? []).length > 0) {
-      items.push({ kind: "secondary" });
-    }
-
-    let needsDraw = false;
-    if (isCommandPhase && myPlayer.secondaryMode === "tactical") {
-      const activeCount = myPlayer.secondaryHand?.length ?? 0;
-      const deckSize = myPlayer.secondaryDeck?.length ?? 0;
-      if (activeCount < 2 && deckSize > 0) {
-        needsDraw = true;
-      }
-    }
-
-    if (items.length > 0) {
-      setScoringPromptItems(items);
-    } else if (needsDraw) {
-      setShowDrawPrompt(true);
-    } else {
-      doAdvancePhase();
-    }
-  }, [gameState, myPlayer, doAdvancePhase]);
 
   const handleAdjustCP = useCallback(
     (delta: number) => {
@@ -183,33 +148,9 @@ export function GamePage() {
     setShowCPCapOverride(false);
   }, [sendAction]);
 
-  const handleScoreVP = useCallback(
-    (
-      category: string,
-      delta: number,
-      scoringSlot?: PrimaryScoringSlot,
-      scoringRuleLabel?: string,
-    ) => {
-      const data: Record<string, unknown> = { category, delta };
-      if (scoringSlot) data.scoringSlot = scoringSlot;
-      if (scoringRuleLabel) data.scoringRuleLabel = scoringRuleLabel;
-      sendAction("score_vp", data);
-    },
-    [sendAction],
-  );
-
   const handleAdjustVPManual = useCallback(
     (category: string, delta: number) => {
       sendAction("adjust_vp_manual", { category, delta });
-    },
-    [sendAction],
-  );
-
-  const handleUndoPrimaryScore = useCallback(
-    (round: number, scoringSlot: PrimaryScoringSlot, scoringRuleLabel: string) => {
-      const data: Record<string, unknown> = { round, scoringSlot };
-      if (scoringRuleLabel) data.scoringRuleLabel = scoringRuleLabel;
-      sendAction("undo_primary_score", data);
     },
     [sendAction],
   );
@@ -246,25 +187,20 @@ export function GamePage() {
     [sendAction],
   );
 
-  const handleDiscardSecondary = useCallback(
-    (secondaryId: string, free: boolean) => {
-      sendAction("discard_secondary", { secondaryId, free });
+  const handleDrawSecondaries = useCallback(() => {
+    sendAction("draw_secondaries");
+  }, [sendAction]);
+
+  const handleSetObjectiveControl = useCallback(
+    (objectiveIndex: number, player: number) => {
+      sendAction("set_objective_control", { objectiveIndex, player });
     },
     [sendAction],
   );
 
-  const handleDrawSecondary = useCallback(() => {
-    sendAction("draw_secondary");
-  }, [sendAction]);
-
-  const handleMoveSecondary = useCallback(
-    (secondaryId: string, fromPile: string, toPile: string, vpScored?: number) => {
-      sendAction("move_secondary", {
-        secondaryId,
-        fromPile,
-        toPile,
-        ...(vpScored ? { vpScored } : {}),
-      });
+  const handleConfirmAward = useCallback(
+    (promptId: string, count: number) => {
+      sendAction("confirm_award", { promptId, count });
     },
     [sendAction],
   );
@@ -455,8 +391,18 @@ export function GamePage() {
             )}
           </div>
 
-          {/* Primary Score History */}
-          <PrimaryScoreHistory scoredSlots={{}} onUndo={handleUndoPrimaryScore} />
+          {/* Layer-2 scoring confirmations awaiting this player */}
+          <ScorePromptsPanel
+            prompts={myPlayer.pendingScorePrompts ?? []}
+            onConfirm={handleConfirmAward}
+          />
+
+          {/* Battlefield objective control */}
+          <BoardView
+            board={gameState.board}
+            pattern={deploymentPattern}
+            onSetControl={handleSetObjectiveControl}
+          />
 
           {/* Opponent's Active Secondaries */}
           {opponent && (opponent.secondaryHand ?? []).length > 0 && (
@@ -491,9 +437,7 @@ export function GamePage() {
             secondaryDeck={myPlayer.secondaryDeck ?? []}
             currentPhase={gameState.currentPhase}
             isMyTurn={isMyTurn}
-            onDiscard={handleDiscardSecondary}
-            onDraw={handleDrawSecondary}
-            onMove={handleMoveSecondary}
+            onDraw={handleDrawSecondaries}
           />
 
           {/* Mission Info */}
@@ -674,17 +618,6 @@ export function GamePage() {
         />
       )}
 
-      {/* Scoring Prompt */}
-      {scoringPromptItems && (
-        <ScoringPrompt
-          items={scoringPromptItems}
-          onScore={handleScoreVP}
-          secondaryHand={myPlayer.secondaryHand ?? []}
-          onConfirm={doAdvancePhase}
-          onCancel={() => setScoringPromptItems(null)}
-        />
-      )}
-
       <SecondaryDetailsModal
         secondary={opponentDetailsCard}
         onClose={() => setOpponentDetailsCard(null)}
@@ -695,24 +628,6 @@ export function GamePage() {
         onClose={() => setScoringSelection(null)}
         events={heatmapData.normalizedEvents}
       />
-
-      {/* Draw Prompt */}
-      {showDrawPrompt && (
-        <ReminderPrompt
-          title="Command Phase Reminder"
-          description="Before advancing, check if you need to draw secondaries."
-          confirmLabel="Continue"
-          cancelLabel="Let me draw first"
-          onConfirm={doAdvancePhase}
-          onCancel={() => setShowDrawPrompt(false)}
-        >
-          <TacticalDrawReminder
-            deckSize={myPlayer.secondaryDeck?.length ?? 0}
-            activeCount={myPlayer.secondaryHand?.length ?? 0}
-            onDraw={handleDrawSecondary}
-          />
-        </ReminderPrompt>
-      )}
     </div>
   );
 }
