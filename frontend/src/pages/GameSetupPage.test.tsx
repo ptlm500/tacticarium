@@ -15,8 +15,7 @@ function renderSetup() {
       makePlayerState({
         factionId: "",
         factionName: "",
-        detachmentId: "",
-        detachmentName: "",
+        detachments: [],
         secondaryMode: "",
         ready: false,
       }),
@@ -102,8 +101,7 @@ describe("GameSetupPage", () => {
         makePlayerState({
           factionId: "faction-sm",
           factionName: "Space Marines",
-          detachmentId: "",
-          detachmentName: "",
+          detachments: [],
           secondaryMode: "",
           ready: false,
         }),
@@ -130,13 +128,76 @@ describe("GameSetupPage", () => {
     });
 
     await vi.waitFor(() => {
-      expect(screen.getByText("Detachment")).toBeTruthy();
+      expect(screen.getByText("Detachments")).toBeTruthy();
     });
 
     // MSW returns mockDetachments for faction-sm
     await vi.waitFor(() => {
       expect(screen.getByText("Gladius Task Force")).toBeTruthy();
       expect(screen.getByText("Ironstorm Spearhead")).toBeTruthy();
+    });
+  });
+
+  it("sends select_detachments with the chosen detachment and its points", async () => {
+    const gs = makeGameState({
+      status: "setup",
+      players: [
+        makePlayerState({
+          detachments: [],
+          side: "",
+          forceDisposition: "",
+          missionId: "",
+          missionName: "",
+          secondaryMode: "",
+          ready: false,
+        }),
+        null,
+      ],
+    });
+    useGameStore.getState().setGameState(gs);
+    localStorage.setItem("token", "test-token");
+
+    const sentActions: Array<Record<string, unknown>> = [];
+    const testLink = ws.link("ws://localhost:8080/ws/game/*");
+    worker.use(
+      testLink.addEventListener("connection", ({ client }) => {
+        client.send(JSON.stringify({ type: "state_update", data: gs }));
+        client.addEventListener("message", (ev) => {
+          if (typeof ev.data !== "string") return;
+          try {
+            const parsed = JSON.parse(ev.data);
+            if (parsed?.type === "action" && parsed.data) {
+              sentActions.push(parsed.data as Record<string, unknown>);
+            }
+          } catch {
+            // ignore non-JSON frames
+          }
+        });
+      }),
+    );
+
+    await act(async () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/game/:id/setup" element={<GameSetupPage />} />
+        </Routes>,
+        { user: mockUser, route: "/game/game-1/setup" },
+      );
+    });
+
+    const user = userEvent.setup();
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("Gladius Task Force")).toBeTruthy();
+    });
+    await user.click(screen.getByRole("button", { name: /Gladius Task Force/ }));
+
+    await vi.waitFor(() => {
+      const action = sentActions.find((a) => a.type === "select_detachments");
+      expect(action).toBeTruthy();
+      expect(action!.detachments).toEqual([
+        { id: "det-gladius", name: "Gladius Task Force", points: 3 },
+      ]);
     });
   });
 
@@ -148,8 +209,7 @@ describe("GameSetupPage", () => {
         makePlayerState({
           factionId: "faction-sm",
           factionName: "Space Marines",
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           side: "attacker",
           forceDisposition: "take-and-hold",
           forceDispositionName: "Take and Hold",
@@ -164,8 +224,7 @@ describe("GameSetupPage", () => {
           playerNumber: 2,
           factionId: "faction-csm",
           factionName: "Chaos Space Marines",
-          detachmentId: "det-black-legion",
-          detachmentName: "Black Legion",
+          detachments: [{ id: "det-black-legion", name: "Black Legion", points: 2 }],
           secondaryMode: "",
           ready: false,
         }),
@@ -241,8 +300,7 @@ describe("GameSetupPage", () => {
         makePlayerState({
           factionId: "",
           factionName: "",
-          detachmentId: "",
-          detachmentName: "",
+          detachments: [],
           secondaryMode: "",
           ready: false,
         }),
@@ -278,8 +336,7 @@ describe("GameSetupPage", () => {
       status: "setup",
       players: [
         makePlayerState({
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           secondaryMode: "",
           ready: false,
           vpPaint: 10,
@@ -321,8 +378,7 @@ describe("GameSetupPage", () => {
       status: "setup",
       players: [
         makePlayerState({
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           secondaryMode: "",
           ready: false,
           vpPaint: 10,
@@ -380,8 +436,7 @@ describe("GameSetupPage", () => {
       status: "setup",
       players: [
         makePlayerState({
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           side: "",
           forceDisposition: "",
           missionId: "",
@@ -426,8 +481,7 @@ describe("GameSetupPage", () => {
       status: "setup",
       players: [
         makePlayerState({
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           side: "attacker",
           forceDisposition: "",
           missionId: "",
@@ -505,8 +559,7 @@ describe("GameSetupPage", () => {
       firstTurnPlayer: 1,
       players: [
         makePlayerState({
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           side: "attacker",
           forceDisposition: "take-and-hold",
           forceDispositionName: "Take and Hold",
@@ -575,8 +628,7 @@ describe("GameSetupPage", () => {
       vpPerRoundCap: 15,
       players: [
         makePlayerState({
-          detachmentId: "det-gladius",
-          detachmentName: "Gladius Task Force",
+          detachments: [{ id: "det-gladius", name: "Gladius Task Force", points: 3 }],
           side: "attacker",
           forceDisposition: "take-and-hold",
           forceDispositionName: "Take and Hold",

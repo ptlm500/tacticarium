@@ -5,7 +5,7 @@ type ActionType string
 const (
 	// Setup
 	ActionSelectFaction          ActionType = "select_faction"
-	ActionSelectDetachment       ActionType = "select_detachment"
+	ActionSelectDetachments      ActionType = "select_detachments"
 	ActionSelectSide             ActionType = "select_side"
 	ActionSelectFirstTurnPlayer  ActionType = "select_first_turn_player"
 	ActionSelectForceDisposition ActionType = "select_force_disposition"
@@ -58,6 +58,7 @@ const (
 	EventVPManualAdjust           EventType = "vp_manual_adjust"
 	EventStratagemUsed            EventType = "stratagem_used"
 	EventFactionSelected          EventType = "faction_selected"
+	EventDetachmentsSelected      EventType = "detachments_selected"
 	EventSideSelected             EventType = "side_selected"
 	EventFirstTurnPlayerSelected  EventType = "first_turn_player_selected"
 	EventForceDispositionSelected EventType = "force_disposition_selected"

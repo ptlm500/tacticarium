@@ -5,8 +5,9 @@ import { useAuth } from "../hooks/useAuth";
 import { useGameStore } from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameState";
 import { getToken } from "../api/client";
-import { Faction, Detachment } from "../types/faction";
+import { Faction } from "../types/faction";
 import { ForceDisposition } from "../types/mission";
+import { SelectedDetachment } from "../types/game";
 import { FactionPicker } from "../components/setup/FactionPicker";
 import { DetachmentPicker } from "../components/setup/DetachmentPicker";
 import { SidePicker } from "../components/setup/SidePicker";
@@ -21,6 +22,10 @@ import { useForceDispositions, useSecondaryCards } from "../hooks/queries/useMis
 // Mirrors the backend FixedSecondaryCount: a fixed-mode player keeps this many
 // secondary cards for the whole game.
 const FIXED_SECONDARY_COUNT = 2;
+
+// Mirrors the backend MaxDetachmentPoints: a player may combine detachments up
+// to this many detachment points.
+const MAX_DETACHMENT_POINTS = 3;
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HUDFrame } from "@/components/ui/hud-frame";
@@ -50,12 +55,18 @@ export function GameSetupPage() {
 
   const { data: detachments = [] } = useDetachments(myPlayer?.factionId);
 
-  // 11e: a player picks their force disposition from the set granted by their
-  // chosen detachment. (Multi-detachment / DP-budget selection isn't modelled
-  // yet — the engine holds a single detachment per player.) Fall back to the
-  // full list when the detachment doesn't enumerate dispositions.
-  const selectedDetachment = detachments.find((d) => d.id === myPlayer?.detachmentId) ?? null;
-  const allowedDispositionIds = selectedDetachment?.forceDispositions ?? [];
+  const selectedDetachmentIds = (myPlayer?.detachments ?? []).map((d) => d.id);
+
+  // 11e: a player picks their force disposition from the union of the dispositions
+  // their selected detachments grant. Fall back to the full list when none of the
+  // chosen detachments enumerate dispositions.
+  const allowedDispositionIds = [
+    ...new Set(
+      detachments
+        .filter((d) => selectedDetachmentIds.includes(d.id))
+        .flatMap((d) => d.forceDispositions ?? []),
+    ),
+  ];
   const availableDispositions =
     allowedDispositionIds.length > 0
       ? dispositions.filter((d) => allowedDispositionIds.includes(d.id))
@@ -83,12 +94,9 @@ export function GameSetupPage() {
     [sendAction],
   );
 
-  const handleSelectDetachment = useCallback(
-    (detachment: Detachment) => {
-      sendAction("select_detachment", {
-        detachmentId: detachment.id,
-        detachmentName: detachment.name,
-      });
+  const handleSelectDetachments = useCallback(
+    (selected: SelectedDetachment[]) => {
+      sendAction("select_detachments", { detachments: selected });
     },
     [sendAction],
   );
@@ -169,7 +177,7 @@ export function GameSetupPage() {
   }
 
   const hasFaction = !!myPlayer?.factionId;
-  const hasDetachment = !!myPlayer?.detachmentId;
+  const hasDetachment = selectedDetachmentIds.length > 0;
   const hasSide = !!myPlayer?.side;
   const hasDisposition = !!myPlayer?.forceDisposition;
   const hasMission = !!myPlayer?.missionId;
@@ -263,11 +271,12 @@ export function GameSetupPage() {
         </HUDFrame>
 
         {hasFaction && (
-          <HUDFrame label="Detachment">
+          <HUDFrame label="Detachments">
             <DetachmentPicker
               detachments={detachments}
-              selectedId={myPlayer?.detachmentId || ""}
-              onSelect={handleSelectDetachment}
+              selectedIds={selectedDetachmentIds}
+              maxPoints={MAX_DETACHMENT_POINTS}
+              onChange={handleSelectDetachments}
             />
           </HUDFrame>
         )}
@@ -365,7 +374,8 @@ export function GameSetupPage() {
             <div className="space-y-1 py-1">
               <p className="text-sm text-foreground/90">
                 {opponent.factionName || "Selecting faction..."}
-                {opponent.detachmentName && ` - ${opponent.detachmentName}`}
+                {(opponent.detachments ?? []).length > 0 &&
+                  ` - ${(opponent.detachments ?? []).map((d) => d.name).join(", ")}`}
               </p>
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 {opponent.side ? `Side: ${opponent.side}` : "Side: pending"}

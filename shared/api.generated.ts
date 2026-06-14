@@ -719,8 +719,7 @@ export interface components {
             cp: number;
             /** Format: int64 */
             cpGainedThisRound: number;
-            detachmentId: string;
-            detachmentName: string;
+            detachments: components["schemas"]["SelectedDetachment"][] | null;
             factionId: string;
             factionName: string;
             fixedSecondaryIds: string[] | null;
@@ -783,6 +782,12 @@ export interface components {
             text: string;
             /** Format: int64 */
             vpScored?: number;
+        };
+        SelectedDetachment: {
+            id: string;
+            name: string;
+            /** Format: int64 */
+            points: number;
         };
         Stratagem: {
             category?: string;

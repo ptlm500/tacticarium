@@ -249,7 +249,7 @@ func TestWSSetReady_GameStart(t *testing.T) {
 
 	testutil.SendWSMessage(t, conn1, map[string]interface{}{
 		"type": "action",
-		"data": map[string]interface{}{"type": "select_detachment", "detachmentId": "det-sm", "detachmentName": "Gladius"},
+		"data": map[string]interface{}{"type": "select_detachments", "detachments": []map[string]interface{}{{"id": "det-sm", "name": "Gladius", "points": 3}}},
 	})
 	testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)
 	testutil.DrainUntil(t, conn2, "state_update", 5*time.Second)
@@ -264,7 +264,7 @@ func TestWSSetReady_GameStart(t *testing.T) {
 
 	testutil.SendWSMessage(t, conn2, map[string]interface{}{
 		"type": "action",
-		"data": map[string]interface{}{"type": "select_detachment", "detachmentId": "det-nec", "detachmentName": "Awakened Dynasty"},
+		"data": map[string]interface{}{"type": "select_detachments", "detachments": []map[string]interface{}{{"id": "det-nec", "name": "Awakened Dynasty", "points": 2}}},
 	})
 	testutil.DrainUntil(t, conn1, "state_update", 5*time.Second)
 	testutil.DrainUntil(t, conn2, "state_update", 5*time.Second)

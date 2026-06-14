@@ -93,8 +93,8 @@ func (e *Engine) applyAction(action GameAction) ([]GameEvent, error) {
 	switch action.Type {
 	case ActionSelectFaction:
 		return e.applySelectFaction(action)
-	case ActionSelectDetachment:
-		return e.applySelectDetachment(action)
+	case ActionSelectDetachments:
+		return e.applySelectDetachments(action)
 	case ActionSelectSide:
 		return e.applySelectSide(action)
 	case ActionSelectFirstTurnPlayer:
@@ -152,8 +152,9 @@ func (e *Engine) applySelectFaction(action GameAction) ([]GameEvent, error) {
 	}
 	player.FactionID = strFromData(action.Data, "factionId")
 	player.FactionName = strFromData(action.Data, "factionName")
-	player.DetachmentID = ""
-	player.DetachmentName = ""
+	// Detachments (and therefore the disposition they grant) are faction-specific.
+	player.Detachments = nil
+	e.clearDisposition(player)
 	player.Ready = false
 	return []GameEvent{{
 		Type:         EventFactionSelected,
@@ -162,22 +163,85 @@ func (e *Engine) applySelectFaction(action GameAction) ([]GameEvent, error) {
 	}}, nil
 }
 
-func (e *Engine) applySelectDetachment(action GameAction) ([]GameEvent, error) {
+// applySelectDetachments records the detachments a player has combined (up to
+// MaxDetachmentPoints). Because a player's force disposition is drawn from their
+// detachments' grants, changing detachments clears the disposition + resolved
+// mission so they are re-picked from the new union.
+func (e *Engine) applySelectDetachments(action GameAction) ([]GameEvent, error) {
 	if e.state.Status != StatusSetup {
-		return nil, fmt.Errorf("can only select detachment during setup")
+		return nil, fmt.Errorf("can only select detachments during setup")
 	}
 	player := e.state.GetPlayer(action.PlayerNumber)
 	if player == nil {
 		return nil, fmt.Errorf("invalid player number")
 	}
-	player.DetachmentID = strFromData(action.Data, "detachmentId")
-	player.DetachmentName = strFromData(action.Data, "detachmentName")
+
+	detachments, err := parseDetachments(action.Data["detachments"])
+	if err != nil {
+		return nil, err
+	}
+	total := 0
+	seen := make(map[string]bool, len(detachments))
+	for _, d := range detachments {
+		if d.ID == "" {
+			return nil, fmt.Errorf("detachment id is required")
+		}
+		if seen[d.ID] {
+			return nil, fmt.Errorf("detachment %q selected more than once", d.ID)
+		}
+		seen[d.ID] = true
+		total += d.Points
+	}
+	if total > MaxDetachmentPoints {
+		return nil, fmt.Errorf("detachments cost %d points, over the %d-point budget", total, MaxDetachmentPoints)
+	}
+
+	player.Detachments = detachments
+	e.clearDisposition(player)
 	player.Ready = false
 	return []GameEvent{{
-		Type:         EventFactionSelected,
+		Type:         EventDetachmentsSelected,
 		PlayerNumber: action.PlayerNumber,
-		Data:         map[string]any{"detachmentId": player.DetachmentID, "detachmentName": player.DetachmentName},
+		Data:         map[string]any{"detachments": detachments, "points": total},
 	}}, nil
+}
+
+// clearDisposition resets a player's force disposition and the mission it
+// resolved (used when the upstream choice — faction or detachments — changes).
+func (e *Engine) clearDisposition(player *PlayerState) {
+	player.ForceDisposition = ""
+	player.ForceDispositionName = ""
+	player.MissionID = ""
+	player.MissionName = ""
+	player.PrimaryCard = scoring.Card{}
+}
+
+// parseDetachments reads a []SelectedDetachment from JSON-decoded action data
+// (a list of {id, name, points} objects, or a []SelectedDetachment in tests).
+func parseDetachments(v any) ([]SelectedDetachment, error) {
+	switch list := v.(type) {
+	case nil:
+		return nil, nil
+	case []SelectedDetachment:
+		return list, nil
+	case []any:
+		out := make([]SelectedDetachment, 0, len(list))
+		for _, item := range list {
+			m, ok := item.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("each detachment must be an object")
+			}
+			d := SelectedDetachment{
+				ID:     strFromData(m, "id"),
+				Name:   strFromData(m, "name"),
+				Points: intFromData(m, "points"),
+			}
+			out = append(out, d)
+		}
+		return out, nil
+	default:
+		return nil, fmt.Errorf("detachments must be a list")
+	}
 }
 
 func (e *Engine) applySelectSide(action GameAction) ([]GameEvent, error) {

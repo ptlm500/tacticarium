@@ -117,7 +117,8 @@ export function GamePage() {
       s.playerTurn === "Either player's turn" ||
       (isMyTurn ? s.playerTurn === "Your turn" : s.playerTurn === "Opponent's turn");
 
-    const detachmentMatch = !s.detachmentId || s.detachmentId === myPlayer?.detachmentId;
+    const detachmentMatch =
+      !s.detachmentId || (myPlayer?.detachments ?? []).some((d) => d.id === s.detachmentId);
 
     const isChallenger = s.type?.startsWith("Challenger \u2013 ") ?? false;
 

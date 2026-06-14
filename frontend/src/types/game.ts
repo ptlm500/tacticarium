@@ -54,6 +54,9 @@ export type Board = Schemas["Board"];
 /** A single board objective (position, role, control, tags). */
 export type Objective = Schemas["Objective"];
 
+/** A detachment a player has taken (id, name, and its DP cost). */
+export type SelectedDetachment = Schemas["SelectedDetachment"];
+
 export type PlayerState = Schemas["PlayerState"];
 
 /** Game state with narrower Phase/GameStatus types and a 2-player tuple. */

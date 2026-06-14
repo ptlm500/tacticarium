@@ -38,9 +38,12 @@ export function SpectatorPlayerPanel({ player, isActive }: Props) {
               Active Turn
             </Badge>
           )}
-          {player.detachmentName && (
+          {(player.detachments ?? []).length > 0 && (
             <span className="text-muted-foreground">
-              Detachment: <span className="text-foreground">{player.detachmentName}</span>
+              Detachment:{" "}
+              <span className="text-foreground">
+                {(player.detachments ?? []).map((d) => d.name).join(", ")}
+              </span>
             </span>
           )}
         </div>

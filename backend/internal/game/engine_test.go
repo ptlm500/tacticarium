@@ -216,6 +216,72 @@ func TestDrawSecondariesKeepsCards(t *testing.T) {
 	}
 }
 
+// newSetupEngine returns a fresh setup-phase engine with two players and the
+// mission resolver wired (resolves once both players pick a disposition).
+func newSetupEngine() *Engine {
+	state := &GameState{
+		GameID: "g", InviteCode: "c", Status: StatusSetup,
+		Players: [2]*PlayerState{{UserID: "u1", PlayerNumber: 1}, {UserID: "u2", PlayerNumber: 2}},
+	}
+	e := NewEngine(state)
+	e.SetMissionResolver(func(_, _ string) (ResolvedMission, bool) {
+		return ResolvedMission{ID: "m", Name: "M", GameCap: 45, RoundCap: 15, PrimaryCard: primaryControlCard()}, true
+	})
+	return e
+}
+
+func detachmentsData(ds ...SelectedDetachment) map[string]any {
+	return map[string]any{"detachments": ds}
+}
+
+func TestSelectDetachmentsEnforcesPointsBudget(t *testing.T) {
+	e := newSetupEngine()
+	_, err := e.Apply(context.Background(), GameAction{
+		Type: ActionSelectDetachments, PlayerNumber: 1,
+		Data: detachmentsData(SelectedDetachment{ID: "a", Name: "A", Points: 2}, SelectedDetachment{ID: "b", Name: "B", Points: 2}),
+	})
+	if err == nil {
+		t.Fatalf("expected error: 4 points over the %d-point budget", MaxDetachmentPoints)
+	}
+
+	// 2 + 1 = 3 is within budget.
+	apply(t, e, GameAction{
+		Type: ActionSelectDetachments, PlayerNumber: 1,
+		Data: detachmentsData(SelectedDetachment{ID: "a", Name: "A", Points: 2}, SelectedDetachment{ID: "c", Name: "C", Points: 1}),
+	})
+	if got := len(e.state.Players[0].Detachments); got != 2 {
+		t.Fatalf("detachments = %d, want 2", got)
+	}
+}
+
+func TestSelectDetachmentsRejectsDuplicates(t *testing.T) {
+	e := newSetupEngine()
+	_, err := e.Apply(context.Background(), GameAction{
+		Type: ActionSelectDetachments, PlayerNumber: 1,
+		Data: detachmentsData(SelectedDetachment{ID: "a", Name: "A", Points: 1}, SelectedDetachment{ID: "a", Name: "A", Points: 1}),
+	})
+	if err == nil {
+		t.Fatal("expected error selecting the same detachment twice")
+	}
+}
+
+func TestSelectDetachmentsClearsDisposition(t *testing.T) {
+	e := newSetupEngine()
+	apply(t, e, GameAction{Type: ActionSelectDetachments, PlayerNumber: 1, Data: detachmentsData(SelectedDetachment{ID: "a", Name: "A", Points: 3})})
+	apply(t, e, GameAction{Type: ActionSelectForceDisposition, PlayerNumber: 1, Data: map[string]any{"disposition": "take-and-hold"}})
+	apply(t, e, GameAction{Type: ActionSelectForceDisposition, PlayerNumber: 2, Data: map[string]any{"disposition": "disruption"}})
+	if e.state.Players[0].MissionID == "" {
+		t.Fatal("precondition: player 1 mission should have resolved")
+	}
+
+	// Changing detachments invalidates the disposition (it's drawn from them).
+	apply(t, e, GameAction{Type: ActionSelectDetachments, PlayerNumber: 1, Data: detachmentsData(SelectedDetachment{ID: "b", Name: "B", Points: 2})})
+	p := e.state.Players[0]
+	if p.ForceDisposition != "" || p.MissionID != "" {
+		t.Errorf("disposition/mission not cleared: disposition=%q mission=%q", p.ForceDisposition, p.MissionID)
+	}
+}
+
 // setupFixedGameState builds a setup-phase engine with side/disposition/first
 // player chosen, player 1 on fixed mode and player 2 on tactical, leaving the
 // fixed selection + ready-up to the caller.

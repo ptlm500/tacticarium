@@ -49,15 +49,26 @@ type ScorePrompt struct {
 	Text       string `json:"text"`
 }
 
+// SelectedDetachment is one detachment a player has taken. 11e lets a player
+// combine detachments up to a points budget (see MaxDetachmentPoints); Points is
+// the detachment's cost (1–3).
+type SelectedDetachment struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Points int    `json:"points"`
+}
+
 type PlayerState struct {
-	UserID         string `json:"userId"`
-	Username       string `json:"username"`
-	AvatarURL      string `json:"avatarUrl,omitempty"`
-	PlayerNumber   int    `json:"playerNumber"`
-	FactionID      string `json:"factionId"`
-	FactionName    string `json:"factionName"`
-	DetachmentID   string `json:"detachmentId"`
-	DetachmentName string `json:"detachmentName"`
+	UserID       string `json:"userId"`
+	Username     string `json:"username"`
+	AvatarURL    string `json:"avatarUrl,omitempty"`
+	PlayerNumber int    `json:"playerNumber"`
+	FactionID    string `json:"factionId"`
+	FactionName  string `json:"factionName"`
+	// Detachments are the detachments this player has taken (combined up to
+	// MaxDetachmentPoints). Their force dispositions union to form the player's
+	// disposition choices.
+	Detachments []SelectedDetachment `json:"detachments"`
 
 	// 11e: each player has a side, a chosen force disposition, and a resolved
 	// (asymmetric) primary mission.
